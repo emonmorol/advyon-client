@@ -13,7 +13,8 @@ import {
   Sparkles,
   TrendingUp,
   UserPlus,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck
 } from "lucide-react";
 import { useCurrentUser } from "../services/auth/authService";
 import { useCases } from "../services/cases/caseService";
@@ -75,6 +76,15 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex gap-3">
+          <Button
+            variant="outline"
+            size="lg"
+            className="hidden md:flex gap-2 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent"
+            onClick={() => window.location.href = '/dashboard/profile/verify'}
+          >
+            <ShieldCheck className="h-5 w-5" />
+            Verify Profile
+          </Button>
           <Button size="lg" className="bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all">
             <Plus className="mr-2 h-5 w-5" />
             New Case

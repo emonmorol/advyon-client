@@ -11,6 +11,8 @@ import WorkspacePage from '@/pages/WorkspacePage';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
 
+import LawyerVerificationPage from '@/pages/dashboard/LawyerVerificationPage';
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -37,7 +39,8 @@ export const router = createBrowserRouter([
     element: <DashboardLayout />,
     children: [
       { index: true, element: <Dashboard /> },
-      { path: 'workspace', element: <WorkspacePage /> }
+      { path: 'workspace', element: <WorkspacePage /> },
+      { path: 'profile/verify', element: <LawyerVerificationPage /> }
     ],
   },
 ]);
