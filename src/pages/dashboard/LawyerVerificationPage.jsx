@@ -42,13 +42,13 @@ const LawyerVerificationPage = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-background p-6 md:p-12 space-y-8">
+        <div className="min-h-screen bg-background p-4 md:p-8 space-y-8">
             {/* Header */}
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w-[95%] mx-auto space-y-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+                    className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
                 >
                     <div>
                         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
@@ -66,8 +66,8 @@ const LawyerVerificationPage = () => {
                 </motion.div>
 
                 <div className="space-y-8">
-                    {/* Top Row: Details and Status */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Top Row: 3 Columns */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Left: Verification Details */}
                         <Card className="border-border shadow-lg h-full">
                             <CardHeader>
@@ -93,7 +93,7 @@ const LawyerVerificationPage = () => {
                             </CardContent>
                         </Card>
 
-                        {/* Right: Verification Status */}
+                        {/* Center: Verification Status */}
                         <Card className="border-border shadow-sm h-full">
                             <CardHeader>
                                 <CardTitle>Verification Status</CardTitle>
@@ -105,12 +105,9 @@ const LawyerVerificationPage = () => {
                                 />
                             </CardContent>
                         </Card>
-                    </div>
-
-                    {/* Bottom Row: Help & FAQ */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* Why Verify */}
-                        <Card className="bg-primary/5 border-primary/20 h-full">
+                                <div>
+ {/* Right: Why Verify */}
+                        <Card className="bg-primary/5 border-primary/20 mb-5">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-primary">
                                     <HelpCircle className="w-5 h-5" />
@@ -134,36 +131,39 @@ const LawyerVerificationPage = () => {
                                 </ul>
                             </CardContent>
                         </Card>
-
-                        {/* FAQ */}
-                        <Card className="h-full">
-                            <CardHeader>
-                                <CardTitle>Frequently Asked Questions</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Accordion type="single" collapsible className="w-full">
-                                    <AccordionItem value="item-1">
-                                        <AccordionTrigger>How long does it take?</AccordionTrigger>
-                                        <AccordionContent>
-                                            Verification typically takes 24-48 hours. We verify your details with the respective State Bar Council.
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                    <AccordionItem value="item-2">
-                                        <AccordionTrigger>What documents are accepted?</AccordionTrigger>
-                                        <AccordionContent>
-                                            We accept a clear photo or scan of your Bar Council ID card. Provisional certificates are also accepted for new enrollments.
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                    <AccordionItem value="item-3">
-                                        <AccordionTrigger>Is my data safe?</AccordionTrigger>
-                                        <AccordionContent>
-                                            Yes, your documents are encrypted and only accessible by our verification team.
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                </Accordion>
-                            </CardContent>
-                        </Card>
+                        {/* Bottom Row: FAQ */}
+                    <Card className="w-full">
+                        <CardHeader>
+                            <CardTitle>Frequently Asked Questions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Accordion type="single" collapsible className="w-full">
+                                <AccordionItem value="item-1">
+                                    <AccordionTrigger>How long does it take?</AccordionTrigger>
+                                    <AccordionContent>
+                                        Verification typically takes 24-48 hours. We verify your details with the respective State Bar Council.
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="item-2">
+                                    <AccordionTrigger>What documents are accepted?</AccordionTrigger>
+                                    <AccordionContent>
+                                        We accept a clear photo or scan of your Bar Council ID card. Provisional certificates are also accepted for new enrollments.
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="item-3">
+                                    <AccordionTrigger>Is my data safe?</AccordionTrigger>
+                                    <AccordionContent>
+                                        Yes, your documents are encrypted and only accessible by our verification team.
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        </CardContent>
+                    </Card>
+                                </div>
+                       
                     </div>
+
+                    
                 </div>
             </div>
         </div>
