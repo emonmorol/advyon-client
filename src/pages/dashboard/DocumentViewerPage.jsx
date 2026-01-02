@@ -45,6 +45,7 @@ const DocumentViewerPage = () => {
   // Resizer State
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef(null);
+  const viewerContainerRef = useRef(null);
 
   // Mock document data
   const document = {
@@ -89,7 +90,16 @@ const DocumentViewerPage = () => {
   };
 
   const handleFitToWidth = () => {
-    setZoom(1);
+    if (viewerContainerRef.current) {
+      const { width } = viewerContainerRef.current.getBoundingClientRect();
+      const pdfBaseWidth = 595; // Base width of the mock PDF
+      const padding = 64; // p-8 = 2rem * 2 = 4rem ≈ 64px
+      const availableWidth = width - padding;
+      // Calculate zoom to fit, maxing out at 200% to avoid being too huge
+      // Also ensure we don't zoom out too much (< 25%)
+      const newZoom = Math.min(Math.max(availableWidth / pdfBaseWidth, 0.25), 2);
+      setZoom(newZoom);
+    }
   };
 
   const handleSearch = (query) => {
@@ -260,7 +270,7 @@ const DocumentViewerPage = () => {
           />
           
           {/* PDF Viewer with Entity Overlay */}
-          <div className="flex-1 relative overflow-hidden">
+          <div ref={viewerContainerRef} className="flex-1 relative overflow-hidden">
             <div 
               className="h-full"
               style={{ transform: `rotate(${rotation}deg)` }}
