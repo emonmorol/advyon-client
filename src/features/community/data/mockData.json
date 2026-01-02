@@ -1,0 +1,194 @@
+{
+    "stats": {
+        "totalThreads": 1248,
+        "activeUsers": 356,
+        "dailyQuestions": 45
+    },
+    "categories": [
+        {
+            "id": "all",
+            "label": "All Topics"
+        },
+        {
+            "id": "family",
+            "label": "Family Law"
+        },
+        {
+            "id": "criminal",
+            "label": "Criminal Defense"
+        },
+        {
+            "id": "civil",
+            "label": "Civil Litigation"
+        },
+        {
+            "id": "property",
+            "label": "Property Law"
+        },
+        {
+            "id": "corporate",
+            "label": "Corporate"
+        },
+        {
+            "id": "ip",
+            "label": "Intellectual Property"
+        }
+    ],
+    "threads": [
+        {
+            "id": 1,
+            "author": {
+                "name": "Sarah Jenkins",
+                "avatar": "https://i.pravatar.cc/150?u=sarah",
+                "role": "Verified Lawyer"
+            },
+            "title": "Understanding the new amendments to the Digital Personal Data Protection Act",
+            "preview": "I've been reviewing the latest draft of the DPDP Act and there are some significant changes regarding data fiduciaries. Specifically, the consent requirements seem to be more stringent...",
+            "category": "Corporate",
+            "tags": [
+                "Data Privacy",
+                "DPDP Act",
+                "Compliance"
+            ],
+            "votes": 128,
+            "replies": 45,
+            "views": 1205,
+            "postedAt": "2 hours ago",
+            "isTrending": true,
+            "isSolved": false
+        },
+        {
+            "id": 2,
+            "author": {
+                "name": "Michael Chen",
+                "avatar": "https://i.pravatar.cc/150?u=michael",
+                "role": "Law Student"
+            },
+            "title": "Precedent for joint custody in interstate divorce cases?",
+            "preview": "I'm working on a moot court case involving a complex custody battle where parents live in different states. Does anyone have recent Supreme Court citations that could be relevant?",
+            "category": "Family Law",
+            "tags": [
+                "Custody",
+                "Divorce",
+                "Family Law"
+            ],
+            "votes": 85,
+            "replies": 12,
+            "views": 560,
+            "postedAt": "5 hours ago",
+            "isTrending": false,
+            "isSolved": true
+        },
+        {
+            "id": 3,
+            "author": {
+                "name": "Priya Sharma",
+                "avatar": "https://i.pravatar.cc/150?u=priya",
+                "role": "Legal Consultant"
+            },
+            "title": "Best practices for drafting a non-compete agreement in 2024",
+            "preview": "With the recent scrutiny on non-competes, what are the key clauses you are including to ensure enforceability while remaining fair to employees?",
+            "category": "Corporate",
+            "tags": [
+                "Contracts",
+                "Employment Law",
+                "Drafting"
+            ],
+            "votes": 210,
+            "replies": 67,
+            "views": 2300,
+            "postedAt": "1 day ago",
+            "isTrending": true,
+            "isSolved": false
+        },
+        {
+            "id": 4,
+            "author": {
+                "name": "David Ross",
+                "avatar": "https://i.pravatar.cc/150?u=david",
+                "role": "Advocate"
+            },
+            "title": "Procedural delays in civil suits: How to expedite?",
+            "preview": "Facing massive delays in a property dispute case at the district court level. Any procedural tactics or specific applications that have worked for you to speed up the listing?",
+            "category": "Civil Litigation",
+            "tags": [
+                "Civil Procedure",
+                "Litigation",
+                "Delay"
+            ],
+            "votes": 56,
+            "replies": 8,
+            "views": 340,
+            "postedAt": "1 day ago",
+            "isTrending": false,
+            "isSolved": false
+        },
+        {
+            "id": 5,
+            "author": {
+                "name": "Emily White",
+                "avatar": "https://i.pravatar.cc/150?u=emily",
+                "role": "Junior Associate"
+            },
+            "title": "Resources for learning about Patent filing process",
+            "preview": "I'm looking to specialize in IP law. Can anyone recommend good practical guides or courses for understanding the patent filing workflow in detail?",
+            "category": "Intellectual Property",
+            "tags": [
+                "IP",
+                "Patents",
+                "Career Advice"
+            ],
+            "votes": 34,
+            "replies": 5,
+            "views": 210,
+            "postedAt": "2 days ago",
+            "isTrending": false,
+            "isSolved": true
+        }
+    ],
+    "topContributors": [
+        {
+            "id": 1,
+            "name": "Adv. R.K. Mehta",
+            "role": "Senior Counsel",
+            "avatar": "https://i.pravatar.cc/150?u=rkmehta",
+            "points": 15400
+        },
+        {
+            "id": 2,
+            "name": "Sarah Jenkins",
+            "role": "Verified Lawyer",
+            "avatar": "https://i.pravatar.cc/150?u=sarah",
+            "points": 12350
+        },
+        {
+            "id": 3,
+            "name": "Amit Patel",
+            "role": "Legal Expert",
+            "avatar": "https://i.pravatar.cc/150?u=amit",
+            "points": 9800
+        }
+    ],
+    "popularTags": [
+        {
+            "name": "Corporate Law",
+            "count": 450
+        },
+        {
+            "name": "Criminal Justice",
+            "count": 320
+        },
+        {
+            "name": "Legal Tech",
+            "count": 280
+        },
+        {
+            "name": "Startups",
+            "count": 210
+        },
+        {
+            "name": "Constitution",
+            "count": 190
+        }
+    ]
+}
