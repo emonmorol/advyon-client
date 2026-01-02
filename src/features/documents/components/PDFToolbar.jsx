@@ -76,7 +76,7 @@ const PDFToolbar = ({
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-card border-b border-border rounded-t-lg">
       {/* Left Section - Page Navigation */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <Button 
           variant="ghost" 
           size="icon" 
@@ -96,7 +96,7 @@ const PDFToolbar = ({
             onChange={handlePageInput}
             className="w-12 h-8 text-center text-sm bg-muted border-border"
           />
-          <span className="text-sm text-muted-foreground">/ {totalPages}</span>
+          <span className="text-sm text-muted-foreground hidden sm:inline">/ {totalPages}</span>
         </div>
         
         <Button 
@@ -111,18 +111,18 @@ const PDFToolbar = ({
       </div>
 
       {/* Center Section - Zoom Controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={handleZoomOut}
           disabled={zoom <= 0.25}
-          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted hidden sm:flex"
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
         
-        <span className="text-sm font-medium text-foreground min-w-[4rem] text-center">
+        <span className="text-sm font-medium text-foreground min-w-[3rem] sm:min-w-[4rem] text-center">
           {Math.round(zoom * 100)}%
         </span>
         
@@ -131,12 +131,12 @@ const PDFToolbar = ({
           size="icon" 
           onClick={handleZoomIn}
           disabled={zoom >= 3}
-          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted hidden sm:flex"
         >
           <ZoomIn className="h-4 w-4" />
         </Button>
 
-        <div className="w-px h-6 bg-border mx-2" />
+        <div className="w-px h-6 bg-border mx-1 sm:mx-2 hidden sm:block" />
 
         <Button 
           variant="ghost" 
@@ -152,7 +152,7 @@ const PDFToolbar = ({
           variant="ghost" 
           size="icon" 
           onClick={onRotate}
-          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted hidden sm:flex"
           title="Rotate"
         >
           <RotateCw className="h-4 w-4" />
@@ -160,15 +160,15 @@ const PDFToolbar = ({
       </div>
 
       {/* Right Section - Search */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 hidden lg:flex">
         {showSearch ? (
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
             <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search in document..."
-              className="w-48 h-8 text-sm bg-muted border-border"
+              placeholder="Search..."
+              className="w-32 lg:w-48 h-8 text-sm bg-muted border-border"
               autoFocus
             />
             <Button 

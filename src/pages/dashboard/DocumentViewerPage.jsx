@@ -167,24 +167,24 @@ const DocumentViewerPage = () => {
         </div>
 
         {/* Right Section - Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowEntities(!showEntities)}
-            className={`gap-2 ${showEntities ? 'text-accent' : 'text-muted-foreground'}`}
+            className={`gap-2 ${showEntities ? 'text-accent' : 'text-muted-foreground'} hidden sm:flex`}
           >
             {showEntities ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-            <span className="hidden sm:inline">Entities</span>
+            <span className="hidden md:inline">Entities</span>
           </Button>
           
-          <div className="w-px h-6 bg-border mx-1" />
+          <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
           
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleShare}
-            className="h-9 w-9 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground hidden sm:flex"
           >
             <Share2 className="h-4 w-4" />
           </Button>
@@ -193,7 +193,7 @@ const DocumentViewerPage = () => {
             variant="ghost" 
             size="icon" 
             onClick={handlePrint}
-            className="h-9 w-9 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground hidden sm:flex"
           >
             <Printer className="h-4 w-4" />
           </Button>
@@ -211,7 +211,7 @@ const DocumentViewerPage = () => {
             variant="ghost" 
             size="icon" 
             onClick={toggleFullscreen}
-            className="h-9 w-9 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground hidden sm:flex"
           >
             {isFullscreen ? (
               <Minimize2 className="h-4 w-4" />
@@ -224,7 +224,7 @@ const DocumentViewerPage = () => {
             variant="ghost" 
             size="icon" 
             onClick={() => setIsPanelOpen(!isPanelOpen)}
-            className="h-9 w-9 text-muted-foreground hover:text-foreground"
+            className={`h-9 w-9 hover:text-foreground ${isPanelOpen ? 'text-accent bg-accent/10' : 'text-muted-foreground'}`}
           >
             {isPanelOpen ? (
               <PanelRightClose className="h-4 w-4" />
@@ -280,10 +280,10 @@ const DocumentViewerPage = () => {
           </div>
         </motion.div>
 
-        {/* Resizable Divider */}
+        {/* Resizable Divider - Desktop only */}
         {isPanelOpen && (
           <div
-            className={`w-1 bg-border hover:bg-accent cursor-col-resize transition-colors ${isResizing ? 'bg-accent' : ''}`}
+            className={`hidden md:block w-1 bg-border hover:bg-accent cursor-col-resize transition-colors ${isResizing ? 'bg-accent' : ''}`}
             onMouseDown={handleMouseDown}
           />
         )}
@@ -291,17 +291,33 @@ const DocumentViewerPage = () => {
         {/* AI Analysis Panel */}
         {isPanelOpen && (
           <motion.aside
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: panelWidth, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
+            initial={{ width: 0, opacity: 0, x: 100 }}
+            animate={{ 
+              width: window.innerWidth < 768 ? '100%' : panelWidth, 
+              opacity: 1, 
+              x: 0 
+            }}
+            exit={{ width: 0, opacity: 0, x: 100 }}
             transition={{ duration: 0.2 }}
-            className="flex-shrink-0 overflow-hidden"
-            style={{ width: panelWidth }}
+            className={`
+              flex-shrink-0 overflow-hidden bg-background border-l border-border
+              absolute inset-y-0 right-0 z-50 shadow-2xl md:relative md:shadow-none md:inset-auto md:border-none md:bg-transparent
+            `}
+            style={{ width: window.innerWidth < 768 ? '100%' : panelWidth }}
           >
-            <AIAnalysisPanel
-              documentId={docId}
-              analysis={docData.analysis}
-            />
+            <div className="h-full flex flex-col md:block">
+               {/* Mobile Header for Panel */}
+               <div className="flex md:hidden items-center justify-between p-2 border-b border-border bg-card">
+                 <span className="font-medium text-sm">AI Analysis</span>
+                 <Button variant="ghost" size="sm" onClick={() => setIsPanelOpen(false)}>
+                   <ArrowLeft className="h-4 w-4 mr-1" /> Back to Doc
+                 </Button>
+               </div>
+               <AIAnalysisPanel
+                 documentId={docId}
+                 analysis={docData.analysis}
+               />
+            </div>
           </motion.aside>
         )}
       </div>
