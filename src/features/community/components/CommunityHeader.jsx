@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Users, MessageSquare, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const CommunityHeader = ({ stats }) => {
+const CommunityHeader = ({ stats, onAskQuestion }) => {
     return (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-border/40">
             <div className="space-y-2">
@@ -42,7 +42,11 @@ const CommunityHeader = ({ stats }) => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
             >
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
+                <Button
+                    size="lg"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+                    onClick={onAskQuestion}
+                >
                     <Plus className="w-4 h-4 mr-2" />
                     Ask a Question
                 </Button>
