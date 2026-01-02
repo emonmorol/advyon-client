@@ -21,6 +21,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import { getMockDocument } from '@/features/documents/data/mockDocumentData';
 
 /**
  * DocumentViewerPage - Main document viewer page with AI analysis panel
@@ -30,10 +31,13 @@ const DocumentViewerPage = () => {
   const { docId } = useParams();
   const navigate = useNavigate();
   
+  // Load mock data based on ID
+  const docData = getMockDocument(docId);
+
   // Viewer State
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages] = useState(12); // Mock total pages
+  const [totalPages] = useState(docData.meta.pages);
   const [rotation, setRotation] = useState(0);
   
   // Panel State
@@ -46,25 +50,6 @@ const DocumentViewerPage = () => {
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef(null);
   const viewerContainerRef = useRef(null);
-
-  // Mock document data
-  const document = {
-    id: docId,
-    title: 'Contract Agreement - TechCorp Industries',
-    type: 'PDF',
-    size: '2.4 MB',
-    pages: totalPages,
-    uploadedAt: new Date().toLocaleDateString(),
-    fileUrl: '/mock-document.pdf'
-  };
-
-  // Mock entities for highlighting
-  const entities = [
-    { id: '1', type: 'person', text: 'John Smith', position: { x: 15, y: 20, width: 12, height: 1.5 } },
-    { id: '2', type: 'amount', text: '$2,500,000', position: { x: 45, y: 35, width: 15, height: 1.5 } },
-    { id: '3', type: 'date', text: 'January 15, 2024', position: { x: 60, y: 42, width: 18, height: 1.5 } },
-    { id: '4', type: 'organization', text: 'TechCorp Industries', position: { x: 20, y: 55, width: 20, height: 1.5 } },
-  ];
 
   const [activeEntity, setActiveEntity] = useState(null);
 
@@ -173,10 +158,10 @@ const DocumentViewerPage = () => {
           </Button>
           <div className="border-l border-border pl-4">
             <h1 className="font-semibold text-foreground truncate max-w-md">
-              {document.title}
+              {docData.meta.title}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {document.type} • {document.size} • {document.pages} pages
+              {docData.meta.type} • {docData.meta.size} • {docData.meta.pages} pages
             </p>
           </div>
         </div>
@@ -276,7 +261,7 @@ const DocumentViewerPage = () => {
               style={{ transform: `rotate(${rotation}deg)` }}
             >
               <PDFViewer
-                fileUrl={document.fileUrl}
+                fileUrl={docData.meta.fileUrl}
                 currentPage={currentPage}
                 zoom={zoom}
                 totalPages={totalPages}
@@ -287,7 +272,7 @@ const DocumentViewerPage = () => {
             {/* Entity Highlights Overlay */}
             {showEntities && (
               <EntityHighlight
-                entities={entities}
+                entities={docData.entityHighlights}
                 activeEntity={activeEntity}
                 onEntityClick={handleEntityClick}
               />
@@ -315,7 +300,7 @@ const DocumentViewerPage = () => {
           >
             <AIAnalysisPanel
               documentId={docId}
-              analysis={{}}
+              analysis={docData.analysis}
             />
           </motion.aside>
         )}

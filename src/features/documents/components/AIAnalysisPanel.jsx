@@ -32,36 +32,14 @@ const AIAnalysisPanel = ({
   documentId, 
   analysis = {} 
 }) => {
-  // Mock data for demonstration
-  const mockAnalysis = {
-    summary: analysis.summary || `This legal document pertains to the contractual agreement between the parties regarding the acquisition of intellectual property rights. The agreement outlines the terms of transfer, including compensation structure, warranties, and dispute resolution mechanisms.
-
-Key provisions include a 30-day notice period for termination, binding arbitration clause, and confidentiality obligations extending 5 years beyond contract termination.`,
-    keyPoints: analysis.keyPoints || [
-      { text: 'Contract value estimated at $2.5M with structured payment over 24 months', importance: 'high', category: 'Financial' },
-      { text: 'Intellectual property transfers upon final payment completion', importance: 'high', category: 'IP Rights' },
-      { text: '30-day notice period required for contract termination', importance: 'medium', category: 'Terms' },
-      { text: 'Binding arbitration in New York for dispute resolution', importance: 'medium', category: 'Legal' },
-      { text: 'Confidentiality obligations extend 5 years post-termination', importance: 'low', category: 'Compliance' },
-    ],
-    entities: analysis.entities || [
-      { type: 'person', name: 'John Smith', count: 12 },
-      { type: 'person', name: 'Sarah Johnson', count: 8 },
-      { type: 'organization', name: 'TechCorp Industries', count: 15 },
-      { type: 'organization', name: 'Legal Partners LLP', count: 6 },
-      { type: 'date', name: 'January 15, 2024', count: 3 },
-      { type: 'date', name: 'December 31, 2025', count: 2 },
-      { type: 'amount', name: '$2,500,000', count: 4 },
-      { type: 'amount', name: '$125,000', count: 2 },
-      { type: 'location', name: 'New York, NY', count: 5 },
-    ],
-    legalRefs: analysis.legalRefs || [
-      { citation: 'UCC § 2-201', description: 'Statute of Frauds requirement for contracts over $500', relevance: 'high' },
-      { citation: 'Smith v. Jones, 2019', description: 'Precedent for IP transfer validity', relevance: 'high' },
-      { citation: 'N.Y. Gen. Bus. Law § 349', description: 'Consumer protection provisions', relevance: 'medium' },
-      { citation: '17 U.S.C. § 204', description: 'Copyright transfer requirements', relevance: 'medium' },
-    ]
-  };
+  // Use analysis data from props, with safe defaults
+  const {
+    refinedSummary = '',
+    rawSummary = '',
+    keyPoints = [],
+    entities = [],
+    legalRefs = []
+  } = analysis;
 
   const getEntityIcon = (type) => {
     switch (type) {
@@ -146,8 +124,8 @@ Key provisions include a 30-day notice period for termination, binding arbitrati
           >
             <SummaryContent 
               documentId={documentId}
-              rawSummary={analysis.rawSummary}
-              refinedSummary={analysis.refinedSummary || mockAnalysis.summary}
+              rawSummary={rawSummary}
+              refinedSummary={refinedSummary}
               onRawChange={(content, timestamp) => console.log('Raw summary saved:', content, timestamp)}
               onRefinedChange={(content, timestamp) => console.log('Refined summary saved:', content, timestamp)}
               onRegenerateFromRaw={async (rawText) => {
@@ -167,13 +145,13 @@ Key provisions include a 30-day notice period for termination, binding arbitrati
           >
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                {mockAnalysis.keyPoints.length} Key Points Identified
+                {keyPoints.length} Key Points Identified
               </span>
               <Button variant="ghost" size="icon" className="h-6 w-6" title="Download key points">
                 <Download className="h-3.5 w-3.5" />
               </Button>
             </div>
-            <KeyPointsList points={mockAnalysis.keyPoints} />
+            <KeyPointsList points={keyPoints} />
           </motion.div>
         </TabsContent>
 
@@ -186,14 +164,14 @@ Key provisions include a 30-day notice period for termination, binding arbitrati
           >
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                {mockAnalysis.entities.length} Entities Found
+                {entities.length} Entities Found
               </span>
             </div>
             
             <EntityLegend />
             
             <div className="space-y-2">
-              {mockAnalysis.entities.map((entity, index) => {
+              {entities.map((entity, index) => {
                 const IconComponent = getEntityIcon(entity.type);
                 const colorClass = getEntityColor(entity.type);
                 
@@ -235,7 +213,7 @@ Key provisions include a 30-day notice period for termination, binding arbitrati
             </div>
             
             <div className="space-y-3">
-              {mockAnalysis.legalRefs.map((ref, index) => (
+              {legalRefs.map((ref, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -10 }}
