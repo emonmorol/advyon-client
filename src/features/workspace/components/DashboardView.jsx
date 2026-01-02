@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Briefcase, Search, Clock } from 'lucide-react';
 import CaseCard from './CaseCard';
 import { RECENT_ACTIVITY } from '../mockData';
 import { useCasesStore } from '@/store/cases';
-import CreateCaseModal from './CreateCaseModal';
 
 const DashboardView = ({ onSelectCase, searchTerm }) => {
-    const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+    const navigate = useNavigate();
 
     // Use Store
     const { cases, fetchCases, isLoading } = useCasesStore();
-    
+
 
     useEffect(() => {
         fetchCases();
@@ -33,7 +33,10 @@ const DashboardView = ({ onSelectCase, searchTerm }) => {
                         <h1 className="text-2xl font-bold text-background-foreground mb-1">Welcome back, <span className='text-accent'>John</span></h1>
                         <p className="text-muted-foreground text-sm">Here is what's happening across your active cases today.</p>
                     </div>
-                    <button className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg">
+                    <button
+                        className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg"
+                        onClick={() => navigate('/dashboard/cases/new')}
+                    >
                         <Plus size={16} /> New Case
                     </button>
                 </div>
@@ -99,15 +102,6 @@ const DashboardView = ({ onSelectCase, searchTerm }) => {
                 </div>
             </div>
 
-            {isCreateModalOpen && (
-                <CreateCaseModal
-                    onClose={() => setIsCreateModalOpen(false)}
-                    onSuccess={(newCase) => {
-                        // Auto-open the new case
-                        if (newCase) onSelectCase(newCase);
-                    }}
-                />
-            )}
         </div>
     );
 };
