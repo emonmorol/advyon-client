@@ -8,6 +8,7 @@ import Dashboard from '@/pages/Dashboard';
 import OnboardingPage from '@/pages/OnboardingPage';
 import WorkspacePage from '@/pages/WorkspacePage';
 import DocumentViewerPage from '@/pages/dashboard/DocumentViewerPage';
+import ProfilePage from '@/pages/dashboard/ProfilePage';
 
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
@@ -39,7 +40,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'workspace', element: <WorkspacePage /> },
-      { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> }
+      { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
+      { path: 'profile', element: <ProfilePage /> }
     ],
   },
 ]);
