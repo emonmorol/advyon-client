@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   Briefcase,
   Calendar,
@@ -21,6 +22,7 @@ import { useCurrentUser } from "../services/auth/authService";
 import { useCases } from "../services/cases/caseService";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { data: userData } = useCurrentUser();
   const { data: casesData } = useCases({ limit: 100 }); // Fetch enough to calculate basic stats
 
@@ -85,7 +87,11 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button size="lg" className="bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all">
+          <Button
+            size="lg"
+            onClick={() => navigate('/dashboard/cases/new')}
+            className="bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all"
+          >
             <Plus className="mr-2 h-5 w-5" />
             New Case
           </Button>

@@ -7,6 +7,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import Dashboard from '@/pages/Dashboard';
 import OnboardingPage from '@/pages/OnboardingPage';
 import WorkspacePage from '@/pages/WorkspacePage';
+import CreateCasePage from '@/pages/CreateCasePage';
 import DocumentViewerPage from '@/pages/dashboard/DocumentViewerPage';
 import ProfilePage from '@/pages/dashboard/ProfilePage';
 
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'workspace', element: <WorkspacePage /> },
+      { path: 'cases/new', element: <CreateCasePage /> }
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
       { path: 'community', element: <CommunityHubPage /> },
       { path: 'community/ask', element: <CommunityHubPage /> }, // Placeholder
