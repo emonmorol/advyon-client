@@ -44,6 +44,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'workspace', element: <WorkspacePage /> },
+      { path: 'profile/verify', element: <LawyerVerificationPage /> }
       { path: 'cases/new', element: <CreateCasePage /> }
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
       { path: 'community', element: <CommunityHubPage /> },
