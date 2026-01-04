@@ -13,6 +13,9 @@ import ProfilePage from '@/pages/dashboard/ProfilePage';
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
 
+import CommunityHubPage from '@/pages/dashboard/CommunityHubPage';
+import LawyerVerificationPage from '@/pages/dashboard/LawyerVerificationPage';
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -40,8 +43,13 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'workspace', element: <WorkspacePage /> },
+      { path: 'profile/verify', element: <LawyerVerificationPage /> },
+      { path: 'community', element: <CommunityHubPage /> },
+      { path: 'community/ask', element: <CommunityHubPage /> }, // Placeholder
+      { path: 'community/verified', element: <CommunityHubPage /> } // Placeholder
       { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
       { path: 'profile', element: <ProfilePage /> }
     ],
+    errorElement: <div className="p-8 text-red-500">Dashboard Error Boundary</div>
   },
 ]);
