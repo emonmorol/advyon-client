@@ -48,16 +48,16 @@ import {
 import { sidebarItems } from "@/components/Sidebar"
 
 const caseManagement = [
-  { title: "Active Cases", href: "/cases/active", description: "View and manage ongoing legal matters and deadlines." },
-  { title: "Smart Intake", href: "/cases/new", description: "Upload documents with AI-powered OCR and auto-sorting." },
-  { title: "My Documents", href: "/documents", description: "Centralized repository for all case files and evidence." },
-  { title: "Archived", href: "/cases/archived", description: "Access closed cases and historical records." },
+  { title: "Active Cases", href: "/dashboard/cases/active", description: "View and manage ongoing legal matters and deadlines." },
+  { title: "Smart Intake", href: "/dashboard/cases/new", description: "Upload documents with AI-powered OCR and auto-sorting." },
+  { title: "My Documents", href: "/dashboard/documents", description: "Centralized repository for all case files and evidence." },
+  { title: "Archived", href: "/dashboard/cases/archived", description: "Access closed cases and historical records." },
 ]
 
 const communityFeatures = [
-  { title: "Discussion Feed", href: "/community", description: "Browse legal topics, Q&A, and trending threads." },
-  { title: "Ask a Question", href: "/community/ask", description: "Post anonymously or as a verified professional." },
-  { title: "Verified Answers", href: "/community/verified", description: "Expert insights from verified lawyers and stakeholders." },
+  { title: "Discussion Feed", href: "/dashboard/community", description: "Browse legal topics, Q&A, and trending threads." },
+  { title: "Ask a Question", href: "/dashboard/community/ask", description: "Post anonymously or as a verified professional." },
+  { title: "Verified Answers", href: "/dashboard/community/verified", description: "Expert insights from verified lawyers and stakeholders." },
 ]
 
 const languages = [
@@ -139,7 +139,7 @@ export function Navbar() {
                         <NavigationMenuLink asChild>
                           <Link
                             className="flex h-full w-full flex-col justify-end rounded-md bg-gradient-to-b from-accent/20 to-accent/10 p-4 no-underline outline-none transition-all duration-200 select-none hover:shadow-md focus:shadow-md md:p-6 border border-border/30"
-                            to="/community"
+                            to="/dashboard/community"
                           >
                             <div className="mb-2 text-lg font-medium sm:mt-4 text-white">Community Hub</div>
                             <p className="text-muted-foreground text-sm leading-tight">Collaborate, share insights, and discuss legal topics.</p>
@@ -155,7 +155,7 @@ export function Navbar() {
 
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white")}>
-                    <Link to="/legal-database" className="flex items-center gap-2">
+                    <Link to="/dashboard/legal-database" className="flex items-center gap-2">
                       <Scale className="w-4 h-4" />
                       Legal DB
                     </Link>
@@ -164,7 +164,7 @@ export function Navbar() {
                 
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white")}>
-                    <Link to="/ai-assistant" className="flex items-center gap-2">
+                    <Link to="/dashboard/ai-assistant" className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-accent-foreground" />
                       AI Tools
                     </Link>
@@ -199,16 +199,16 @@ export function Navbar() {
                   <Link to="/dashboard" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
-                   <Link to="/cases" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                   <Link to="/dashboard/cases/active" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <FileText className="w-4 h-4" /> Cases
                   </Link>
-                   <Link to="/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                   <Link to="/dashboard/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Users className="w-4 h-4" /> Community
                   </Link>
-                   <Link to="/legal-database" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                   <Link to="/dashboard/legal-database" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Scale className="w-4 h-4" /> Legal DB
                   </Link>
-                   <Link to="/ai-assistant" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                   <Link to="/dashboard/ai-assistant" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Sparkles className="w-4 h-4 text-accent-foreground" /> AI Tools
                   </Link>
                 </div>

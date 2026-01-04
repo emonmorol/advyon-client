@@ -177,9 +177,11 @@ const Dashboard = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-foreground">Recent Matters</h3>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white">
-                View All <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <Link to="/dashboard/cases/active">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white">
+                  View All <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
 
             <div className="space-y-3">
