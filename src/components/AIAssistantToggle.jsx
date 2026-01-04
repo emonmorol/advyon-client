@@ -51,10 +51,10 @@ const AIAssistantToggle = ({
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-1 px-6 py-2 rounded-lg transition-all duration-300 min-w-[140px] group",
+        "flex items-center gap-1 px-6 py-2 rounded-lg transition-all duration-300 min-w-[140px] group ",
         isActive
           ? "bg-accent text-primary border border-accent"
-          : "bg-primary text-primary-foreground border border-transparent hover:bg-accent hover:text-primary"
+          : "bg-primary text-primary-foreground hover:bg-accent hover:text-primary border border-accent/30 shadow-[0_0_12px_rgba(var(--accent),0.2)]"
       )}
       title="Toggle AI Assistant"
     >
@@ -73,7 +73,7 @@ const AIAssistantToggle = ({
             : "bg-accent group-hover:bg-primary"
         )} />
       </div>
-      <span className="text-sm font-medium hidden sm:inline">Advyon AI</span>
+      <span className="text-sm font-medium hidden sm:inline">AI AGENT</span>
     </button>
   );
 };
