@@ -14,8 +14,10 @@ import {
   Sparkles,
   TrendingUp,
   UserPlus,
-  ArrowRight
+  ArrowRight,
+  Users
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useCurrentUser } from "../services/auth/authService";
 import { useCases } from "../services/cases/caseService";
 
@@ -71,7 +73,15 @@ const Dashboard = () => {
       {/* Header Section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-4xl font-bold tracking-tight text-black">Overview</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-4xl font-bold tracking-tight text-black">Overview</h2>
+            <Link to="/dashboard/community">
+              <Button variant="outline" size="sm" className="h-8 shadow-sm hover:bg-accent/10 hover:text-accent border-accent/20">
+                <Users className="mr-2 h-4 w-4" />
+                Community Hub
+              </Button>
+            </Link>
+          </div>
           <p className="text-gray-600 mt-1">
             Welcome back, {profile?.fullName || user?.fullName || 'Advocate'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
           </p>
