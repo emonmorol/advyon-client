@@ -7,6 +7,7 @@ import {
   Gavel, RefreshCw, ThumbsUp, ThumbsDown, Lightbulb,
   Send, Paperclip, Copy, BookOpen, TrendingUp
 } from 'lucide-react';
+import { useAIStore } from '../store/useAIStore';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -84,9 +85,13 @@ const AIAssistant = ({
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  const handleSendMessage = (message = chatInput) => {
+  /* AI Store Integration */
+  const { sendMessage, isSending } = useAIStore();
+
+  const handleSendMessage = async (message = chatInput) => {
     if (!message.trim()) return;
 
+    // Optimistic UI update
     setChatMessages(prev => [...prev, {
       type: 'user',
       text: message,
@@ -96,15 +101,25 @@ const AIAssistant = ({
     setChatInput('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        type: 'ai',
-        text: `I've analyzed your request: "${message}". Based on the current case data, here's what I found...`,
-        timestamp: new Date()
-      }]);
-      setIsTyping(false);
-    }, 1500);
+    try {
+        const response = await sendMessage(caseData.id || 'general', message);
+        // Assuming response is the text or object with response field
+        const responseText = response?.response || "I have processed your request.";
+        
+        setChatMessages(prev => [...prev, {
+            type: 'ai',
+            text: responseText,
+            timestamp: new Date()
+        }]);
+    } catch (error) {
+         setChatMessages(prev => [...prev, {
+            type: 'ai',
+            text: "Sorry, I encountered an error processing your request.",
+            timestamp: new Date()
+        }]);
+    } finally {
+        setIsTyping(false);
+    }
   };
 
   const handleQuickQuestion = (question) => {

@@ -7,28 +7,34 @@ import ThreadFeed from '@/features/community/components/ThreadFeed';
 import TrendingSidebar from '@/features/community/components/TrendingSidebar';
 import CreateThreadModal from '@/features/community/components/CreateThreadModal';
 import mockData from '@/features/community/data/mockData.json';
+import { useCommunityStore } from '@/store/useCommunityStore';
 
 const CommunityHubPage = () => {
     const [activeCategory, setActiveCategory] = useState('all');
-    const [isLoading, setIsLoading] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    
+    // Use Store
+    const { threads, fetchThreads, isLoading } = useCommunityStore();
+
+    React.useEffect(() => {
+        fetchThreads();
+    }, [fetchThreads]);
 
     const handleCategoryChange = (categoryId) => {
         setActiveCategory(categoryId);
-        setIsLoading(true);
-        // Simulate loading
-        setTimeout(() => setIsLoading(false), 500);
+        // Store handles caching/loading
     };
 
     const handleCreateSuccess = (newThread) => {
-        // In a real app, we would add this to the list or refetch
+        // Option: re-fetch or manual add to store
+        fetchThreads(); 
         console.log("Thread created successfully:", newThread);
     };
 
     // Filter threads based on active category
     const filteredThreads = activeCategory === 'all'
-        ? mockData.threads
-        : mockData.threads.filter(t => t.category.toLowerCase().includes(activeCategory) || t.tags.some(tag => tag.toLowerCase().includes(activeCategory)));
+        ? threads
+        : threads.filter(t => t.category?.toLowerCase().includes(activeCategory) || t.tags?.some(tag => tag.toLowerCase().includes(activeCategory)));
 
     return (
         <div className="min-h-screen bg-background">

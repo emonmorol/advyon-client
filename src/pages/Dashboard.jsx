@@ -19,17 +19,23 @@ import {
   Users
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useCurrentUser } from "../services/auth/authService";
-import { useCases } from "../services/cases/caseService";
+import { useAuthStore } from "../store/useAuthStore";
+import { useCasesStore } from "../store/cases";
+import { useDashboardStore } from "../store/useDashboardStore";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { data: userData } = useCurrentUser();
-  const { data: casesData } = useCases({ limit: 100 }); // Fetch enough to calculate basic stats
+  const { user, fetchProfile } = useAuthStore();
+  const { cases: allCases, fetchCases } = useCasesStore();
+  const { stats, fetchStats } = useDashboardStore();
 
-  const user = userData?.data?.user;
-  const profile = userData?.data?.profile;
-  const allCases = casesData?.data || [];
+  React.useEffect(() => {
+    fetchProfile();
+    fetchCases();
+    fetchStats();
+  }, [fetchProfile, fetchCases, fetchStats]);
+
+  const profile = user;
 
   // --- Computed Stats ---
   const activeCasesCount = allCases.filter(c => c.status === 'active').length;
@@ -84,7 +90,7 @@ const Dashboard = () => {
             </Link>
           </div>
           <p className="text-gray-600 mt-1">
-            Welcome back, {profile?.fullName || user?.fullName || 'Advocate'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
+            Welcome back, {profile?.displayName || profile?.fullName || 'Advocate'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
           </p>
         </div>
         <div className="flex gap-3">
@@ -105,7 +111,7 @@ const Dashboard = () => {
           { title: "Active Cases", value: activeCasesCount, sub: "Total active", icon: Briefcase, color: "text-blue-400" },
           { title: "Upcoming Hearings", value: upcomingHearingsCount, sub: "Next 7 days", icon: Gavel, color: "text-amber-400" },
           { title: "Pending Review", value: pendingReviewCount, sub: "Documents & Evidence", icon: FileText, color: "text-red-400" },
-          { title: "Client Messages", value: "08", sub: "3 new inquiries", icon: MessageSquare, color: "text-emerald-400" } // Static for now
+          { title: "Client Messages", value: stats?.clientMessagesCount || "08", sub: "3 new inquiries", icon: MessageSquare, color: "text-emerald-400" } 
         ].map((stat, index) => (
           <motion.div key={index} variants={item}>
             <Card className={cardStyle}>

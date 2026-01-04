@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,8 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { getMockDocument } from '@/features/documents/data/mockDocumentData';
+import { useDocumentsStore } from '@/store/documents';
+import { useAIStore } from '@/store/useAIStore'; // Assuming this exists for document analysis
 
 /**
  * DocumentViewerPage - Main document viewer page with AI analysis panel
@@ -31,13 +32,19 @@ const DocumentViewerPage = () => {
   const { docId } = useParams();
   const navigate = useNavigate();
   
-  // Load mock data based on ID
-  const docData = getMockDocument(docId);
+  // Store Hooks
+  const { fetchDocumentContent } = useDocumentsStore();
+  const { analyzeDocument, analysisResult, isAnalyzing } = useAIStore(); // Assuming similar actions
+
+  // Local State for Doc Data
+  const [docData, setDocData] = useState(null);
+  const [fileUrl, setFileUrl] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Viewer State
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages] = useState(docData.meta.pages);
+  const [totalPages] = useState(10); // Default, update if PDF metadata known
   const [rotation, setRotation] = useState(0);
   
   // Panel State
@@ -52,6 +59,53 @@ const DocumentViewerPage = () => {
   const viewerContainerRef = useRef(null);
 
   const [activeEntity, setActiveEntity] = useState(null);
+
+  // Fetch Data Effect
+  useEffect(() => {
+      const loadDoc = async () => {
+          setIsLoading(true);
+          try {
+              // 1. Fetch Content URL
+              const url = await fetchDocumentContent(docId);
+              if (url) setFileUrl(url);
+
+              // 2. Fetch AI Analysis (if not already cached/available)
+              // This assumes AIStore can fetch analysis for a doc
+              // Or we might need a separate call to get document metadata
+              // For now, we simulate metadata or fetch it if possible.
+              // Assuming analyzeDocument fetches existing analysis or triggers new
+              // await analyzeDocument(docId);
+              
+              // Simulating metadata since we don't have a "getDocMeta" endpoint yet explicitly
+              setDocData({
+                  meta: {
+                      title: `Document ${docId}`, // Placeholder
+                      type: 'PDF',
+                      size: 'Unknown',
+                      pages: 10, // Placeholder
+                      fileUrl: url
+                  },
+                  analysis: {
+                      // Will be populated by AI store result preferably
+                  },
+                  entityHighlights: []
+              });
+          } catch (err) {
+              console.error(err);
+          } finally {
+              setIsLoading(false);
+          }
+      };
+
+      if (docId) loadDoc();
+  }, [docId, fetchDocumentContent, analyzeDocument]);
+
+  // Sync analysis result
+  // useEffect(() => {
+  //     if (analysisResult) {
+  //         setDocData(prev => ({ ...prev, analysis: analysisResult }));
+  //     }
+  // }, [analysisResult]);
 
   // Handlers
   const handleBack = () => {
@@ -134,6 +188,10 @@ const DocumentViewerPage = () => {
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  if (isLoading || !docData) {
+      return <div className="flex items-center justify-center h-screen">Loading Document...</div>;
+  }
 
   return (
     <div 
@@ -261,7 +319,7 @@ const DocumentViewerPage = () => {
               style={{ transform: `rotate(${rotation}deg)` }}
             >
               <PDFViewer
-                fileUrl={docData.meta.fileUrl}
+                fileUrl={fileUrl || docData.meta.fileUrl}
                 currentPage={currentPage}
                 zoom={zoom}
                 totalPages={totalPages}
