@@ -14,24 +14,24 @@ const DashboardLayout = () => {
       <Navbar />
       <div className="flex flex-1 relative overflow-hidden">
         {/* Left Sidebar - Animated Placeholder */}
-        <motion.div 
+        <motion.div
           initial={{ width: 80 }}
           animate={{ width: isSidebarCollapsed ? 80 : 250 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="hidden md:block shrink-0" 
+          className="hidden md:block shrink-0"
         />
-        
-        <Sidebar 
-          className="hidden md:flex" 
+
+        <Sidebar
+          className="hidden md:flex"
           isCollapsed={isSidebarCollapsed}
           onMouseEnter={() => setIsSidebarCollapsed(false)}
           onMouseLeave={() => setIsSidebarCollapsed(true)}
         />
-        
+
         <main className="flex-1 pr-3 pb-3 overflow-y-auto h-[calc(100vh-4rem)] relative z-10">
-           {/* Background Effects */}
-           <div className="absolute inset-0 bg-primary -z-10 fixed"></div>
-           
+          {/* Background Effects */}
+          <div className="absolute inset-0 bg-primary -z-10 fixed"></div>
+
           <div className="bg-background rounded-2xl shadow-2xl min-h-full p-6 text-gray-800">
             <Outlet />
           </div>
@@ -39,9 +39,9 @@ const DashboardLayout = () => {
 
         {/* AI Panel - Animated Placeholder (like sidebar) */}
         <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: isOpen ? width : 0 }}
-          transition={{ 
+          initial={{ width: 0, marginLeft: 0 }}
+          animate={{ width: isOpen ? width : 0, marginLeft: isOpen ? 12 : 0 }}
+          transition={{
             type: "spring",
             damping: 25,
             stiffness: 200
@@ -52,8 +52,8 @@ const DashboardLayout = () => {
         {/* AI Assistant Panel - Fixed position (like sidebar) */}
         <AnimatePresence mode="wait">
           {isOpen && (
-            <AIAssistant 
-              isOpen={isOpen} 
+            <AIAssistant
+              isOpen={isOpen}
               onClose={closeAI}
               width={width}
               onWidthChange={setAIWidth}

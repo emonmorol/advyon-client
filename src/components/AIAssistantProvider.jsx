@@ -22,7 +22,7 @@ export const useAIAssistant = () => {
 export const AIAssistantProvider = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [caseData, setCaseData] = useState({});
-  const [width, setWidth] = useState(380); // Default width in pixels
+  const [width, setWidth] = useState(340); // Default width in pixels
 
   const openAI = (data = {}) => {
     setCaseData(data);
