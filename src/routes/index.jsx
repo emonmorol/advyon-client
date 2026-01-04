@@ -7,6 +7,8 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import Dashboard from '@/pages/Dashboard';
 import OnboardingPage from '@/pages/OnboardingPage';
 import WorkspacePage from '@/pages/WorkspacePage';
+import DocumentViewerPage from '@/pages/dashboard/DocumentViewerPage';
+import ProfilePage from '@/pages/dashboard/ProfilePage';
 
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
@@ -45,6 +47,8 @@ export const router = createBrowserRouter([
       { path: 'community', element: <CommunityHubPage /> },
       { path: 'community/ask', element: <CommunityHubPage /> }, // Placeholder
       { path: 'community/verified', element: <CommunityHubPage /> } // Placeholder
+      { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
+      { path: 'profile', element: <ProfilePage /> }
     ],
     errorElement: <div className="p-8 text-red-500">Dashboard Error Boundary</div>
   },
