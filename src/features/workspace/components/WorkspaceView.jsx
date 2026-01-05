@@ -7,6 +7,7 @@ import DocumentItem from './DocumentItem';
 import TimerWidget from './TimerWidget';
 import { ALL_CASES } from '../mockData';
 import { useDocumentsStore } from '@/store/documents';
+import { SmartFileUploader } from '@/components/SmartFileUploader';
 
 // Define standard folders
 const FOLDERS = ['Evidence', 'Witness Statements', 'Pleadings', 'Correspondence', 'Court Orders', 'Research'];
@@ -198,10 +199,15 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                    <div className="border-2 border-dashed border-teal-accent/30 rounded-xl p-6 mb-4 flex flex-col items-center justify-center text-muted-foreground hover:border-accent/50 hover:bg-secondary/50 transition-all cursor-pointer group">
-                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"><Plus size={20} className="text-teal-accent group-hover:text-accent" /></div>
-                        <p className="text-sm font-medium">Drop new {currentFolder} here</p>
-                    </div>
+                    <SmartFileUploader
+                        caseId={activeCase.id}
+                        folderName={currentFolder}
+                        className="mb-4 border-2 border-dashed border-teal-accent/30 bg-transparent hover:border-accent/50 hover:bg-secondary/50 transition-all"
+                        onUploadComplete={() => {
+                            // The store already invalidates queries, so the list should update automatically
+                            // We can add a toast notification here if needed
+                        }}
+                    />
 
                     <div className="space-y-1">
                         {selectedFile ? (

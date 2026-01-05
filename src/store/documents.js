@@ -57,15 +57,15 @@ export const useDocumentsStore = create((set, get) => ({
         }));
 
         try {
-            // GET /cases/:caseId?folder=...
+            // GET /cases/:caseId/documents?folder=...
             const params = {};
             if (folder) params.folder = folder;
 
-            const res = await api.get(`${CASE_BASE}/${caseId}`, { params });
+            const res = await api.get(`${CASE_BASE}/${caseId}/documents`, { params });
             const data = res.data;
 
-            // backend might return { data: [...] } OR just [...]
-            const items = Array.isArray(data) ? data : (data?.data ?? data?.documents ?? []);
+            // backend response format: { success: true, data: [...] }
+            const items = Array.isArray(data?.data) ? data.data : [];
 
             set((state) => ({
                 cache: { ...state.cache, [k]: { items, fetchedAt: Date.now() } },
@@ -86,17 +86,17 @@ export const useDocumentsStore = create((set, get) => ({
         if (!caseId) throw new Error("uploadDocument: caseId is required");
         if (!file) throw new Error("uploadDocument: file is required");
 
-        // POST /cases/:caseId/upload
+        // POST /cases/:caseId/documents
         const formData = new FormData();
         formData.append("file", file);
-        if (folderName) formData.append("folderName", folderName);
+        if (folderName) formData.append("folder", folderName); // Standardized to "folder"
 
         // allow adding extra fields if your backend expects them later
         Object.entries(extra).forEach(([k, v]) => {
             if (v !== undefined && v !== null) formData.append(k, v);
         });
 
-        const res = await api.post(`${CASE_BASE}/${caseId}/upload`, formData);
+        const res = await api.post(`${CASE_BASE}/${caseId}/documents`, formData);
 
         // After upload, refresh that folder cache (force)
         await get().fetchDocuments({ caseId, folder: folderName, force: true });

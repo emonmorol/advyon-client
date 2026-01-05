@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
  */
 export const SmartFileUploader = ({
   caseId,
+  folderName,
   onUploadComplete,
   className,
   acceptedFileTypes = {
@@ -33,22 +34,21 @@ export const SmartFileUploader = ({
   },
 }) => {
   const {
+    upload,
     isUploading,
     uploadProgress,
-    isAnalyzing,
+    status,
     analysisResult,
     error,
-    status,
-    upload,
     reset,
   } = useSmartUpload(caseId);
 
   // Handle file drop
   const onDrop = useCallback((acceptedFiles) => {
     if (acceptedFiles.length > 0) {
-      upload(acceptedFiles[0]);
+      upload({ file: acceptedFiles[0], folderName });
     }
-  }, [upload]);
+  }, [upload, folderName]);
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,

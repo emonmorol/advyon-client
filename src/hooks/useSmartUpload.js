@@ -19,13 +19,17 @@ export const useSmartUpload = (caseId) => {
   const [status, setStatus] = useState('idle'); // 'idle' | 'uploading' | 'analyzing' | 'completed' | 'failed'
 
   // Upload mutation
+  // Endpoint: POST /api/v1/cases/:caseId/documents
   const uploadMutation = useMutation({
-    mutationFn: async (file) => {
+    mutationFn: async ({ file, folderName }) => {
       const formData = new FormData();
       formData.append('file', file);
+      if (folderName) {
+        formData.append('folder', folderName);
+      }
 
       const response = await api.post(
-        `/documents/${caseId}/upload`,
+        `/cases/${caseId}/documents`,
         formData,
         {
           headers: {
@@ -64,11 +68,12 @@ export const useSmartUpload = (caseId) => {
   });
 
   // Status polling query - only enabled when analyzing
+  // Endpoint: GET /api/v1/cases/:caseId/documents/:documentId/status
   const statusQuery = useQuery({
     queryKey: ['documentStatus', caseId, documentId],
     queryFn: async () => {
       const response = await api.get(
-        `/documents/${caseId}/${documentId}/status`
+        `/cases/${caseId}/documents/${documentId}/status`
       );
       return response.data;
     },
@@ -93,7 +98,7 @@ export const useSmartUpload = (caseId) => {
     if (processingStatus === 'completed' && aiAnalysis && status === 'analyzing') {
       setAnalysisResult(aiAnalysis);
       setStatus('completed');
-      // Invalidate related queries
+      // Invalidate related queries to refresh document lists
       queryClient.invalidateQueries({ queryKey: ['documents', caseId] });
     } else if (processingStatus === 'failed' && status === 'analyzing') {
       setError(new Error(statusError || 'Document processing failed'));
@@ -108,13 +113,14 @@ export const useSmartUpload = (caseId) => {
   }
 
   // Upload handler
-  const upload = useCallback((file) => {
+  const upload = useCallback(({ file, folderName }) => {
     if (!caseId) {
       setError(new Error('Case ID is required'));
       setStatus('failed');
       return;
     }
-    uploadMutation.mutate(file);
+    // Mutate expects a single argument, passing object to be handled in mutationFn
+    uploadMutation.mutate({ file, folderName });
   }, [caseId, uploadMutation]);
 
   // Reset handler
