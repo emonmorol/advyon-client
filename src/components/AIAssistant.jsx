@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings, ShieldCheck, AlertCircle, MessageSquare,
@@ -8,6 +9,7 @@ import {
   Send, Paperclip, Copy, BookOpen, TrendingUp
 } from 'lucide-react';
 import { useAIStore } from '../store/useAIStore';
+import { useDocumentsStore } from '@/store/documents';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -37,6 +39,8 @@ const AIAssistant = ({
     { id: 2, text: "Review witness statements for inconsistencies", completed: false, priority: "medium" },
     { id: 3, text: "Schedule deposition with key witness", completed: true, priority: "low" }
   ]);
+
+  const { selectedDocument } = useDocumentsStore();
 
   const [missingDocs, setMissingDocs] = useState([
     { id: 1, name: "Police Report - Incident #2024-892", referenced: "Case Summary" },
@@ -102,9 +106,10 @@ const AIAssistant = ({
     setIsTyping(true);
 
     try {
-        const response = await sendMessage(caseData.id || 'general', message);
+        const context = selectedDocument ? { documentId: selectedDocument.id || selectedDocument._id } : {};
+        const response = await sendMessage(caseData.id || 'general', message, [], context);
         // Assuming response is the text or object with response field
-        const responseText = response?.response || "I have processed your request.";
+        const responseText = response?.data?.response || "I have processed your request.";
         
         setChatMessages(prev => [...prev, {
             type: 'ai',
@@ -266,19 +271,31 @@ const AIAssistant = ({
           </div>
         </motion.div>
 
-        {/* Case Context */}
-        {caseData.caseName && (
-          <motion.div
+        {/* Case / Document Context */}
+        <motion.div
             className="p-3 bg-primary/10 border-b border-border"
             variants={itemVariants}
           >
-            <p className="text-xs text-muted-foreground">Analyzing Case:</p>
-            <p className="text-sm font-semibold text-accent">{caseData.caseName}</p>
-            {caseData.caseNumber && (
-              <p className="text-xs text-muted-foreground">{caseData.caseNumber}</p>
+            {selectedDocument ? (
+               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <FileText size={10} /> analyzing Document:
+                  </p>
+                  <p className="text-sm font-semibold text-accent truncate">{selectedDocument.name}</p>
+                   <p className="text-[10px] text-muted-foreground mt-0.5">
+                     type: {selectedDocument.type || 'PDF'} • size: {selectedDocument.size ? Math.round(selectedDocument.size/1024)+'KB' : 'Unknown'}
+                   </p>
+               </div>
+            ) : (
+              <div>
+                <p className="text-xs text-muted-foreground">Analyzing Case:</p>
+                <p className="text-sm font-semibold text-accent">{caseData.caseName || "General Context"}</p>
+                {caseData.caseNumber && (
+                  <p className="text-xs text-muted-foreground">{caseData.caseNumber}</p>
+                )}
+              </div>
             )}
           </motion.div>
-        )}
 
         {/* Tabs */}
         <motion.div className="flex border-b border-border" variants={itemVariants}>
@@ -550,7 +567,15 @@ const AIAssistant = ({
                           ? "bg-primary/10 border border-primary/20 text-foreground"
                           : "bg-card border border-border text-foreground"
                       )}>
-                        <p className="text-xs">{msg.text}</p>
+                        {msg.type === 'user' ? (
+                          <p className="text-xs whitespace-pre-wrap">{msg.text}</p>
+                        ) : (
+                          <div className="prose prose-sm dark:prose-invert prose-p:text-xs prose-p:leading-relaxed prose-headings:text-sm prose-headings:font-semibold prose-ul:my-2 prose-li:my-0.5 prose-code:text-[10px] prose-code:bg-muted prose-code:px-1 prose-code:rounded max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                            <ReactMarkdown>
+                              {msg.text}
+                            </ReactMarkdown>
+                          </div>
+                        )}
                         {msg.type === 'ai' && (
                           <div className="flex items-center gap-2 mt-2">
                             <button className="text-muted-foreground hover:text-primary transition-colors">

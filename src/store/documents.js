@@ -9,7 +9,9 @@ const keyOf = (caseId, folder) => `${caseId}::${folder || "__root__"}`;
 export const useDocumentsStore = create((set, get) => ({
     // ---------- UI state ----------
     activeCaseId: null,
+    activeCaseId: null,
     activeFolder: "Evidence",
+    selectedDocument: null, // Shared selected document state
 
     // ---------- cache ----------
     // cache[key] = { items: Document[], fetchedAt: number }
@@ -40,6 +42,7 @@ export const useDocumentsStore = create((set, get) => ({
     // ---------- simple setters ----------
     setActiveCase: (caseId) => set({ activeCaseId: caseId }),
     setActiveFolder: (folder) => set({ activeFolder: folder }),
+    setSelectedDocument: (doc) => set({ selectedDocument: doc }),
 
     // ---------- core actions ----------
     fetchDocuments: async ({ caseId, folder, force = false } = {}) => {
@@ -79,6 +82,37 @@ export const useDocumentsStore = create((set, get) => ({
                 error: { ...state.error, [k]: err },
             }));
             throw err;
+        }
+    },
+
+    fetchDocumentContent: async (documentId) => {
+        console.log("[DEBUG] fetchDocumentContent called with:", documentId);
+        if (!documentId) {
+             console.error("[DEBUG] fetchDocumentContent: Missing documentId");
+             return null;
+        }
+
+        try {
+            // User confirmed the route is: GET /api/v1/documents/:documentId/content
+            const endpoint = `/documents/${documentId}/content`;
+            console.log("[DEBUG] Requesting:", endpoint);
+            
+            const response = await api.get(endpoint);
+            console.log("[DEBUG] API Response:", response);
+            
+            if (response.data && response.data.data.url) {
+                console.log("[DEBUG] Found URL:", response.data.data.url);
+                return response.data.data.url;
+            }
+            console.warn("[DEBUG] Response missing url field:", response.data.data);
+            return null;
+        } catch (error) {
+            console.error("[DEBUG] Failed to fetch document content:", error);
+            if (error.response) {
+                console.error("[DEBUG] Error Status:", error.response.status);
+                console.error("[DEBUG] Error Data:", error.response.data);
+            }
+            throw error;
         }
     },
 

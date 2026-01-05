@@ -32,9 +32,6 @@ export const useSmartUpload = (caseId) => {
         `/cases/${caseId}/documents`,
         formData,
         {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
           onUploadProgress: (progressEvent) => {
             const progress = progressEvent.total
               ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
@@ -51,6 +48,7 @@ export const useSmartUpload = (caseId) => {
       setUploadProgress(0);
       setError(null);
       setAnalysisResult(null);
+      setDocumentId(null);
     },
     onSuccess: (data) => {
       if (data.success && data.data?.id) {
@@ -142,6 +140,7 @@ export const useSmartUpload = (caseId) => {
     status,
     upload,
     reset,
+    documentId,
   };
 };
 

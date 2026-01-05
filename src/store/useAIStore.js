@@ -10,14 +10,24 @@ export const useAIStore = create((set) => ({
   analysisResult: null,
   isAnalyzing: false,
 
-  sendMessage: async (caseId, message, history = []) => {
+  sendMessage: async (caseId, message, history = [], context = {}) => {
     set({ isSending: true, error: null });
     try {
-      const { data: response } = await api.post('/ai/chat', {
+      const payload = {
         caseId,
         message,
         history,
-      });
+      };
+      
+      // If we have document context, attach it
+      if (context.documentId) {
+        payload.documentId = context.documentId;
+      }
+      console.log("Payload from chat = ", payload);
+      
+
+      const { data: response } = await api.post('/ai/chat', payload);
+      console.log("Response from chat = ", response);
       // Return response so component can update its local history or store logic can be expanded
       set({ isSending: false });
       return response;

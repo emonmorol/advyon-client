@@ -17,10 +17,15 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     const [isCaseSwitcherOpen, setIsCaseSwitcherOpen] = useState(false);
     const [breadcrumbs, setBreadcrumbs] = useState([activeCase.title, 'Evidence']);
     const [expandedFolders, setExpandedFolders] = useState([]);
-    const [selectedFile, setSelectedFile] = useState(null);
 
     // Store Integration
-    const { fetchDocuments, getDocuments, isLoading } = useDocumentsStore();
+    const { 
+        fetchDocuments, 
+        getDocuments, 
+        isLoading, 
+        selectedDocument, 
+        setSelectedDocument 
+    } = useDocumentsStore();
     const currentFolder = breadcrumbs[breadcrumbs.length - 1];
 
     // Fetch documents when case or folder changes
@@ -28,7 +33,40 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         if (activeCase?.id && currentFolder) {
             fetchDocuments({ caseId: activeCase.id, folder: currentFolder });
         }
-    }, [activeCase, currentFolder, fetchDocuments]);
+        // Cleanup selection on unmount or case switch
+        return () => setSelectedDocument(null);
+    }, [activeCase, currentFolder, fetchDocuments, setSelectedDocument]);
+
+    // Fetch Content for selected document
+    const { fetchDocumentContent } = useDocumentsStore();
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const [loadingPreview, setLoadingPreview] = useState(false);
+
+    React.useEffect(() => {
+        let active = true;
+        const loadPreview = async () => {
+             const docId = selectedDocument?.id || selectedDocument?._id;
+            if (!docId || !activeCase?.id) {
+                setPreviewUrl(null);
+                return;
+            }
+            
+            setLoadingPreview(true);
+            try {
+                const url = await fetchDocumentContent(docId);
+                if (active) {
+                    setPreviewUrl(url);
+                }
+            } catch (err) {
+                console.error("Failed to load preview url", err);
+            } finally {
+                if (active) setLoadingPreview(false);
+            }
+        };
+
+        loadPreview();
+        return () => { active = false; };
+    }, [selectedDocument, activeCase, fetchDocumentContent]);
 
     const rawFiles = getDocuments(activeCase.id, currentFolder);
     const currentFiles = Array.isArray(rawFiles) ? rawFiles : [];
@@ -41,7 +79,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
 
     const handleFolderClick = (folder) => {
         setBreadcrumbs([activeCase.title, folder]);
-        setSelectedFile(null);
+        setSelectedDocument(null);
         setExpandedFolders(prev =>
             prev.includes(folder)
                 ? prev.filter(f => f !== folder)
@@ -54,7 +92,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         if (!expandedFolders.includes(folder)) {
             setExpandedFolders(prev => [...prev, folder]);
         }
-        setSelectedFile(file);
+        setSelectedDocument(file);
     };
 
     return (
@@ -146,19 +184,19 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                         {isExpanded && (
                                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-border pl-2">
                                                 {files.map((file, idx) => (
-                                                    <button
-                                                        key={idx}
-                                                        onClick={(e) => { e.stopPropagation(); handleFileClick(folder, file); }}
-                                                        className={cn(
-                                                            "w-full text-left px-2 py-0.5 text-[11px] rounded-md transition-colors truncate flex items-center gap-2",
-                                                            selectedFile?.name === file.name
-                                                                ? "bg-accent text-primary font-medium"
-                                                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                                                        )}
-                                                    >
-                                                        <span className={cn("w-1 h-1 rounded-full flex-shrink-0", selectedFile?.name === file.name ? "bg-primary" : "bg-muted-foreground")}></span>
-                                                        {file.name}
-                                                    </button>
+                                                        <button
+                                                            key={idx}
+                                                            onClick={(e) => { e.stopPropagation(); handleFileClick(folder, file); }}
+                                                            className={cn(
+                                                                "w-full text-left px-2 py-0.5 text-[11px] rounded-md transition-colors truncate flex items-center gap-2",
+                                                                selectedDocument?.name === file.name
+                                                                    ? "bg-accent text-primary font-medium"
+                                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                                            )}
+                                                        >
+                                                            <span className={cn("w-1 h-1 rounded-full flex-shrink-0", selectedDocument?.name === file.name ? "bg-primary" : "bg-muted-foreground")}></span>
+                                                            {file.name}
+                                                        </button>
                                                 ))}
                                                 {files.length === 0 && (
                                                     <div className="px-2 py-0.5 text-[9px] text-muted-foreground/50 italic">No files</div>
@@ -210,17 +248,55 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                     />
 
                     <div className="space-y-1">
-                        {selectedFile ? (
+                        {selectedDocument ? (
                             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                                        <DocumentItem name={selectedFile.name} type={selectedFile.type} date={selectedFile.date} status={selectedFile.status} compact />
+                                        <DocumentItem name={selectedDocument.name} type={selectedDocument.type} date={selectedDocument.date} status={selectedDocument.status} compact />
                                     </h3>
-                                    <button onClick={() => setSelectedFile(null)} className="text-xs text-teal-accent hover:text-foreground underline">Back to list</button>
+                                    <button onClick={() => setSelectedDocument(null)} className="text-xs text-teal-accent hover:text-foreground underline">Back to list</button>
                                 </div>
-                                <div className="bg-secondary/30 border border-accent/20 rounded-xl p-6 flex flex-col items-center justify-center min-h-[250px] text-muted-foreground">
-                                    <p>File Preview for <strong>{selectedFile.name}</strong></p>
-                                    <p className="text-xs opacity-50 mt-2">Preview not available in this demo.</p>
+                                <div className="bg-secondary/30 border border-accent/20 rounded-xl flex flex-col items-center justify-center min-h-[500px] text-muted-foreground overflow-hidden relative">
+                                    {(previewUrl || selectedDocument.url || selectedDocument.fileUrl || selectedDocument.secure_url) ? (
+                                        (() => {
+                                            const urlToUse = previewUrl || selectedDocument.url || selectedDocument.fileUrl || selectedDocument.secure_url;
+                                            const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(selectedDocument.type?.toLowerCase()) || 
+                                                           /\.(doc|docx|ppt|pptx|xls|xlsx)$/i.test(selectedDocument.name);
+                                            
+                                            // Ensure we have a valid string URL
+                                            if (!urlToUse || typeof urlToUse !== 'string') return null;
+
+                                            const finalUrl = isOffice 
+                                                ? `https://docs.google.com/gview?url=${encodeURIComponent(urlToUse)}&embedded=true`
+                                                : urlToUse;
+
+                                            return (
+                                                <iframe 
+                                                    src={finalUrl} 
+                                                    className="w-full h-[500px] border-none"
+                                                    title={selectedDocument.name}
+                                                />
+                                            );
+                                        })()
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-6 text-center">
+                                            {loadingPreview ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                                                    <p className="text-muted-foreground">Loading preview...</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="font-medium text-foreground">File Preview for <strong>{selectedDocument.name}</strong></p>
+                                                    <p className="text-xs opacity-50 mt-2 mb-4">Preview not available.</p>
+                                                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto">
+                                                        Note: Unable to load document preview.
+                                                    </p>
+                                                    <div className="hidden">{JSON.stringify(selectedDocument)}</div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ) : (
@@ -236,7 +312,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                     </div>
                                 ) : filteredFiles.length > 0 ? (
                                     filteredFiles.map((file, idx) => (
-                                        <DocumentItem key={idx} {...file} onClick={() => setSelectedFile(file)} />
+                                        <DocumentItem key={idx} {...file} onClick={() => setSelectedDocument(file)} />
                                     ))
                                 ) : (
                                     <div className="text-center py-10 opacity-50">

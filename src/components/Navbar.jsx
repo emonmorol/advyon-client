@@ -48,7 +48,7 @@ import {
 import { sidebarItems } from "@/components/Sidebar"
 
 const caseManagement = [
-  { title: "Active Cases", href: "/dashboard/cases/active", description: "View and manage ongoing legal matters and deadlines." },
+  { title: "Active Cases", href: "/dashboard/workspace", description: "View and manage ongoing legal matters and deadlines." },
   { title: "Smart Intake", href: "/dashboard/cases/new", description: "Upload documents with AI-powered OCR and auto-sorting." },
   { title: "My Documents", href: "/dashboard/documents", description: "Centralized repository for all case files and evidence." },
   { title: "Archived", href: "/dashboard/cases/archived", description: "Access closed cases and historical records." },
@@ -199,7 +199,7 @@ export function Navbar() {
                   <Link to="/dashboard" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
-                   <Link to="/dashboard/cases/active" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                   <Link to="/dashboard/workspace" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <FileText className="w-4 h-4" /> Cases
                   </Link>
                    <Link to="/dashboard/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
@@ -207,9 +207,6 @@ export function Navbar() {
                   </Link>
                    <Link to="/dashboard/legal-database" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Scale className="w-4 h-4" /> Legal DB
-                  </Link>
-                   <Link to="/dashboard/ai-assistant" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
-                    <Sparkles className="w-4 h-4 text-accent-foreground" /> AI Tools
                   </Link>
                 </div>
 
