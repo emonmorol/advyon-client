@@ -32,6 +32,9 @@ export const useSmartUpload = (caseId) => {
         `/cases/${caseId}/documents`,
         formData,
         {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
           onUploadProgress: (progressEvent) => {
             const progress = progressEvent.total
               ? Math.round((progressEvent.loaded * 100) / progressEvent.total)

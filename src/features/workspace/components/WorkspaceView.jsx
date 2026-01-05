@@ -267,7 +267,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                             if (!urlToUse || typeof urlToUse !== 'string') return null;
 
                                             const finalUrl = isOffice 
-                                                ? `https://docs.google.com/gview?url=${encodeURIComponent(urlToUse)}&embedded=true`
+                                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(urlToUse)}`
                                                 : urlToUse;
 
                                             return (

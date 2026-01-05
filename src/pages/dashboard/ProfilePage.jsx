@@ -1,20 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Settings, Shield, BadgeCheck, FileText } from 'lucide-react';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
 import ProfileForm from '@/features/profile/components/ProfileForm';
 import PreferencesForm from '@/features/profile/components/PreferencesForm';
-import { mockUserProfile, mockUserPreferences } from '@/features/profile/data/mockProfileData';
+import { mockUserPreferences } from '@/features/profile/data/mockProfileData';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useUser } from '@clerk/clerk-react';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('general');
-  const [user, setUser] = useState(mockUserProfile);
-
+  const { user: authUser, fetchProfile, updateProfile, isLoading } = useAuthStore();
   const [preferences, setPreferences] = useState(mockUserPreferences);
 
-  const handleProfileUpdate = (data) => {
-    setUser(prev => ({ ...prev, ...data }));
-    // In a real app, API call would go here
-    console.log("Profile updated:", data);
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleProfileUpdate = async (data) => {
+    try {
+      await updateProfile(data);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    }
   };
 
   const handlePreferencesUpdate = (data) => {
@@ -22,9 +29,30 @@ const ProfilePage = () => {
     console.log("Preferences updated:", data);
   };
 
-  const handleAvatarUpdate = (url) => {
-    setUser(prev => ({ ...prev, avatarUrl: url }));
+  const handleAvatarUpdate = async (url) => {
+    try {
+      await updateProfile({ avatarUrl: url });
+    } catch (error) {
+      console.error("Failed to update avatar:", error);
+    }
   };
+
+  if (isLoading && !authUser) {
+    return <div className="flex items-center justify-center min-h-[400px]">Loading profile...</div>;
+  }
+
+  const { user: clerkUser } = useUser();
+
+  // Merge backend data with Clerk data
+  // Backend data takes precedence for business logic fields, but Clerk is source of truth for Identity (Email, initial setup)
+  const user = {
+    ...authUser,
+    displayName: authUser?.displayName || clerkUser?.fullName || '',
+    email: authUser?.email || clerkUser?.primaryEmailAddress?.emailAddress || '',
+    avatarUrl: authUser?.avatarUrl || clerkUser?.imageUrl || '',
+    // Additional Clerk fallbacks if useful
+    phone: authUser?.phone || (clerkUser?.phoneNumbers?.[0]?.phoneNumber) || '', 
+  } || {};
 
   const tabs = [
     { id: 'general', label: 'General', icon: User },
