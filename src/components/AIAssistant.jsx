@@ -33,34 +33,18 @@ const AIAssistant = ({
   const panelRef = useRef(null);
   const chatEndRef = useRef(null);
 
-  // Mock data for suggestions
-  const [nextSteps, setNextSteps] = useState([
-    { id: 1, text: "Prepare and file motion by Dec 15, 2024", completed: false, priority: "high" },
-    { id: 2, text: "Review witness statements for inconsistencies", completed: false, priority: "medium" },
-    { id: 3, text: "Schedule deposition with key witness", completed: true, priority: "low" }
-  ]);
+  // Mock data for suggestions - replaced with empty initial state
+  const [nextSteps, setNextSteps] = useState([]);
 
   const { selectedDocument } = useDocumentsStore();
 
-  const [missingDocs, setMissingDocs] = useState([
-    { id: 1, name: "Police Report - Incident #2024-892", referenced: "Case Summary" },
-    { id: 2, name: "Medical Records - Dr. Smith", referenced: "Witness Statement" }
-  ]);
+  const [missingDocs, setMissingDocs] = useState([]);
 
-  const legalSections = [
-    { id: 1, code: "Section 302", title: "Punishment for murder", relevant: 95 },
-    { id: 2, code: "Section 34", title: "Acts done by several persons", relevant: 88 }
-  ];
+  const [legalSections, setLegalSections] = useState([]);
 
-  const similarCases = [
-    { id: 1, title: "Miranda rights in traffic stops", replies: 12, views: 234 },
-    { id: 2, title: "Evidence admissibility in DUI", replies: 8, views: 156 }
-  ];
+  const [similarCases, setSimilarCases] = useState([]);
 
-  const recentOrders = [
-    { id: 1, title: "State v. Martinez - Suppression", date: "Dec 1, 2024", court: "Supreme Court" },
-    { id: 2, title: "Updated DUI guidelines", date: "Nov 28, 2024", court: "Appeals Court" }
-  ];
+  const [recentOrders, setRecentOrders] = useState([]);
 
   const quickQuestions = [
     "Summarize this case",

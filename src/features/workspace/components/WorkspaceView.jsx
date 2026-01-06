@@ -5,14 +5,17 @@ import {
 import { cn } from "@/lib/utils";
 import DocumentItem from './DocumentItem';
 import TimerWidget from './TimerWidget';
-import { ALL_CASES } from '../mockData';
 import { useDocumentsStore } from '@/store/documents';
+import { useCasesStore } from '@/store/cases';
 import { SmartFileUploader } from '@/components/SmartFileUploader';
 
 // Define standard folders
 const FOLDERS = ['Evidence', 'Witness Statements', 'Pleadings', 'Correspondence', 'Court Orders', 'Research'];
 
+import { useNavigate } from 'react-router-dom';
+
 const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
+    const navigate = useNavigate();
     const [showLeftSidebar, setShowLeftSidebar] = useState(true);
     const [isCaseSwitcherOpen, setIsCaseSwitcherOpen] = useState(false);
     const [breadcrumbs, setBreadcrumbs] = useState([activeCase.title, 'Evidence']);
@@ -92,7 +95,8 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         if (!expandedFolders.includes(folder)) {
             setExpandedFolders(prev => [...prev, folder]);
         }
-        setSelectedDocument(file);
+        // Navigate to document viewer
+        navigate(`/dashboard/workspace/doc/${file.id || file._id}`);
     };
 
     return (
@@ -124,7 +128,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                         <p className="text-[10px] text-muted-foreground font-bold uppercase">Switch Case</p>
                                     </div>
                                     <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                                        {ALL_CASES.filter(c => c.id !== activeCase.id).map(c => (
+                                        {useCasesStore.getState().cases.filter(c => c.id !== activeCase.id).map(c => (
                                             <button
                                                 key={c.id}
                                                 onClick={() => { onSwitchCase(c); setIsCaseSwitcherOpen(false); }}

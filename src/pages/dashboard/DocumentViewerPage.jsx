@@ -33,7 +33,7 @@ const DocumentViewerPage = () => {
   const navigate = useNavigate();
   
   // Store Hooks
-  const { fetchDocumentById } = useDocumentsStore();
+  const { fetchDocumentById, setSelectedDocument } = useDocumentsStore();
   const { analyzeDocument, isAnalyzing } = useAIStore(); 
 
   // Local State for Doc Data
@@ -100,6 +100,8 @@ const DocumentViewerPage = () => {
                       })) || [] // Map entities for highlighter
                   });
                   setFileUrl(doc.cloudinaryUrl);
+                  // Update global store for AI Assistant context
+                  setSelectedDocument(doc);
               }
           } catch (err) {
               console.error("Failed to load document:", err);
@@ -109,7 +111,10 @@ const DocumentViewerPage = () => {
       };
 
       if (docId) loadDoc();
-  }, [docId, fetchDocumentById]);
+      
+      // Cleanup
+      return () => setSelectedDocument(null);
+  }, [docId, fetchDocumentById, setSelectedDocument]);
 
   // Sync analysis result
   // useEffect(() => {

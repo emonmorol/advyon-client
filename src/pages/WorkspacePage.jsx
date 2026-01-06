@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
-import { DashboardView, WorkspaceView, ALL_CASES } from '../features/workspace';
+import React, { useState, useEffect } from 'react';
+import { DashboardView, WorkspaceView } from '../features/workspace';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { motion } from 'framer-motion';
+import { useCasesStore } from '@/store/cases';
 
 const WorkspacePage = () => {
     const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'workspace'
     const [activeCase, setActiveCase] = useState(null);
     const [searchTerm, setSearchTerm] = useState(''); // Global search state
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+    const { cases, fetchCases, isLoading } = useCasesStore();
+
+    useEffect(() => {
+        fetchCases();
+    }, [fetchCases]);
 
     const handleCaseSelect = (caseData) => {
         setActiveCase(caseData);
@@ -36,7 +43,7 @@ const WorkspacePage = () => {
                         <DashboardView onSelectCase={handleCaseSelect} searchTerm={searchTerm} />
                     ) : (
                         <WorkspaceView
-                            activeCase={activeCase || ALL_CASES[0]}
+                            activeCase={activeCase || cases[0]}
                             onSwitchCase={handleCaseSelect}
                             onBack={() => setCurrentView('dashboard')}
                             searchTerm={searchTerm}
