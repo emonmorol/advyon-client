@@ -15,7 +15,7 @@ import {
   TrendingUp,
   UserPlus,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
   Users
 } from "lucide-react";
 import { Link } from "react-router-dom";
