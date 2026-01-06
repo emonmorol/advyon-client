@@ -23,23 +23,23 @@ const AuthSuccessPage = () => {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full min-h-[50vh]">
-      <div className="bg-[#1C4645]/10 p-4 rounded-full mb-6 border border-[#3A7573]/20 animate-pulse">
-        <CheckCircle className="w-16 h-16 text-[#3A7573]" />
+    <div className="bg-[#1C4645]/60 backdrop-blur-2xl border border-white/10 p-10 rounded-3xl shadow-[0_0_50px_rgba(58,117,115,0.2)] flex flex-col items-center justify-center w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="bg-teal-400/10 p-5 rounded-full mb-8 border border-teal-400/20 shadow-inner group">
+        <CheckCircle className="w-16 h-16 text-teal-400 group-hover:scale-110 transition-transform duration-500" />
       </div>
-      
-      <h2 className="text-3xl font-bold text-[#1C4645] mb-2 dark:text-white">
-        Welcome Back!
+
+      <h2 className="text-4xl font-extrabold text-white mb-3 tracking-tight">
+        Welcome Back
       </h2>
-      
-      <p className="text-gray-500 text-center max-w-sm mb-8 dark:text-gray-400">
-        You have successfully logged in. We're taking you to your dashboard now.
+
+      <p className="text-white/60 text-center max-w-sm mb-10 text-lg leading-relaxed font-light">
+        Authentication successful. Preparing your workspace...
       </p>
 
-      <div className="flex gap-2">
-        <div className="w-3 h-3 rounded-full bg-[#3A7573] animate-bounce [animation-delay:-0.3s]"></div>
-        <div className="w-3 h-3 rounded-full bg-[#3A7573] animate-bounce [animation-delay:-0.15s]"></div>
-        <div className="w-3 h-3 rounded-full bg-[#3A7573] animate-bounce"></div>
+      <div className="flex gap-3">
+        <div className="w-2.5 h-2.5 rounded-full bg-teal-400/80 animate-bounce [animation-delay:-0.3s] shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
+        <div className="w-2.5 h-2.5 rounded-full bg-teal-400/80 animate-bounce [animation-delay:-0.15s] shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
+        <div className="w-2.5 h-2.5 rounded-full bg-teal-400/80 animate-bounce shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
       </div>
     </div>
   );
