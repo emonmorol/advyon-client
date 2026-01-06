@@ -54,8 +54,11 @@ export const useSmartUpload = (caseId) => {
       setDocumentId(null);
     },
     onSuccess: (data) => {
-      if (data.success && data.data?.id) {
-        setDocumentId(data.data.id);
+      // Check for id directly or nested in document object (handle both response formats)
+      const docId = data.data?.id || data.data?.document?.id;
+      
+      if (data.success && docId) {
+        setDocumentId(docId);
         setStatus('analyzing');
       } else {
         setError(new Error('Upload failed: Invalid response'));
