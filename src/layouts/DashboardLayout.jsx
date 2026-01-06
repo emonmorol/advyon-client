@@ -5,9 +5,20 @@ import { Sidebar } from '@/components/Sidebar'
 import { AIAssistant, useAIAssistant } from '@/components'
 import { motion, AnimatePresence } from 'framer-motion'
 
+import { useAuth, RedirectToSignIn } from '@clerk/clerk-react';
+
 const DashboardLayout = () => {
+  const { isLoaded, isSignedIn } = useAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true)
   const { isOpen, closeAI, width, setAIWidth } = useAIAssistant()
+
+  if (!isLoaded) {
+    return <div className="flex h-screen items-center justify-center bg-[#1C4645] text-white">Loading Advyon...</div>;
+  }
+
+  if (!isSignedIn) {
+    return <RedirectToSignIn />;
+  }
 
   return (
     <div className="min-h-screen bg-[#1C4645] text-foreground flex flex-col">

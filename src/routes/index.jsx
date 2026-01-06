@@ -52,7 +52,9 @@ export const router = createBrowserRouter([
       { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'community', element: <CommunityHubPage /> },
       { path: 'community/ask', element: <AskQuestionPage /> },
-      { path: 'community/thread/:threadId', element: <ThreadDetailPage /> },,
+      { path: 'community/thread/:threadId', element: <ThreadDetailPage /> },
+      { path: 'community/verified', element: <ComingSoonPage /> },
+      
       { path: 'legal', element: <LegalSearchPage /> },
       { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
       { path: 'profile', element: <ProfilePage /> },

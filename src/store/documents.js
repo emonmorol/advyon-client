@@ -87,32 +87,38 @@ export const useDocumentsStore = create((set, get) => ({
 
     fetchDocumentContent: async (documentId) => {
         console.log("[DEBUG] fetchDocumentContent called with:", documentId);
-        if (!documentId) {
-             console.error("[DEBUG] fetchDocumentContent: Missing documentId");
-             return null;
-        }
+        if (!documentId) return null;
 
         try {
-            // User confirmed the route is: GET /api/v1/documents/:documentId/content
-            const endpoint = `/documents/${documentId}/content`;
-            console.log("[DEBUG] Requesting:", endpoint);
-            
+            // Updated to use the new direct ID route if we just need content
+            // However, the PDFViewer usually needs a blob or URL. 
+            // The new getDocumentById returns the full document object which has cloudinaryUrl.
+            // We can reuse that or keep this specific content fetcher. 
+            // Let's keep this compatible but maybe use the new route if needed.
+            const endpoint = `/documents/id/${documentId}`;
             const response = await api.get(endpoint);
-            console.log("[DEBUG] API Response:", response);
             
-            if (response.data && response.data.data.url) {
-                console.log("[DEBUG] Found URL:", response.data.data.url);
-                return response.data.data.url;
+            if (response.data && response.data.data) {
+                return response.data.data.cloudinaryUrl;
             }
-            console.warn("[DEBUG] Response missing url field:", response.data.data);
             return null;
         } catch (error) {
             console.error("[DEBUG] Failed to fetch document content:", error);
-            if (error.response) {
-                console.error("[DEBUG] Error Status:", error.response.status);
-                console.error("[DEBUG] Error Data:", error.response.data);
-            }
             throw error;
+        }
+    },
+
+    fetchDocumentById: async (documentId) => {
+        if (!documentId) throw new Error("fetchDocumentById: documentId is required");
+        try {
+            const res = await api.get(`/documents/id/${documentId}`);
+            if (res.data && res.data.success) {
+                return res.data.data;
+            }
+            return null;
+        } catch (err) {
+            console.error("Error fetching document by ID:", err);
+            throw err;
         }
     },
 

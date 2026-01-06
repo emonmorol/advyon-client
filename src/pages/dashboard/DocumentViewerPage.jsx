@@ -33,8 +33,8 @@ const DocumentViewerPage = () => {
   const navigate = useNavigate();
   
   // Store Hooks
-  const { fetchDocumentContent } = useDocumentsStore();
-  const { analyzeDocument, analysisResult, isAnalyzing } = useAIStore(); // Assuming similar actions
+  const { fetchDocumentById } = useDocumentsStore();
+  const { analyzeDocument, isAnalyzing } = useAIStore(); 
 
   // Local State for Doc Data
   const [docData, setDocData] = useState(null);
@@ -65,40 +65,51 @@ const DocumentViewerPage = () => {
       const loadDoc = async () => {
           setIsLoading(true);
           try {
-              // 1. Fetch Content URL
-              const url = await fetchDocumentContent(docId);
-              if (url) setFileUrl(url);
-
-              // 2. Fetch AI Analysis (if not already cached/available)
-              // This assumes AIStore can fetch analysis for a doc
-              // Or we might need a separate call to get document metadata
-              // For now, we simulate metadata or fetch it if possible.
-              // Assuming analyzeDocument fetches existing analysis or triggers new
-              // await analyzeDocument(docId);
+              // Fetch full document details including AI analysis
+              const doc = await fetchDocumentById(docId);
               
-              // Simulating metadata since we don't have a "getDocMeta" endpoint yet explicitly
-              setDocData({
-                  meta: {
-                      title: `Document ${docId}`, // Placeholder
-                      type: 'PDF',
-                      size: 'Unknown',
-                      pages: 10, // Placeholder
-                      fileUrl: url
-                  },
-                  analysis: {
-                      // Will be populated by AI store result preferably
-                  },
-                  entityHighlights: []
-              });
+              if (doc) {
+                  setDocData({
+                      meta: {
+                          title: doc.fileName || `Document ${docId}`,
+                          type: doc.fileType || 'PDF',
+                          size: doc.fileSize ? `${(doc.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Unknown',
+                          pages: 0, // We can't know pages until PDF loads
+                          fileUrl: doc.cloudinaryUrl
+                      },
+                      analysis: {
+                          refinedSummary: doc.aiAnalysis?.summary || '',
+                          rawSummary: doc.aiAnalysis?.rawSummary || doc.aiAnalysis?.summary || '',
+                          keyPoints: (doc.aiAnalysis?.keyPoints || []).map(kp => ({
+                              text: kp,
+                              importance: 'medium',
+                              category: 'General'
+                          })),
+                          entities: doc.aiAnalysis?.extractedEntities?.map(e => ({
+                              name: e.name || e, // Handle if string or object
+                              type: e.type || 'other',
+                              count: e.count || 1
+                          })) || [],
+                          legalRefs: doc.aiAnalysis?.legalRefs || []
+                      } || {}, 
+                      entityHighlights: doc.aiAnalysis?.extractedEntities?.map(e => ({
+                          id: e.name || e,
+                          text: e.name || e,
+                          type: e.type || 'other',
+                          count: e.count || 1
+                      })) || [] // Map entities for highlighter
+                  });
+                  setFileUrl(doc.cloudinaryUrl);
+              }
           } catch (err) {
-              console.error(err);
+              console.error("Failed to load document:", err);
           } finally {
               setIsLoading(false);
           }
       };
 
       if (docId) loadDoc();
-  }, [docId, fetchDocumentContent, analyzeDocument]);
+  }, [docId, fetchDocumentById]);
 
   // Sync analysis result
   // useEffect(() => {

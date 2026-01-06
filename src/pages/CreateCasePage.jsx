@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Loader2, ArrowLeft, CheckCircle2, FileText, AlertCircle, Gavel, Scale, Clock, Sparkles } from 'lucide-react';
+import { Save, Loader2, ArrowLeft, AlertCircle, Gavel, Scale, Clock, Sparkles, FileText } from 'lucide-react';
 import { useCasesStore } from '@/store/cases';
 import { motion } from 'framer-motion';
+
+import { toast } from 'sonner';
 
 const CreateCasePage = () => {
     const navigate = useNavigate();
@@ -14,7 +16,7 @@ const CreateCasePage = () => {
         caseNumber: '',
         caseType: 'Criminal Defense',
         description: '',
-        priority: 'Medium',
+        urgency: 'Medium',
     });
 
     const [error, setError] = useState(null);
@@ -23,12 +25,50 @@ const CreateCasePage = () => {
         e.preventDefault();
         setError(null);
         try {
-            console.log(formData);
             await createCase(formData);
+            toast.success("Case workspace created successfully", {
+                description: `Matter ${formData.caseNumber} has been initialized.`
+            });
             navigate('/dashboard/workspace');
         } catch (err) {
             console.error("Failed to create case:", err);
-            setError("Failed to create case. Please try again.");
+            
+            // Comprehensive Error Handling with Toasts
+            if (err.response) {
+                const status = err.response.status;
+                const message = err.response.data?.message || "An error occurred";
+
+                switch (status) {
+                    case 400:
+                        toast.error("Validation Error", { description: message });
+                        break;
+                    case 401:
+                        toast.error("Unauthorized", { description: "Please sign in again to continue." });
+                        break;
+                    case 403:
+                        toast.error("Permission Denied", { description: "You don't have permission to create cases." });
+                        break;
+                    case 404:
+                        toast.error("Resource Not Found", { description: message });
+                        break;
+                    case 409:
+                        toast.error("Duplicate Case", { description: "A case with this number already exists." });
+                        break;
+                    case 500:
+                        toast.error("Server Error", { description: "Something went wrong on our end. Please try again later." });
+                        break;
+                    default:
+                        toast.error("Error", { description: message });
+                }
+            } else if (err.request) {
+                // Network error
+                toast.error("Network Error", { description: "Could not connect to the server. Please check your internet connection." });
+            } else {
+                toast.error("Application Error", { description: err.message });
+            }
+            
+            // Keep local error for persistent display if needed, or remove if toast is enough
+            setError(err.response?.data?.message || "Failed to create case. Please try again.");
         }
     };
 
@@ -160,7 +200,7 @@ const CreateCasePage = () => {
                                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Urgency Priority</label>
                                     <div className="grid grid-cols-4 gap-2 bg-surface/30 p-1.5 rounded-2xl border border-border/30">
                                         {['low', 'medium', 'high'].map((p) => {
-                                            const isActive = formData.priority === p;
+                                            const isActive = formData.urgency === p;
                                             let colorClass = "bg-primary text-primary-foreground shadow-md";
                                             if (isActive && p === 'high') colorClass = "bg-orange-500 text-white shadow-md";
                                             if (isActive && p === 'medium') colorClass = "bg-red-500 text-white shadow-md";
@@ -169,7 +209,7 @@ const CreateCasePage = () => {
                                                 <button
                                                     key={p}
                                                     type="button"
-                                                    onClick={() => setFormData({ ...formData, priority: p })}
+                                                    onClick={() => setFormData({ ...formData, urgency: p })}
                                                     className={`py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${isActive
                                                         ? colorClass
                                                         : 'text-muted-foreground hover:bg-surface/50 hover:text-foreground'
