@@ -1,15 +1,15 @@
 import * as React from "react"
 import { Link, useLocation } from "react-router-dom"
-import { 
-  CircleCheckIcon, 
-  CircleHelpIcon, 
-  CircleIcon, 
-  User, 
-  LogOut, 
-  Globe, 
-  Scale, 
-  FileText, 
-  Users, 
+import {
+  CircleCheckIcon,
+  CircleHelpIcon,
+  CircleIcon,
+  User,
+  LogOut,
+  Globe,
+  Scale,
+  FileText,
+  Users,
   LayoutDashboard,
   Sparkles,
   Search,
@@ -55,9 +55,9 @@ const caseManagement = [
 ]
 
 const communityFeatures = [
-  { title: "Discussion Feed", href: "/community", description: "Browse legal topics, Q&A, and trending threads." },
-  { title: "Ask a Question", href: "/community/ask", description: "Post anonymously or as a verified professional." },
-  { title: "Verified Answers", href: "/community/verified", description: "Expert insights from verified lawyers and stakeholders." },
+  { title: "Discussion Feed", href: "/dashboard/community", description: "Browse legal topics, Q&A, and trending threads." },
+  { title: "Ask a Question", href: "/dashboard/community/ask", description: "Post anonymously or as a verified professional." },
+  { title: "Verified Answers", href: "/dashboard/community/verified", description: "Expert insights from verified lawyers and stakeholders." },
 ]
 
 const languages = [
@@ -77,7 +77,7 @@ export function Navbar() {
   const isDashboard = location.pathname.startsWith('/dashboard')
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
@@ -116,7 +116,7 @@ export function Navbar() {
 
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white data-[active]:bg-accent/20 data-[state=open]:bg-accent/20">
-                    <span className="flex items-center gap-2"><FileText className="w-4 h-4"/> Cases</span>
+                    <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Cases</span>
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-primary border border-border/30">
@@ -131,15 +131,15 @@ export function Navbar() {
 
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white data-[active]:bg-accent/20 data-[state=open]:bg-accent/20">
-                    <span className="flex items-center gap-2"><Users className="w-4 h-4"/> Community</span>
+                    <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Community</span>
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                     <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-primary border border-border/30">
+                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-primary border border-border/30">
                       <li className="row-span-3">
                         <NavigationMenuLink asChild>
                           <Link
                             className="flex h-full w-full flex-col justify-end rounded-md bg-gradient-to-b from-accent/20 to-accent/10 p-4 no-underline outline-none transition-all duration-200 select-none hover:shadow-md focus:shadow-md md:p-6 border border-border/30"
-                            to="/community"
+                            to="/dashboard/community"
                           >
                             <div className="mb-2 text-lg font-medium sm:mt-4 text-white">Community Hub</div>
                             <p className="text-muted-foreground text-sm leading-tight">Collaborate, share insights, and discuss legal topics.</p>
@@ -161,7 +161,7 @@ export function Navbar() {
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
-                
+
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white")}>
                     <Link to="/ai-assistant" className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export function Navbar() {
           <Button variant="ghost" size="icon" className="md:hidden text-muted-foreground hover:text-white hover:bg-accent/20">
             <Search className="h-5 w-5" />
           </Button>
-          
+
           {/* Mobile Menu Trigger */}
           <Sheet>
             <SheetTrigger asChild>
@@ -212,16 +212,16 @@ export function Navbar() {
                   <Link to="/dashboard" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
-                   <Link to="/cases" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                  <Link to="/cases" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <FileText className="w-4 h-4" /> Cases
                   </Link>
-                   <Link to="/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                  <Link to="/dashboard/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Users className="w-4 h-4" /> Community
                   </Link>
-                   <Link to="/legal-database" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                  <Link to="/legal-database" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Scale className="w-4 h-4" /> Legal DB
                   </Link>
-                   <Link to="/ai-assistant" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                  <Link to="/ai-assistant" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Sparkles className="w-4 h-4 text-accent-foreground" /> AI Tools
                   </Link>
                 </div>
@@ -249,7 +249,7 @@ export function Navbar() {
           </Sheet>
 
           {/* AI Assistant Toggle */}
-          <AIAssistantToggle 
+          <AIAssistantToggle
             onClick={toggleAI}
             isActive={isOpen}
             position="navbar"
