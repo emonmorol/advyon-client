@@ -1,15 +1,15 @@
 import * as React from "react"
 import { Link, useLocation } from "react-router-dom"
-import { 
-  CircleCheckIcon, 
-  CircleHelpIcon, 
-  CircleIcon, 
-  User, 
-  LogOut, 
-  Globe, 
-  Scale, 
-  FileText, 
-  Users, 
+import {
+  CircleCheckIcon,
+  CircleHelpIcon,
+  CircleIcon,
+  User,
+  LogOut,
+  Globe,
+  Scale,
+  FileText,
+  Users,
   LayoutDashboard,
   Sparkles,
   Search,
@@ -77,7 +77,7 @@ export function Navbar() {
   const isDashboard = location.pathname.startsWith('/dashboard')
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
@@ -116,7 +116,7 @@ export function Navbar() {
 
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white data-[active]:bg-accent/20 data-[state=open]:bg-accent/20">
-                    <span className="flex items-center gap-2"><FileText className="w-4 h-4"/> Cases</span>
+                    <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Cases</span>
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-primary border border-border/30">
@@ -131,10 +131,10 @@ export function Navbar() {
 
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white data-[active]:bg-accent/20 data-[state=open]:bg-accent/20">
-                    <span className="flex items-center gap-2"><Users className="w-4 h-4"/> Community</span>
+                    <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Community</span>
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                     <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-primary border border-border/30">
+                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-primary border border-border/30">
                       <li className="row-span-3">
                         <NavigationMenuLink asChild>
                           <Link
@@ -155,13 +155,13 @@ export function Navbar() {
 
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white")}>
-                    <Link to="/dashboard/legal-database" className="flex items-center gap-2">
+                    <Link to="/dashboard/legal" className="flex items-center gap-2">
                       <Scale className="w-4 h-4" />
                       Legal DB
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
-                
+
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white")}>
                     <Link to="/dashboard/ai-assistant" className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export function Navbar() {
                   <Link to="/dashboard" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
-                   <Link to="/dashboard/workspace" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                  <Link to="/cases" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <FileText className="w-4 h-4" /> Cases
                   </Link>
                    <Link to="/dashboard/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
@@ -233,7 +233,7 @@ export function Navbar() {
           </Sheet>
 
           {/* AI Assistant Toggle */}
-          <AIAssistantToggle 
+          <AIAssistantToggle
             onClick={toggleAI}
             isActive={isOpen}
             position="navbar"

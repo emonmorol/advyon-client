@@ -16,7 +16,9 @@ import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
 
 import CommunityHubPage from '@/pages/dashboard/CommunityHubPage';
 import LawyerVerificationPage from '@/pages/dashboard/LawyerVerificationPage';
-import ComingSoonPage from '@/pages/ComingSoonPage';
+import LegalSearchPage from '@/pages/dashboard/LegalSearchPage';
+import AskQuestionPage from '@/pages/dashboard/AskQuestionPage';
+import ThreadDetailPage from '@/pages/dashboard/ThreadDetailPage';
 
 export const router = createBrowserRouter([
   {
@@ -48,8 +50,9 @@ export const router = createBrowserRouter([
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
       { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'community', element: <CommunityHubPage /> },
-      { path: 'community/ask', element: <CommunityHubPage /> }, // Placeholder
-      { path: 'community/verified', element: <CommunityHubPage /> }, // Placeholder
+      { path: 'community/ask', element: <AskQuestionPage /> },
+      { path: 'community/thread/:threadId', element: <ThreadDetailPage /> },,
+      { path: 'legal', element: <LegalSearchPage /> },
       { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'cases/active', element: <ComingSoonPage title="Active Cases" /> },
