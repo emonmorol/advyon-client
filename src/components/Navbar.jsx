@@ -103,7 +103,7 @@ export function Navbar() {
 
           {/* Main Navigation - Desktop */}
           <div className="hidden md:block">
-            <NavigationMenu viewport={isMobile}>
+            <NavigationMenu>
               <NavigationMenuList className="flex-wrap">
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white")}>

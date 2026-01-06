@@ -19,6 +19,7 @@ import LawyerVerificationPage from '@/pages/dashboard/LawyerVerificationPage';
 import LegalSearchPage from '@/pages/dashboard/LegalSearchPage';
 import AskQuestionPage from '@/pages/dashboard/AskQuestionPage';
 import ThreadDetailPage from '@/pages/dashboard/ThreadDetailPage';
+import ComingSoonPage from '@/pages/ComingSoonPage';
 
 export const router = createBrowserRouter([
   {
