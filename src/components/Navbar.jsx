@@ -48,10 +48,10 @@ import {
 import { sidebarItems } from "@/components/Sidebar"
 
 const caseManagement = [
-  { title: "Active Cases", href: "/cases/active", description: "View and manage ongoing legal matters and deadlines." },
-  { title: "Smart Intake", href: "/cases/new", description: "Upload documents with AI-powered OCR and auto-sorting." },
-  { title: "My Documents", href: "/documents", description: "Centralized repository for all case files and evidence." },
-  { title: "Archived", href: "/cases/archived", description: "Access closed cases and historical records." },
+  { title: "Active Cases", href: "/dashboard/workspace", description: "View and manage ongoing legal matters and deadlines." },
+  { title: "Smart Intake", href: "/dashboard/cases/new", description: "Upload documents with AI-powered OCR and auto-sorting." },
+  { title: "My Documents", href: "/dashboard/documents", description: "Centralized repository for all case files and evidence." },
+  { title: "Archived", href: "/dashboard/cases/archived", description: "Access closed cases and historical records." },
 ]
 
 const communityFeatures = [
@@ -103,7 +103,7 @@ export function Navbar() {
 
           {/* Main Navigation - Desktop */}
           <div className="hidden md:block">
-            <NavigationMenu viewport={isMobile}>
+            <NavigationMenu>
               <NavigationMenuList className="flex-wrap">
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white")}>
@@ -164,7 +164,7 @@ export function Navbar() {
 
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "bg-transparent text-primary-foreground hover:bg-accent/20 hover:text-white focus:bg-accent/20 focus:text-white")}>
-                    <Link to="/ai-assistant" className="flex items-center gap-2">
+                    <Link to="/dashboard/ai-assistant" className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-accent-foreground" />
                       AI Tools
                     </Link>
@@ -202,14 +202,11 @@ export function Navbar() {
                   <Link to="/cases" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <FileText className="w-4 h-4" /> Cases
                   </Link>
-                  <Link to="/dashboard/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                   <Link to="/dashboard/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Users className="w-4 h-4" /> Community
                   </Link>
-                    <Link to="/dashboard/legal" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
-                      <Scale className="w-4 h-4" /> Legal DB
-                    </Link>
-                  <Link to="/ai-assistant" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
-                    <Sparkles className="w-4 h-4 text-accent-foreground" /> AI Tools
+                   <Link to="/dashboard/legal-database" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                    <Scale className="w-4 h-4" /> Legal DB
                   </Link>
                 </div>
 

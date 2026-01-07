@@ -119,8 +119,29 @@ export const useCasesStore = create(persist((set, get) => ({
             set({ cases: prevCases, error: "Failed to delete case" });
             throw err;
         }
+    },
+
+    // ---------- Documents Actions (Added) ----------
+    documents: {}, // Map caseId -> list of documents
+
+    fetchDocuments: async (caseId, folder = '') => {
+        set({ isLoading: true, error: null });
+        try {
+            const url = folder ? `${BASE}/${caseId}/documents?folder=${folder}` : `${BASE}/${caseId}/documents`;
+            const { data } = await api.get(url);
+            set((state) => ({
+                documents: {
+                    ...state.documents,
+                    [caseId]: Array.isArray(data) ? data : (data?.data || [])
+                },
+                isLoading: false
+            }));
+        } catch (err) {
+            set({ isLoading: false, error: err.message || "Failed to fetch documents" });
+            console.error(err);
+        }
     }
 }), {
     name: 'advyon-cases-storage',
-    partialize: (state) => ({ cases: state.cases, activeCaseId: state.activeCaseId }), // Only persist data, not loading states
+    partialize: (state) => ({ cases: state.cases, activeCaseId: state.activeCaseId }), // Only persist data
 }));

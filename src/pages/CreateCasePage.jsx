@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Loader2, ArrowLeft, CheckCircle2, FileText, AlertCircle, Gavel, Scale, Clock, Sparkles } from 'lucide-react';
+import { Save, Loader2, ArrowLeft, AlertCircle, Gavel, Scale, Clock, Sparkles, FileText } from 'lucide-react';
 import { useCasesStore } from '@/store/cases';
 import { motion } from 'framer-motion';
+
+import { toast } from 'sonner';
 
 const CreateCasePage = () => {
     const navigate = useNavigate();
@@ -11,10 +13,10 @@ const CreateCasePage = () => {
     // Form State
     const [formData, setFormData] = useState({
         title: '',
-        ref: '',
-        type: 'Criminal Defense',
+        caseNumber: '',
+        caseType: 'Criminal Defense',
         description: '',
-        priority: 'Medium',
+        urgency: 'Medium',
     });
 
     const [error, setError] = useState(null);
@@ -24,10 +26,49 @@ const CreateCasePage = () => {
         setError(null);
         try {
             await createCase(formData);
+            toast.success("Case workspace created successfully", {
+                description: `Matter ${formData.caseNumber} has been initialized.`
+            });
             navigate('/dashboard/workspace');
         } catch (err) {
             console.error("Failed to create case:", err);
-            setError("Failed to create case. Please try again.");
+            
+            // Comprehensive Error Handling with Toasts
+            if (err.response) {
+                const status = err.response.status;
+                const message = err.response.data?.message || "An error occurred";
+
+                switch (status) {
+                    case 400:
+                        toast.error("Validation Error", { description: message });
+                        break;
+                    case 401:
+                        toast.error("Unauthorized", { description: "Please sign in again to continue." });
+                        break;
+                    case 403:
+                        toast.error("Permission Denied", { description: "You don't have permission to create cases." });
+                        break;
+                    case 404:
+                        toast.error("Resource Not Found", { description: message });
+                        break;
+                    case 409:
+                        toast.error("Duplicate Case", { description: "A case with this number already exists." });
+                        break;
+                    case 500:
+                        toast.error("Server Error", { description: "Something went wrong on our end. Please try again later." });
+                        break;
+                    default:
+                        toast.error("Error", { description: message });
+                }
+            } else if (err.request) {
+                // Network error
+                toast.error("Network Error", { description: "Could not connect to the server. Please check your internet connection." });
+            } else {
+                toast.error("Application Error", { description: err.message });
+            }
+            
+            // Keep local error for persistent display if needed, or remove if toast is enough
+            setError(err.response?.data?.message || "Failed to create case. Please try again.");
         }
     };
 
@@ -103,14 +144,14 @@ const CreateCasePage = () => {
                                     />
                                 </div>
                                 <div className="group space-y-2">
-                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1 group-focus-within:text-teal-accent transition-colors">Reference ID</label>
+                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1 group-focus-within:text-teal-accent transition-colors">Case Number</label>
                                     <input
                                         type="text"
                                         required
                                         placeholder="e.g. CR-2024-001"
                                         className="w-full bg-secondary/5 backdrop-blur-sm border border-border/40 rounded-2xl px-5 py-4 text-lg font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-teal-accent focus:bg-secondary/10 focus:ring-4 focus:ring-teal-accent/10 transition-all shadow-sm"
-                                        value={formData.ref}
-                                        onChange={(e) => setFormData({ ...formData, ref: e.target.value })}
+                                        value={formData.caseNumber}
+                                        onChange={(e) => setFormData({ ...formData, caseNumber: e.target.value })}
                                     />
                                 </div>
                             </div>
@@ -138,8 +179,8 @@ const CreateCasePage = () => {
                                     <div className="relative">
                                         <select
                                             className="w-full appearance-none bg-secondary/5 backdrop-blur-sm border border-border/40 rounded-2xl px-5 py-4 text-base text-foreground outline-none focus:border-teal-accent focus:bg-secondary/10 focus:ring-4 focus:ring-teal-accent/10 transition-all cursor-pointer hover:border-border/80"
-                                            value={formData.type}
-                                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                            value={formData.caseType}
+                                            onChange={(e) => setFormData({ ...formData, caseType: e.target.value })}
                                         >
                                             <option>Criminal Defense</option>
                                             <option>Family Law</option>
@@ -158,17 +199,17 @@ const CreateCasePage = () => {
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Urgency Priority</label>
                                     <div className="grid grid-cols-4 gap-2 bg-surface/30 p-1.5 rounded-2xl border border-border/30">
-                                        {['Low', 'Medium', 'High', 'Urgent'].map((p) => {
-                                            const isActive = formData.priority === p;
+                                        {['low', 'medium', 'high'].map((p) => {
+                                            const isActive = formData.urgency === p;
                                             let colorClass = "bg-primary text-primary-foreground shadow-md";
-                                            if (isActive && p === 'High') colorClass = "bg-orange-500 text-white shadow-md";
-                                            if (isActive && p === 'Urgent') colorClass = "bg-red-500 text-white shadow-md";
+                                            if (isActive && p === 'high') colorClass = "bg-orange-500 text-white shadow-md";
+                                            if (isActive && p === 'medium') colorClass = "bg-red-500 text-white shadow-md";
 
                                             return (
                                                 <button
                                                     key={p}
                                                     type="button"
-                                                    onClick={() => setFormData({ ...formData, priority: p })}
+                                                    onClick={() => setFormData({ ...formData, urgency: p })}
                                                     className={`py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${isActive
                                                         ? colorClass
                                                         : 'text-muted-foreground hover:bg-surface/50 hover:text-foreground'
@@ -239,7 +280,7 @@ const CreateCasePage = () => {
                                         </div>
                                         <div>
                                             <p className="font-semibold text-foreground text-sm">Deadline Tracking</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Smart alerts will be configured for common {formData.type || 'Legal'} milestones.</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Smart alerts will be configured for common {formData.caseType || 'Legal'} milestones.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -254,7 +295,7 @@ const CreateCasePage = () => {
                                         {formData.title || 'New Matter'}
                                     </div>
                                     <p className="text-teal-100 text-sm opacity-80 font-mono">
-                                        REF: {formData.ref || 'PENDING...'}
+                                        REF: {formData.caseNumber || 'PENDING...'}
                                     </p>
                                 </div>
                                 <Sparkles className="absolute bottom-4 right-4 text-white/10 group-hover:text-white/30 transition-colors transform scale-150 rotate-12" />

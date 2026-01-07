@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/api';
 
@@ -18,24 +18,35 @@ export const useSmartUpload = (caseId) => {
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('idle'); // 'idle' | 'uploading' | 'analyzing' | 'completed' | 'failed'
 
+  const lastUpdateRef = useRef(0);
+
   // Upload mutation
+  // Endpoint: POST /api/v1/cases/:caseId/documents
   const uploadMutation = useMutation({
-    mutationFn: async (file) => {
+    mutationFn: async ({ file, folderName }) => {
       const formData = new FormData();
       formData.append('file', file);
+      if (folderName) {
+        formData.append('folder', folderName);
+      }
 
       const response = await api.post(
-        `/documents/${caseId}/upload`,
+        `/cases/${caseId}/documents`,
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
           onUploadProgress: (progressEvent) => {
-            const progress = progressEvent.total
-              ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-              : 0;
-            setUploadProgress(progress);
+            const now = Date.now();
+            // Throttle updates to every 100ms to prevent UI freeze
+            if (now - lastUpdateRef.current > 100 || progressEvent.loaded === progressEvent.total) {
+                const progress = progressEvent.total
+                ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+                : 0;
+                setUploadProgress(progress);
+                lastUpdateRef.current = now;
+            }
           },
         }
       );
@@ -47,10 +58,14 @@ export const useSmartUpload = (caseId) => {
       setUploadProgress(0);
       setError(null);
       setAnalysisResult(null);
+      setDocumentId(null);
     },
     onSuccess: (data) => {
-      if (data.success && data.data?.id) {
-        setDocumentId(data.data.id);
+      // Check for id directly or nested in document object (handle both response formats)
+      const docId = data.data?.id || data.data?.document?.id;
+      
+      if (data.success && docId) {
+        setDocumentId(docId);
         setStatus('analyzing');
       } else {
         setError(new Error('Upload failed: Invalid response'));
@@ -64,11 +79,12 @@ export const useSmartUpload = (caseId) => {
   });
 
   // Status polling query - only enabled when analyzing
+  // Endpoint: GET /api/v1/cases/:caseId/documents/:documentId/status
   const statusQuery = useQuery({
     queryKey: ['documentStatus', caseId, documentId],
     queryFn: async () => {
       const response = await api.get(
-        `/documents/${caseId}/${documentId}/status`
+        `/cases/${caseId}/documents/${documentId}/status`
       );
       return response.data;
     },
@@ -87,34 +103,37 @@ export const useSmartUpload = (caseId) => {
   });
 
   // Handle status changes from polling
-  if (statusQuery.data?.data) {
-    const { processingStatus, aiAnalysis, error: statusError } = statusQuery.data.data;
-    
-    if (processingStatus === 'completed' && aiAnalysis && status === 'analyzing') {
-      setAnalysisResult(aiAnalysis);
-      setStatus('completed');
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['documents', caseId] });
-    } else if (processingStatus === 'failed' && status === 'analyzing') {
-      setError(new Error(statusError || 'Document processing failed'));
+  useEffect(() => {
+    if (statusQuery.data?.data) {
+      const { processingStatus, aiAnalysis, error: statusError } = statusQuery.data.data;
+      
+      if (processingStatus === 'completed' && aiAnalysis && status === 'analyzing') {
+        setAnalysisResult(aiAnalysis);
+        setStatus('completed');
+        // Invalidate related queries to refresh document lists
+        queryClient.invalidateQueries({ queryKey: ['documents', caseId] });
+      } else if (processingStatus === 'failed' && status === 'analyzing') {
+        setError(new Error(statusError || 'Document processing failed'));
+        setStatus('failed');
+      }
+    }
+
+    // Handle polling errors
+    if (statusQuery.error && status === 'analyzing') {
+      setError(statusQuery.error);
       setStatus('failed');
     }
-  }
-
-  // Handle polling errors
-  if (statusQuery.error && status === 'analyzing') {
-    setError(statusQuery.error);
-    setStatus('failed');
-  }
+  }, [statusQuery.data, statusQuery.error, status, caseId, queryClient]);
 
   // Upload handler
-  const upload = useCallback((file) => {
+  const upload = useCallback(({ file, folderName }) => {
     if (!caseId) {
       setError(new Error('Case ID is required'));
       setStatus('failed');
       return;
     }
-    uploadMutation.mutate(file);
+    // Mutate expects a single argument, passing object to be handled in mutationFn
+    uploadMutation.mutate({ file, folderName });
   }, [caseId, uploadMutation]);
 
   // Reset handler
@@ -136,6 +155,7 @@ export const useSmartUpload = (caseId) => {
     status,
     upload,
     reset,
+    documentId,
   };
 };
 

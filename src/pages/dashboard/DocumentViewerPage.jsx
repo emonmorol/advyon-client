@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,8 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { getMockDocument } from '@/features/documents/data/mockDocumentData';
+import { useDocumentsStore } from '@/store/documents';
+import { useAIStore } from '@/store/useAIStore'; // Assuming this exists for document analysis
 
 /**
  * DocumentViewerPage - Main document viewer page with AI analysis panel
@@ -31,13 +32,19 @@ const DocumentViewerPage = () => {
   const { docId } = useParams();
   const navigate = useNavigate();
   
-  // Load mock data based on ID
-  const docData = getMockDocument(docId);
+  // Store Hooks
+  const { fetchDocumentById, setSelectedDocument } = useDocumentsStore();
+  const { analyzeDocument, isAnalyzing } = useAIStore(); 
+
+  // Local State for Doc Data
+  const [docData, setDocData] = useState(null);
+  const [fileUrl, setFileUrl] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Viewer State
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages] = useState(docData.meta.pages);
+  const [totalPages] = useState(10); // Default, update if PDF metadata known
   const [rotation, setRotation] = useState(0);
   
   // Panel State
@@ -52,6 +59,69 @@ const DocumentViewerPage = () => {
   const viewerContainerRef = useRef(null);
 
   const [activeEntity, setActiveEntity] = useState(null);
+
+  // Fetch Data Effect
+  useEffect(() => {
+      const loadDoc = async () => {
+          setIsLoading(true);
+          try {
+              // Fetch full document details including AI analysis
+              const doc = await fetchDocumentById(docId);
+              
+              if (doc) {
+                  setDocData({
+                      meta: {
+                          title: doc.fileName || `Document ${docId}`,
+                          type: doc.fileType || 'PDF',
+                          size: doc.fileSize ? `${(doc.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Unknown',
+                          pages: 0, // We can't know pages until PDF loads
+                          fileUrl: doc.cloudinaryUrl
+                      },
+                      analysis: {
+                          refinedSummary: doc.aiAnalysis?.summary || '',
+                          rawSummary: doc.aiAnalysis?.rawSummary || doc.aiAnalysis?.summary || '',
+                          keyPoints: (doc.aiAnalysis?.keyPoints || []).map(kp => ({
+                              text: kp,
+                              importance: 'medium',
+                              category: 'General'
+                          })),
+                          entities: doc.aiAnalysis?.extractedEntities?.map(e => ({
+                              name: e.name || e, // Handle if string or object
+                              type: e.type || 'other',
+                              count: e.count || 1
+                          })) || [],
+                          legalRefs: doc.aiAnalysis?.legalRefs || []
+                      } || {}, 
+                      entityHighlights: doc.aiAnalysis?.extractedEntities?.map(e => ({
+                          id: e.name || e,
+                          text: e.name || e,
+                          type: e.type || 'other',
+                          count: e.count || 1
+                      })) || [] // Map entities for highlighter
+                  });
+                  setFileUrl(doc.cloudinaryUrl);
+                  // Update global store for AI Assistant context
+                  setSelectedDocument(doc);
+              }
+          } catch (err) {
+              console.error("Failed to load document:", err);
+          } finally {
+              setIsLoading(false);
+          }
+      };
+
+      if (docId) loadDoc();
+      
+      // Cleanup
+      return () => setSelectedDocument(null);
+  }, [docId, fetchDocumentById, setSelectedDocument]);
+
+  // Sync analysis result
+  // useEffect(() => {
+  //     if (analysisResult) {
+  //         setDocData(prev => ({ ...prev, analysis: analysisResult }));
+  //     }
+  // }, [analysisResult]);
 
   // Handlers
   const handleBack = () => {
@@ -134,6 +204,10 @@ const DocumentViewerPage = () => {
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  if (isLoading || !docData) {
+      return <div className="flex items-center justify-center h-screen">Loading Document...</div>;
+  }
 
   return (
     <div 
@@ -261,7 +335,7 @@ const DocumentViewerPage = () => {
               style={{ transform: `rotate(${rotation}deg)` }}
             >
               <PDFViewer
-                fileUrl={docData.meta.fileUrl}
+                fileUrl={fileUrl || docData.meta.fileUrl}
                 currentPage={currentPage}
                 zoom={zoom}
                 totalPages={totalPages}

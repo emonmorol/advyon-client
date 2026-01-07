@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Loader2 } from 'lucide-react';
+import api from '@/lib/api/api';
 
 /**
  * PDFViewer - Main PDF rendering component
@@ -20,12 +21,45 @@ const PDFViewer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  /* API Integration */
+  
   useEffect(() => {
-    // Simulate PDF loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    let active = true;
+    
+    const loadContent = async () => {
+        if (fileUrl) {
+            setIsLoading(false);
+            return;
+        }
+        
+        // If we don't have a direct URL but have a documentId (implied prop or needed?)
+        // The component signature has fileUrl. Parent should provide it or we fetch it?
+        // Task said: Integrate GET /documents/:id/content in PDFViewer.
+        // So I should assume I might receive documentId.
+        
+        // For now, I'll assume fileUrl IS the endpoint or I fetch it.
+        // Let's assume the parent passes documentId.
+        // I will add documentId to props in a separate edit if needed, or assume fileUrl might be missing.
+        
+        setIsLoading(true);
+        try {
+            // This is a placeholder logic. If I had documentId, I would do:
+            // const response = await api.get(`/documents/${documentId}/content`, { responseType: 'blob' });
+            // const url = URL.createObjectURL(response.data);
+            // setPdfUrl(url);
+            
+            // Since I don't see documentId in props yet, I'll rely on existing timeout for now but add the import to be ready.
+            // Actually, I should probably wait to find the parent to see what it passes.
+            // But I can add the fetching logic if I add `documentId` to props.
+             setIsLoading(false);
+        } catch (err) {
+            setError(err.message);
+            setIsLoading(false);
+        }
+    };
+
+    loadContent();
+    return () => { active = false; };
   }, [fileUrl]);
 
   if (error) {

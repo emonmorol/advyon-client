@@ -9,7 +9,9 @@ const keyOf = (caseId, folder) => `${caseId}::${folder || "__root__"}`;
 export const useDocumentsStore = create((set, get) => ({
     // ---------- UI state ----------
     activeCaseId: null,
+    activeCaseId: null,
     activeFolder: "Evidence",
+    selectedDocument: null, // Shared selected document state
 
     // ---------- cache ----------
     // cache[key] = { items: Document[], fetchedAt: number }
@@ -40,6 +42,7 @@ export const useDocumentsStore = create((set, get) => ({
     // ---------- simple setters ----------
     setActiveCase: (caseId) => set({ activeCaseId: caseId }),
     setActiveFolder: (folder) => set({ activeFolder: folder }),
+    setSelectedDocument: (doc) => set({ selectedDocument: doc }),
 
     // ---------- core actions ----------
     fetchDocuments: async ({ caseId, folder, force = false } = {}) => {
@@ -57,15 +60,15 @@ export const useDocumentsStore = create((set, get) => ({
         }));
 
         try {
-            // GET /cases/:caseId?folder=...
+            // GET /cases/:caseId/documents?folder=...
             const params = {};
             if (folder) params.folder = folder;
 
-            const res = await api.get(`${CASE_BASE}/${caseId}`, { params });
+            const res = await api.get(`${CASE_BASE}/${caseId}/documents`, { params });
             const data = res.data;
 
-            // backend might return { data: [...] } OR just [...]
-            const items = Array.isArray(data) ? data : (data?.data ?? data?.documents ?? []);
+            // backend response format: { success: true, data: [...] }
+            const items = Array.isArray(data?.data) ? data.data : [];
 
             set((state) => ({
                 cache: { ...state.cache, [k]: { items, fetchedAt: Date.now() } },
@@ -82,21 +85,58 @@ export const useDocumentsStore = create((set, get) => ({
         }
     },
 
+    fetchDocumentContent: async (documentId) => {
+        console.log("[DEBUG] fetchDocumentContent called with:", documentId);
+        if (!documentId) return null;
+
+        try {
+            // Updated to use the new direct ID route if we just need content
+            // However, the PDFViewer usually needs a blob or URL. 
+            // The new getDocumentById returns the full document object which has cloudinaryUrl.
+            // We can reuse that or keep this specific content fetcher. 
+            // Let's keep this compatible but maybe use the new route if needed.
+            const endpoint = `/documents/id/${documentId}`;
+            const response = await api.get(endpoint);
+            
+            if (response.data && response.data.data) {
+                return response.data.data.cloudinaryUrl;
+            }
+            return null;
+        } catch (error) {
+            console.error("[DEBUG] Failed to fetch document content:", error);
+            throw error;
+        }
+    },
+
+    fetchDocumentById: async (documentId) => {
+        if (!documentId) throw new Error("fetchDocumentById: documentId is required");
+        try {
+            const res = await api.get(`/documents/id/${documentId}`);
+            if (res.data && res.data.success) {
+                return res.data.data;
+            }
+            return null;
+        } catch (err) {
+            console.error("Error fetching document by ID:", err);
+            throw err;
+        }
+    },
+
     uploadDocument: async ({ caseId, folderName, file, extra = {} }) => {
         if (!caseId) throw new Error("uploadDocument: caseId is required");
         if (!file) throw new Error("uploadDocument: file is required");
 
-        // POST /cases/:caseId/upload
+        // POST /cases/:caseId/documents
         const formData = new FormData();
         formData.append("file", file);
-        if (folderName) formData.append("folderName", folderName);
+        if (folderName) formData.append("folder", folderName); // Standardized to "folder"
 
         // allow adding extra fields if your backend expects them later
         Object.entries(extra).forEach(([k, v]) => {
             if (v !== undefined && v !== null) formData.append(k, v);
         });
 
-        const res = await api.post(`${CASE_BASE}/${caseId}/upload`, formData);
+        const res = await api.post(`${CASE_BASE}/${caseId}/documents`, formData);
 
         // After upload, refresh that folder cache (force)
         await get().fetchDocuments({ caseId, folder: folderName, force: true });
