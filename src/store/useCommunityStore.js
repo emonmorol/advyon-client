@@ -11,8 +11,12 @@ export const useCommunityStore = create((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      const { data } = await api.get('/community/threads');
-      set({ threads: Array.isArray(data) ? data : [], isLoading: false });
+      // STATIC DATA MODE: Use mock data instead of API
+      // const { data } = await api.get('/community/threads');
+      
+      const mockData = await import('@/features/community/data/mockData.json');
+      const threads = mockData.threads || mockData.default?.threads || [];
+      set({ threads, isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
     }
