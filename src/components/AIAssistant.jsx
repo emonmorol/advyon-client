@@ -27,35 +27,52 @@ const AIAssistant = ({
   const [chatInput, setChatInput] = useState('');
   const [isResizing, setIsResizing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
+  // const [chatMessages, setChatMessages] = useState([]); // Moved to store
   const [isTyping, setIsTyping] = useState(false);
   const [activeTab, setActiveTab] = useState('suggestions'); // 'suggestions' or 'chat'
   const panelRef = useRef(null);
   const chatEndRef = useRef(null);
+  
+  /* AI Store Integration */
+  const { 
+      sendMessage, 
+      isSending: storeIsSending, 
+      activeContext, 
+      setContext, 
+      histories,
+      addMessage 
+  } = useAIStore();
+  
+  // Local derived state for UI from store
+  const chatMessages = histories[activeContext] || [];
+  
+  const { selectedDocument } = useDocumentsStore();
+  
+  // Context Switching Logic
+  useEffect(() => {
+      if (selectedDocument) {
+          setContext(`doc_${selectedDocument.id || selectedDocument._id}`);
+      } else if (caseData?.id) {
+          setContext(`case_${caseData.id}`);
+      } else {
+          setContext('global');
+      }
+  }, [caseData?.id, selectedDocument, setContext]);
 
   // Mock data for suggestions - replaced with empty initial state
   const [nextSteps, setNextSteps] = useState([]);
-
-  const { selectedDocument } = useDocumentsStore();
-
   const [missingDocs, setMissingDocs] = useState([]);
-
   const [legalSections, setLegalSections] = useState([]);
-
   const [similarCases, setSimilarCases] = useState([]);
-
   const [recentOrders, setRecentOrders] = useState([]);
+  
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
-  const quickQuestions = [
-    "Summarize this case",
-    "What's missing?",
-    "Suggest next steps",
-    "Find similar cases"
-  ];
-
-  // Handlers
   const toggleStep = (id) => {
-    setNextSteps(prev => prev.map(step =>
+    setNextSteps(prev => prev.map(step => 
       step.id === id ? { ...step, completed: !step.completed } : step
     ));
   };
@@ -68,44 +85,23 @@ const AIAssistant = ({
     setMissingDocs(prev => prev.filter(doc => doc.id !== id));
   };
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
-
-  /* AI Store Integration */
-  const { sendMessage, isSending } = useAIStore();
-
   const handleSendMessage = async (message = chatInput) => {
     if (!message.trim()) return;
 
-    // Optimistic UI update
-    setChatMessages(prev => [...prev, {
-      type: 'user',
-      text: message,
-      timestamp: new Date()
-    }]);
+    // formatted message for store
+    const userMsg = { text: message, type: 'user' };
+    addMessage(userMsg);
 
     setChatInput('');
-    setIsTyping(true);
+    setIsTyping(true); // Keep local typing indicator for perceived latency if needed, or rely on storeIsSending
 
     try {
         const context = selectedDocument ? { documentId: selectedDocument.id || selectedDocument._id } : {};
-        const response = await sendMessage(caseData.id || 'general', message, [], context);
-        // Assuming response is the text or object with response field
-        const responseText = response?.data?.response || "I have processed your request.";
-        
-        setChatMessages(prev => [...prev, {
-            type: 'ai',
-            text: responseText,
-            timestamp: new Date()
-        }]);
+        // Pass 'general' or actual caseId
+        await sendMessage(caseData.id || 'general', message, context);
+        // Store handles success/failure state updates
     } catch (error) {
-         setChatMessages(prev => [...prev, {
-            type: 'ai',
-            text: "Sorry, I encountered an error processing your request.",
-            timestamp: new Date()
-        }]);
+        console.error("Failed to send message", error);
     } finally {
         setIsTyping(false);
     }
@@ -152,7 +148,7 @@ const AIAssistant = ({
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+  }, [chatMessages, isTyping]);
 
   // Animation variants
   const containerVariants = {
@@ -509,7 +505,7 @@ const AIAssistant = ({
                 className="flex flex-col h-full"
               >
                 {/* Quick Questions */}
-                <div className="p-4 border-b border-border">
+                {/* <div className="p-4 border-b border-border">
                   <h4 className="text-xs uppercase text-gray-500 font-bold mb-2">Quick Questions</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {quickQuestions.map((question, idx) => (
@@ -524,7 +520,7 @@ const AIAssistant = ({
                       </motion.button>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Chat Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">

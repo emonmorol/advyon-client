@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft
 } from 'lucide-react';
@@ -8,17 +8,13 @@ import TimerWidget from './TimerWidget';
 import { useDocumentsStore } from '@/store/documents';
 import { useCasesStore } from '@/store/cases';
 import { SmartFileUploader } from '@/components/SmartFileUploader';
-
-// Define standard folders
-const FOLDERS = ['Evidence', 'Witness Statements', 'Pleadings', 'Correspondence', 'Court Orders', 'Research'];
-
 import { useNavigate } from 'react-router-dom';
 
 const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     const navigate = useNavigate();
     const [showLeftSidebar, setShowLeftSidebar] = useState(true);
     const [isCaseSwitcherOpen, setIsCaseSwitcherOpen] = useState(false);
-    const [breadcrumbs, setBreadcrumbs] = useState([activeCase.title, 'Evidence']);
+    const [breadcrumbs, setBreadcrumbs] = useState([activeCase.title]);
     const [expandedFolders, setExpandedFolders] = useState([]);
 
     // Store Integration
@@ -29,16 +25,61 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         selectedDocument, 
         setSelectedDocument 
     } = useDocumentsStore();
-    const currentFolder = breadcrumbs[breadcrumbs.length - 1];
 
-    // Fetch documents when case or folder changes
+    // Fetch ALL documents for the case on mount or case change
     React.useEffect(() => {
-        if (activeCase?.id && currentFolder) {
-            fetchDocuments({ caseId: activeCase.id, folder: currentFolder });
+        if (activeCase?.id) {
+            // Fetching with no folder param gets all documents for the case
+            fetchDocuments({ caseId: activeCase.id, force: true });
         }
-        // Cleanup selection on unmount or case switch
         return () => setSelectedDocument(null);
-    }, [activeCase, currentFolder, fetchDocuments, setSelectedDocument]);
+    }, [activeCase?.id, fetchDocuments, setSelectedDocument]);
+
+    // Get all documents for the current case
+    const allCaseDocs = getDocuments(activeCase.id) || [];
+
+    // Derive dynamic folders from documents
+    const folderStats = useMemo(() => {
+        const stats = {};
+        allCaseDocs.forEach(doc => {
+            // Ensure folderName is a string and fallback to 'General' if missing
+            const folder = doc.folderName || 'General';
+            if (!stats[folder]) {
+                stats[folder] = [];
+            }
+            stats[folder].push(doc);
+        });
+        return stats;
+    }, [allCaseDocs]);
+
+    const dynamicFolders = useMemo(() => Object.keys(folderStats).sort(), [folderStats]);
+
+    // Determine current folder:
+    // If we have clicked a folder, it's in the breadcrumbs.
+    // If not, default to the first available folder or 'General' if distinct folders exist.
+    const derivedCurrentFolder = useMemo(() => {
+        const lastCrumb = breadcrumbs[breadcrumbs.length - 1];
+        // If the last breadcrumb is the case title, it means no folder is selected yet.
+        if (lastCrumb === activeCase.title) {
+            return dynamicFolders.length > 0 ? dynamicFolders[0] : 'General';
+        }
+        // Otherwise, the last breadcrumb IS the folder name.
+        return lastCrumb;
+    }, [breadcrumbs, activeCase.title, dynamicFolders]);
+    
+    // Ensure the current folder actually exists in our derived list, otherwise fallback safely
+    const currentFolder = dynamicFolders.includes(derivedCurrentFolder) ? derivedCurrentFolder : (dynamicFolders[0] || 'General');
+
+    // Filter files for the main view
+    const currentFiles = folderStats[currentFolder] || [];
+    
+    // Check loading state for the root fetch
+    const loading = isLoading(activeCase.id); 
+
+    // Filter files based on search term
+    const filteredFiles = currentFiles.filter(f =>
+        f.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     // Fetch Content for selected document
     const { fetchDocumentContent } = useDocumentsStore();
@@ -56,9 +97,14 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
             
             setLoadingPreview(true);
             try {
-                const url = await fetchDocumentContent(docId);
-                if (active) {
-                    setPreviewUrl(url);
+                // Check if we already have a direct URL in the document object
+                if (selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url) {
+                    setPreviewUrl(selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url);
+                } else {
+                    const url = await fetchDocumentContent(docId);
+                    if (active) {
+                        setPreviewUrl(url);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load preview url", err);
@@ -67,18 +113,15 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
             }
         };
 
-        loadPreview();
+        if (selectedDocument) {
+            loadPreview();
+        } else {
+             setPreviewUrl(null);
+        }
+        
         return () => { active = false; };
     }, [selectedDocument, activeCase, fetchDocumentContent]);
 
-    const rawFiles = getDocuments(activeCase.id, currentFolder);
-    const currentFiles = Array.isArray(rawFiles) ? rawFiles : [];
-    const loading = isLoading(activeCase.id, currentFolder);
-
-    // Filter files based on search term
-    const filteredFiles = currentFiles.filter(f =>
-        f.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     const handleFolderClick = (folder) => {
         setBreadcrumbs([activeCase.title, folder]);
@@ -95,8 +138,8 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         if (!expandedFolders.includes(folder)) {
             setExpandedFolders(prev => [...prev, folder]);
         }
-        // Navigate to document viewer
         navigate(`/dashboard/workspace/doc/${file.id || file._id}`);
+        setSelectedDocument(file);
     };
 
     return (
@@ -161,11 +204,14 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                         {/* Folder Navigation Tree */}
                         <div className="mt-4 space-y-0.5">
                             <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Folders</div>
-                            {FOLDERS.map((folder) => {
+                            {dynamicFolders.length === 0 && !loading && (
+                                <div className="text-xs text-muted-foreground px-2 italic">No folders yet</div>
+                            )}
+                            
+                            {dynamicFolders.map((folder) => {
                                 const isExpanded = expandedFolders.includes(folder);
                                 const isCurrent = currentFolder === folder;
-                                // We can fetch counts or just show what's loaded. For now, showing length of loaded items.
-                                const files = getDocuments(activeCase.id, folder);
+                                const files = folderStats[folder] || [];
 
                                 return (
                                     <div key={folder} className="mb-0.5">
@@ -193,12 +239,12 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                                             onClick={(e) => { e.stopPropagation(); handleFileClick(folder, file); }}
                                                             className={cn(
                                                                 "w-full text-left px-2 py-0.5 text-[11px] rounded-md transition-colors truncate flex items-center gap-2",
-                                                                selectedDocument?.name === file.name
+                                                                selectedDocument?.id === file.id
                                                                     ? "bg-accent text-primary font-medium"
                                                                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                                             )}
                                                         >
-                                                            <span className={cn("w-1 h-1 rounded-full flex-shrink-0", selectedDocument?.name === file.name ? "bg-primary" : "bg-muted-foreground")}></span>
+                                                            <span className={cn("w-1 h-1 rounded-full flex-shrink-0", selectedDocument?.id === file.id ? "bg-primary" : "bg-muted-foreground")}></span>
                                                             {file.name}
                                                         </button>
                                                 ))}
@@ -246,8 +292,8 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                         folderName={currentFolder}
                         className="mb-4 border-2 border-dashed border-teal-accent/30 bg-transparent hover:border-accent/50 hover:bg-secondary/50 transition-all"
                         onUploadComplete={() => {
-                            // The store already invalidates queries, so the list should update automatically
-                            // We can add a toast notification here if needed
+                            // Re-fetch all documents to update folders and lists
+                            fetchDocuments({ caseId: activeCase.id, force: true });
                         }}
                     />
 
@@ -261,18 +307,17 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                     <button onClick={() => setSelectedDocument(null)} className="text-xs text-teal-accent hover:text-foreground underline">Back to list</button>
                                 </div>
                                 <div className="bg-secondary/30 border border-accent/20 rounded-xl flex flex-col items-center justify-center min-h-[500px] text-muted-foreground overflow-hidden relative">
-                                    {(previewUrl || selectedDocument.url || selectedDocument.fileUrl || selectedDocument.secure_url) ? (
+                                    {(previewUrl) ? (
                                         (() => {
-                                            const urlToUse = previewUrl || selectedDocument.url || selectedDocument.fileUrl || selectedDocument.secure_url;
                                             const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(selectedDocument.type?.toLowerCase()) || 
                                                            /\.(doc|docx|ppt|pptx|xls|xlsx)$/i.test(selectedDocument.name);
                                             
                                             // Ensure we have a valid string URL
-                                            if (!urlToUse || typeof urlToUse !== 'string') return null;
+                                            if (!previewUrl || typeof previewUrl !== 'string') return null;
 
                                             const finalUrl = isOffice 
-                                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(urlToUse)}`
-                                                : urlToUse;
+                                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`
+                                                : previewUrl;
 
                                             return (
                                                 <iframe 

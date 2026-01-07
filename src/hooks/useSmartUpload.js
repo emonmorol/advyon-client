@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/api';
 
@@ -18,6 +18,8 @@ export const useSmartUpload = (caseId) => {
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('idle'); // 'idle' | 'uploading' | 'analyzing' | 'completed' | 'failed'
 
+  const lastUpdateRef = useRef(0);
+
   // Upload mutation
   // Endpoint: POST /api/v1/cases/:caseId/documents
   const uploadMutation = useMutation({
@@ -36,10 +38,15 @@ export const useSmartUpload = (caseId) => {
             'Content-Type': 'multipart/form-data',
           },
           onUploadProgress: (progressEvent) => {
-            const progress = progressEvent.total
-              ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-              : 0;
-            setUploadProgress(progress);
+            const now = Date.now();
+            // Throttle updates to every 100ms to prevent UI freeze
+            if (now - lastUpdateRef.current > 100 || progressEvent.loaded === progressEvent.total) {
+                const progress = progressEvent.total
+                ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+                : 0;
+                setUploadProgress(progress);
+                lastUpdateRef.current = now;
+            }
           },
         }
       );
@@ -96,25 +103,27 @@ export const useSmartUpload = (caseId) => {
   });
 
   // Handle status changes from polling
-  if (statusQuery.data?.data) {
-    const { processingStatus, aiAnalysis, error: statusError } = statusQuery.data.data;
-    
-    if (processingStatus === 'completed' && aiAnalysis && status === 'analyzing') {
-      setAnalysisResult(aiAnalysis);
-      setStatus('completed');
-      // Invalidate related queries to refresh document lists
-      queryClient.invalidateQueries({ queryKey: ['documents', caseId] });
-    } else if (processingStatus === 'failed' && status === 'analyzing') {
-      setError(new Error(statusError || 'Document processing failed'));
+  useEffect(() => {
+    if (statusQuery.data?.data) {
+      const { processingStatus, aiAnalysis, error: statusError } = statusQuery.data.data;
+      
+      if (processingStatus === 'completed' && aiAnalysis && status === 'analyzing') {
+        setAnalysisResult(aiAnalysis);
+        setStatus('completed');
+        // Invalidate related queries to refresh document lists
+        queryClient.invalidateQueries({ queryKey: ['documents', caseId] });
+      } else if (processingStatus === 'failed' && status === 'analyzing') {
+        setError(new Error(statusError || 'Document processing failed'));
+        setStatus('failed');
+      }
+    }
+
+    // Handle polling errors
+    if (statusQuery.error && status === 'analyzing') {
+      setError(statusQuery.error);
       setStatus('failed');
     }
-  }
-
-  // Handle polling errors
-  if (statusQuery.error && status === 'analyzing') {
-    setError(statusQuery.error);
-    setStatus('failed');
-  }
+  }, [statusQuery.data, statusQuery.error, status, caseId, queryClient]);
 
   // Upload handler
   const upload = useCallback(({ file, folderName }) => {
