@@ -1,6 +1,6 @@
 import { useAuth, useUser } from "@clerk/clerk-react";
 import api from "../lib/api/api";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 
 export const useAuthApi = () => {
   const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
@@ -29,7 +29,8 @@ export const useAuthApi = () => {
     };
   }, [getToken, isSignedIn]);
 
-  const syncUser = async () => {
+  // Sync user with backend (Idempotent)
+  const syncUser = useCallback(async () => {
     if (!userLoaded || !user) {
       console.warn("User not loaded or not signed in");
       return null;
@@ -46,13 +47,13 @@ export const useAuthApi = () => {
     try {
       // Example: Send user data to your backend to sync/create user
       // Adjust the endpoint '/users/sync' to match your backend
-      const response = await api.post('/users/sync', userData);
+      const response = await api.post('/auth/sync', userData);
       return response.data;
     } catch (error) {
       console.error("Failed to sync user:", error);
       throw error;
     }
-  };
+  }, [user, userLoaded]);
 
   return {
     api,

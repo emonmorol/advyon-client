@@ -291,10 +291,10 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                         caseId={activeCase.id}
                         folderName={currentFolder}
                         className="mb-4 border-2 border-dashed border-teal-accent/30 bg-transparent hover:border-accent/50 hover:bg-secondary/50 transition-all"
-                        onUploadComplete={() => {
+                        onUploadComplete={React.useCallback(() => {
                             // Re-fetch all documents to update folders and lists
                             fetchDocuments({ caseId: activeCase.id, force: true });
-                        }}
+                        }, [activeCase.id, fetchDocuments])}
                     />
 
                     <div className="space-y-1">

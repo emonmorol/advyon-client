@@ -58,15 +58,25 @@ export const SmartFileUploader = ({
     disabled: status !== 'idle',
   });
 
+  // Guard to prevent double-firing completion
+  const completionHandledRef = React.useRef(false);
+
   // Notify parent on completion
   useEffect(() => {
-    if (status === 'completed' && analysisResult && onUploadComplete) {
+    if (status === 'completed' && analysisResult && onUploadComplete && !completionHandledRef.current) {
+      completionHandledRef.current = true;
       onUploadComplete({
         documentCategory: analysisResult.documentCategory,
         confidenceScore: analysisResult.confidenceScore,
       });
     }
   }, [status, analysisResult, onUploadComplete]);
+
+  // Reset internal state when reset is called
+  const handleReset = useCallback(() => {
+      completionHandledRef.current = false;
+      reset();
+  }, [reset]);
 
   return (
     <Card className={cn('overflow-hidden', className)}>
@@ -287,7 +297,7 @@ export const SmartFileUploader = ({
               {/* Upload Another Button */}
               <Button
                 variant="outline"
-                onClick={reset}
+                onClick={handleReset}
                 className="gap-2"
               >
                 <CloudUpload className="h-4 w-4" />
@@ -338,7 +348,7 @@ export const SmartFileUploader = ({
               <div className="flex justify-center gap-3">
                 <Button
                   variant="outline"
-                  onClick={reset}
+                  onClick={handleReset}
                   className="gap-2"
                 >
                   {documentId ? (
