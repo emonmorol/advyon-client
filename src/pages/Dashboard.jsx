@@ -15,7 +15,7 @@ import {
   TrendingUp,
   UserPlus,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
   Users
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -80,6 +80,12 @@ const Dashboard = () => {
               <Button variant="outline" size="sm" className="h-8 shadow-sm hover:bg-accent/10 hover:text-accent border-accent/20">
                 <Users className="mr-2 h-4 w-4" />
                 Community Hub
+              </Button>
+            </Link>
+            <Link to="/dashboard/profile/verify">
+              <Button variant="outline" size="sm" className="h-8 shadow-sm hover:bg-accent/10 hover:text-accent border-accent/20">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Verify Profile
               </Button>
             </Link>
           </div>

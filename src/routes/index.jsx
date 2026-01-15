@@ -44,12 +44,11 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'workspace', element: <WorkspacePage /> },
-      { path: 'profile/verify', element: <LawyerVerificationPage /> }
-      { path: 'cases/new', element: <CreateCasePage /> }
+      { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
       { path: 'community', element: <CommunityHubPage /> },
       { path: 'community/ask', element: <CommunityHubPage /> }, // Placeholder
-      { path: 'community/verified', element: <CommunityHubPage /> } // Placeholder
+      { path: 'community/verified', element: <CommunityHubPage /> }, // Placeholder
       { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
       { path: 'profile', element: <ProfilePage /> }
     ],
