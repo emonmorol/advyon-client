@@ -4,13 +4,22 @@ import { Navbar } from '@/components/Navbar'
 import { Sidebar } from '@/components/Sidebar'
 import { AIAssistant, useAIAssistant } from '@/components'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuthApi } from '../hooks/useAuthApi';
 
 import { useAuth, RedirectToSignIn } from '@clerk/clerk-react';
 
 const DashboardLayout = () => {
   const { isLoaded, isSignedIn } = useAuth();
+  const { syncUser } = useAuthApi();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true)
   const { isOpen, closeAI, width, setAIWidth } = useAIAssistant()
+
+  // Sync user with backend on login
+  React.useEffect(() => {
+    if (isSignedIn) {
+      syncUser();
+    }
+  }, [isSignedIn, syncUser]);
 
   if (!isLoaded) {
     return <div className="flex h-screen items-center justify-center bg-[#1C4645] text-white">Loading Advyon...</div>;

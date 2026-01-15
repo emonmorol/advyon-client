@@ -16,7 +16,7 @@ const CreateCasePage = () => {
         caseNumber: '',
         caseType: 'Criminal Defense',
         description: '',
-        urgency: 'Medium',
+        urgency: 'medium',
     });
 
     const [error, setError] = useState(null);

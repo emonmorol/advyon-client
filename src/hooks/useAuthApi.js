@@ -46,7 +46,7 @@ export const useAuthApi = () => {
     try {
       // Example: Send user data to your backend to sync/create user
       // Adjust the endpoint '/users/sync' to match your backend
-      const response = await api.post('/users/sync', userData);
+      const response = await api.post('/auth/sync', userData);
       return response.data;
     } catch (error) {
       console.error("Failed to sync user:", error);
