@@ -52,6 +52,30 @@ const useLegalStore = create((set) => ({
                 isLoading: false
             });
         }
+    },
+
+    fetchSectionByNumber: async (actName, number) => {
+        set({ isLoading: true, error: null });
+        try {
+            const params = new URLSearchParams();
+            params.append('actName', actName);
+            params.append('number', number);
+
+            const response = await api.get(`/legal?${params.toString()}`);
+            if (response.data.data && response.data.data.length > 0) {
+                // Assuming the combination of actName and number is unique
+                return response.data.data[0];
+            }
+            return null;
+        } catch (error) {
+            set({
+                error: error.response?.data?.message || 'Failed to fetch section',
+                isLoading: false
+            });
+            return null;
+        } finally {
+            set({ isLoading: false });
+        }
     }
 }));
 
