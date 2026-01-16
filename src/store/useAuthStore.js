@@ -10,7 +10,7 @@ export const useAuthStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await api.get('/users/me/profile');
-      set({ user: data, isLoading: false });
+      set({ user: data.data || data, isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
     }
@@ -19,14 +19,30 @@ export const useAuthStore = create((set) => ({
   updateProfile: async (userData) => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await api.put('/users/me/profile', userData);
+      const { data } = await api.patch('/users/me/profile', userData);
+      const updatedUser = data.data || data;
       set((state) => ({ 
-        user: { ...state.user, ...data }, 
+        user: { ...state.user, ...updatedUser }, 
         isLoading: false 
       }));
-      return data;
+      return updatedUser;
     } catch (error) {
       set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data } = await api.post('/users/me/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      set({ isLoading: false });
+      return data;
+    } catch (error) {
+      set({ error: error.response?.data?.message || error.message, isLoading: false });
       throw error;
     }
   },
@@ -34,3 +50,4 @@ export const useAuthStore = create((set) => ({
   // Placeholder for logout or other auth actions
   logout: () => set({ user: null }),
 }));
+

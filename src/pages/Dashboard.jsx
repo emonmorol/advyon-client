@@ -418,7 +418,7 @@ const Dashboard = () => {
                     <div className="mt-1 h-2 w-2 rounded-full bg-teal-accent" />
                     <div>
                       <p className="text-xs text-background-foreground">
-                        {act.action || act.description || 'Activity logged'}
+                        {act.message || act.description || 'Activity logged'}
                       </p>
                       <p className="text-[10px] text-background-foreground">
                         {formatRelativeTime(act.createdAt)}
