@@ -16,7 +16,7 @@ const CommunityHubPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     // Use Store
-    const { threads, fetchThreads, isLoading, clearCache, communityStats, fetchCommunityStats, trendingTopics, fetchTrendingTopics } = useCommunityStore();
+    const { threads, fetchThreads, isLoading, clearCache, communityStats, fetchCommunityStats, trendingTopics, fetchTrendingTopics, topContributors, fetchTopContributors } = useCommunityStore();
 
     // Category ID to backend category mapping
     const CATEGORY_MAP = {
@@ -68,7 +68,8 @@ const CommunityHubPage = () => {
     React.useEffect(() => {
         fetchCommunityStats();
         fetchTrendingTopics();
-    }, [fetchCommunityStats, fetchTrendingTopics]);
+        fetchTopContributors();
+    }, [fetchCommunityStats, fetchTrendingTopics, fetchTopContributors]);
 
     const handleCategoryChange = (categoryId) => {
         setActiveCategory(categoryId);
@@ -118,7 +119,7 @@ const CommunityHubPage = () => {
                     <div className="lg:col-span-4 space-y-6">
                         <div className="sticky top-24 space-y-6">
                             <TrendingSidebar
-                                contributors={mockData.topContributors}
+                                contributors={topContributors.length > 0 ? topContributors : mockData.topContributors}
                                 tags={trendingTopics.length > 0 ? trendingTopics : mockData.popularTags}
                             />
                         </div>

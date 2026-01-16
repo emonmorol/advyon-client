@@ -230,4 +230,16 @@ export const useCommunityStore = create((set, get) => ({
       console.error('Failed to fetch trending topics:', error);
     }
   },
+
+  // Top Contributors
+  topContributors: [],
+  fetchTopContributors: async (limit = 5) => {
+    try {
+      const { data } = await api.get(`${BASE}/top-contributors?limit=${limit}`);
+      const contributors = data?.data || [];
+      set({ topContributors: contributors });
+    } catch (error) {
+      console.error('Failed to fetch top contributors:', error);
+    }
+  },
 }));

@@ -21,8 +21,8 @@ const TrendingSidebar = ({ contributors, tags }) => {
                             <div className="flex items-center gap-4">
                                 <div className="relative">
                                     <Avatar className="w-10 h-10 border border-border">
-                                        <AvatarImage src={user.avatar} />
-                                        <AvatarFallback>{user.name[0]}</AvatarFallback>
+                                        <AvatarImage src={user.avatar || user.avatarUrl} />
+                                        <AvatarFallback>{(user.name || user.fullName || '?')[0]}</AvatarFallback>
                                     </Avatar>
                                     {index < 3 && (
                                         <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-[10px] text-white font-bold border-2 border-background">
@@ -32,13 +32,13 @@ const TrendingSidebar = ({ contributors, tags }) => {
                                 </div>
                                 <div>
                                     <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">
-                                        {user.name}
+                                        {user.name || user.fullName}
                                     </p>
                                     <p className="text-sm text-muted-foreground">{user.role}</p>
                                 </div>
                             </div>
                             <span className="text-sm font-mono font-medium text-accent">
-                                {user.points.toLocaleString()}
+                                {(user.points || 0).toLocaleString()}
                             </span>
                         </div>
                     ))}
