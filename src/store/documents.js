@@ -44,6 +44,16 @@ export const useDocumentsStore = create((set, get) => ({
     setActiveFolder: (folder) => set({ activeFolder: folder }),
     setSelectedDocument: (doc) => set({ selectedDocument: doc }),
 
+    selectedForAI: [], // Array of document IDs
+    toggleSelectedForAI: (docId) => set((state) => {
+        const current = state.selectedForAI;
+        if (current.includes(docId)) {
+            return { selectedForAI: current.filter(id => id !== docId) };
+        }
+        return { selectedForAI: [...current, docId] };
+    }),
+    clearSelectedForAI: () => set({ selectedForAI: [] }),
+
     // ---------- core actions ----------
     fetchDocuments: async ({ caseId, folder, force = false } = {}) => {
         if (!caseId) return [];
@@ -112,6 +122,16 @@ export const useDocumentsStore = create((set, get) => ({
         if (!documentId) throw new Error("fetchDocumentById: documentId is required");
         try {
             const res = await api.get(`/documents/id/${documentId}`);
+            const result = res.data; // Assuming res.data is the actual result object
+            if (result.success && result.data?.isComplete) {
+                console.log('[Client Store] Document processing complete:', result.data);
+                // pollInterval is not defined in this scope, assuming it's handled externally
+                // clearInterval(pollInterval); 
+                
+                // Re-fetch document list to get fresh data with folder update
+                // caseId is not available in this scope, assuming it's handled externally or passed
+                // get().fetchDocuments({ caseId: /* some caseId */, folder: /* some folder */, force: true });
+            }
             if (res.data && res.data.success) {
                 return res.data.data;
             }

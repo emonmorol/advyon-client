@@ -46,18 +46,20 @@ const AIAssistant = ({
   // Local derived state for UI from store
   const chatMessages = histories[activeContext] || [];
   
-  const { selectedDocument } = useDocumentsStore();
+  const { selectedDocument, selectedForAI } = useDocumentsStore();
   
   // Context Switching Logic
   useEffect(() => {
-      if (selectedDocument) {
+      if (selectedForAI && selectedForAI.length > 0) {
+          setContext('multi_select');
+      } else if (selectedDocument) {
           setContext(`doc_${selectedDocument.id || selectedDocument._id}`);
       } else if (caseData?.id) {
           setContext(`case_${caseData.id}`);
       } else {
           setContext('global');
       }
-  }, [caseData?.id, selectedDocument, setContext]);
+  }, [caseData?.id, selectedDocument, selectedForAI, setContext]);
 
   // Mock data for suggestions - replaced with empty initial state
   const [nextSteps, setNextSteps] = useState([]);
@@ -96,7 +98,13 @@ const AIAssistant = ({
     setIsTyping(true); // Keep local typing indicator for perceived latency if needed, or rely on storeIsSending
 
     try {
-        const context = selectedDocument ? { documentId: selectedDocument.id || selectedDocument._id } : {};
+        let context = {};
+        if (selectedForAI && selectedForAI.length > 0) {
+            context = { documentIds: selectedForAI };
+        } else if (selectedDocument) {
+            context = { documentId: selectedDocument.id || selectedDocument._id };
+        }
+
         // Pass 'general' or actual caseId
         await sendMessage(caseData.id || 'general', message, context);
         // Store handles success/failure state updates
@@ -256,7 +264,17 @@ const AIAssistant = ({
             className="p-3 bg-primary/10 border-b border-border"
             variants={itemVariants}
           >
-            {selectedDocument ? (
+            {selectedForAI && selectedForAI.length > 0 ? (
+               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <FileText size={10} /> analyzing selection:
+                  </p>
+                  <p className="text-sm font-semibold text-accent truncate">{selectedForAI.length} Documents Selected</p>
+                   <p className="text-[10px] text-muted-foreground mt-0.5">
+                     Multi-file analysis enabled
+                   </p>
+               </div>
+            ) : selectedDocument ? (
                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <FileText size={10} /> analyzing Document:

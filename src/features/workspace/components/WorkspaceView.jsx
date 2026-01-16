@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
-    ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft
+    ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft,
+    CheckSquare, Square
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import DocumentItem from './DocumentItem';
@@ -23,7 +24,9 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         getDocuments, 
         isLoading, 
         selectedDocument, 
-        setSelectedDocument 
+        setSelectedDocument,
+        selectedForAI,
+        toggleSelectedForAI
     } = useDocumentsStore();
 
     // Fetch ALL documents for the case on mount or case change
@@ -234,11 +237,24 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                         {isExpanded && (
                                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-border pl-2">
                                                 {files.map((file, idx) => (
+                                                    <div key={idx} className="flex items-center gap-0.5 group/item w-full">
                                                         <button
-                                                            key={idx}
+                                                            onClick={(e) => { e.stopPropagation(); toggleSelectedForAI(file.id || file._id); }}
+                                                            className={cn(
+                                                                "p-0.5 shrink-0 rounded hover:bg-muted transition-colors",
+                                                                selectedForAI.includes(file.id || file._id) ? "text-primary opacity-100" : "text-muted-foreground opacity-0 group-hover/item:opacity-100"
+                                                            )}
+                                                            title="Select for AI Context"
+                                                        >
+                                                            {selectedForAI.includes(file.id || file._id) ? 
+                                                                <CheckSquare size={11} fill="currentColor" className="text-primary-foreground" /> : 
+                                                                <Square size={11} />
+                                                            }
+                                                        </button>
+                                                        <button
                                                             onClick={(e) => { e.stopPropagation(); handleFileClick(folder, file); }}
                                                             className={cn(
-                                                                "w-full text-left px-2 py-0.5 text-[11px] rounded-md transition-colors truncate flex items-center gap-2",
+                                                                "flex-1 text-left px-2 py-0.5 text-[11px] rounded-md transition-colors truncate flex items-center gap-2",
                                                                 selectedDocument?.id === file.id
                                                                     ? "bg-accent text-primary font-medium"
                                                                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -247,6 +263,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                                             <span className={cn("w-1 h-1 rounded-full flex-shrink-0", selectedDocument?.id === file.id ? "bg-primary" : "bg-muted-foreground")}></span>
                                                             {file.name}
                                                         </button>
+                                                    </div>
                                                 ))}
                                                 {files.length === 0 && (
                                                     <div className="px-2 py-0.5 text-[9px] text-muted-foreground/50 italic">No files</div>
