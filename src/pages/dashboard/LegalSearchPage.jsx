@@ -26,20 +26,30 @@ const item = {
 const LegalSearchPage = () => {
   const { legals, meta, isLoading, fetchLegals, error } = useLegalStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [filters, setFilters] = useState({ actType: 'all', year: 'all' });
   const [isOpen, setIsOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   useEffect(() => {
     fetchLegals({
-      search: searchQuery,
+      search: debouncedSearchQuery,
       actName: filters.actType,
       year: filters.year,
       page: currentPage,
       limit: 10
     });
-  }, [searchQuery, filters, currentPage, fetchLegals]);
+  }, [debouncedSearchQuery, filters, currentPage, fetchLegals]);
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -49,6 +59,7 @@ const LegalSearchPage = () => {
   const handleFilterChange = (key, value) => {
     if (key === 'reset') {
       setFilters({ actType: 'all', year: 'all' });
+      setSearchQuery('');
     } else {
       setFilters(prev => ({ ...prev, [key]: value }));
     }
