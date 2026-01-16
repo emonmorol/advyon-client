@@ -25,6 +25,7 @@ import { useCasesStore } from "../store/cases";
 import { useDashboardStore } from "../store/useDashboardStore";
 import { useMessageStore } from "../store/useMessageStore";
 import { useActivityStore } from "../store/useActivityStore";
+import { useAIStore } from "../store/useAIStore";
 
 // Helper function to format relative time
 const formatRelativeTime = (date) => {
@@ -60,6 +61,13 @@ const Dashboard = () => {
     fetchRecentActivities,
     isLoading: activitiesLoading
   } = useActivityStore();
+  const {
+    myInsights,
+    dashboardSummary,
+    fetchMyInsights,
+    fetchDashboardSummary,
+    isLoadingInsights
+  } = useAIStore();
 
   React.useEffect(() => {
     fetchProfile();
@@ -70,7 +78,10 @@ const Dashboard = () => {
     fetchPendingCount();
     // Phase 1.3: Fetch real activities
     fetchRecentActivities(5);
-  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount, fetchRecentActivities]);
+    // Phase 1.4: Fetch AI insights
+    fetchMyInsights(3);
+    fetchDashboardSummary();
+  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount, fetchRecentActivities, fetchMyInsights, fetchDashboardSummary]);
 
   const profile = user;
 
@@ -208,7 +219,7 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* AI Insights Panel */}
+          {/* AI Insights Panel - Phase 1.4: Now connected to API */}
           <Card className={`${cardStyle} border-accent/20 bg-teal-accent`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-primary-foreground">
@@ -217,14 +228,53 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-lg bg-background p-4 text-sm text-background-foreground border border-accent/20 shadow-sm">
-                <span className="mb-2 block font-semibold text-accent">Analysis Complete: State v. Johnson</span>
-                The evidence analysis identified 3 missing timestamps in the witness testimony. Recommendation: Request supplementary statement.
-              </div>
-              <div className="rounded-lg bg-background p-4 text-sm text-background-foreground border border-accent/20 shadow-sm ">
-                <span className="mb-2 block font-semibold text-accent">Legal Update Alert</span>
-                New Supreme Court ruling on "Digital Privacy" may impact your current case <span className="text-white underline decoration-accent/50 underline-offset-4">TechCorp v. StartUp</span>.
-              </div>
+              {isLoadingInsights ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-accent" />
+                </div>
+              ) : (
+                <>
+                  {/* AI Tips from Dashboard Summary */}
+                  {dashboardSummary?.tips?.length > 0 && (
+                    dashboardSummary.tips.slice(0, 2).map((tip, i) => (
+                      <div key={i} className={`rounded-lg bg-background p-4 text-sm text-background-foreground border shadow-sm ${
+                        tip.type === 'warning' ? 'border-amber-500/30' : 
+                        tip.type === 'info' ? 'border-blue-500/30' : 'border-accent/20'
+                      }`}>
+                        <span className={`mb-2 block font-semibold ${
+                          tip.type === 'warning' ? 'text-amber-500' : 
+                          tip.type === 'info' ? 'text-blue-400' : 'text-accent'
+                        }`}>
+                          {tip.type === 'warning' ? '⚠️ Alert' : tip.type === 'info' ? '📋 Status' : '💡 Insight'}
+                        </span>
+                        {tip.message}
+                      </div>
+                    ))
+                  )}
+                  
+                  {/* Recent AI Insights */}
+                  {myInsights.length > 0 ? (
+                    myInsights.slice(0, 2).map((insight, i) => (
+                      <div key={insight.id || i} className="rounded-lg bg-background p-4 text-sm text-background-foreground border border-accent/20 shadow-sm">
+                        <span className="mb-2 block font-semibold text-accent">
+                          Analysis: {insight.caseTitle}
+                        </span>
+                        {insight.summary ? (
+                          <p className="line-clamp-2">{insight.summary}</p>
+                        ) : (
+                          <p>Document: {insight.documentName} - Category: {insight.category || 'Uncategorized'}</p>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    !dashboardSummary?.tips?.length && (
+                      <div className="rounded-lg bg-background p-4 text-sm text-muted-foreground border border-accent/20 shadow-sm text-center">
+                        No AI insights available yet. Upload documents to get AI-powered analysis.
+                      </div>
+                    )
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 
