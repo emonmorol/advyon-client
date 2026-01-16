@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { Navbar } from '@/components/Navbar'
 import { Sidebar } from '@/components/Sidebar'
 import { AIAssistant, useAIAssistant } from '@/components'
@@ -14,12 +14,25 @@ const DashboardLayout = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true)
   const { isOpen, closeAI, width, setAIWidth } = useAIAssistant()
 
+  const navigate = useNavigate();
+
   // Sync user with backend on login
   React.useEffect(() => {
-    if (isSignedIn) {
-      syncUser();
-    }
-  }, [isSignedIn, syncUser]);
+    const sync = async () => {
+      if (isSignedIn) {
+        try {
+          const res = await syncUser();
+          if (res?.data?.needsOnboarding) {
+            navigate('/onboarding');
+          }
+        } catch (error) {
+          console.error("Sync failed:", error);
+        }
+      }
+    };
+    
+    sync();
+  }, [isSignedIn, syncUser, navigate]);
 
   if (!isLoaded) {
     return <div className="flex h-screen items-center justify-center bg-[#1C4645] text-white">Loading Advyon...</div>;
