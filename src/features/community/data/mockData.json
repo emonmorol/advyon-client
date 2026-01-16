@@ -31,9 +31,7 @@
         },
         {
             "id": "ip",
-            "label": "Intellectual Property"
-        }
-    ],
+            "label": "Intellectual Property" }, { "id": "others", "label": "Others" } ],
     "threads": [
         {
             "id": 1,

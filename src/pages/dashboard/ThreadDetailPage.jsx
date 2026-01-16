@@ -1,83 +1,139 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import QuestionBody from '@/features/community/components/QuestionBody';
 import ReplyCard from '@/features/community/components/ReplyCard';
 import ReplyForm from '@/features/community/components/ReplyForm';
 import AISummary from '@/features/community/components/AISummary';
-
-// Mock Data
-const MOCK_THREAD = {
-  id: '123',
-  title: 'Can I claim maintenance if I\'m working but earn significantly less than my spouse?',
-  content: 'I am going through a divorce proceedings. My husband earns 5x more than me. Even though I am employed, my salary is barely enough to cover my basic living expenses in this city. Am I eligible to claim interim maintenance? What factors will the court consider?',
-  author: { name: 'Sarah J.', avatar: '', role: 'Community Member' },
-  createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-  views: 1250,
-  upvotes: 45,
-  downvotes: 2,
-  category: 'Family Law',
-  tags: ['Divorce', 'Maintenance', 'Alimony'],
-  isSolved: true,
-  acceptedAnswerId: 'r1',
-  aiSummary: 'Under Section 24 of the Hindu Marriage Act, either spouse can claim maintenance if they do not have sufficient independent income. Courts consider the "status and standard of living" of the parties. The fact that the wife is working does not automatically disqualify her from claiming maintenance if her income is insufficient to maintain the standard of living she was accustomed to in the matrimonial home.',
-  replies: [
-    {
-      id: 'r1',
-      content: 'Yes, you can absolutely claim maintenance. The Supreme Court has clarified in multiple judgments (like Rajnesh v. Neha) that the capacity to earn or the fact that the wife is earning does not bar her from claiming maintenance. The court looks at the "lifestyle" you were used to. If there is a massive disparity in income (like 5x as you mentioned), the court usually grants maintenance to bridge that gap.',
-      author: { name: 'Adv. Rajesh Kumar', avatar: '', role: 'Family Lawyer', isLawyer: true },
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1),
-      upvotes: 28,
-      downvotes: 0
-    },
-    {
-      id: 'r2',
-      content: 'Make sure you file an affidavit of assets and liabilities correctly. That is crucial now for deciding the quantum of maintenance.',
-      author: { name: 'Priya S.', avatar: '', role: 'Community Member', isLawyer: false },
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12),
-      upvotes: 5,
-      downvotes: 0
-    }
-  ]
-};
+import { useCommunityStore } from '@/store/useCommunityStore';
 
 const ThreadDetailPage = () => {
-  const { threadId } = useParams();
-  // Fetch logic would go here
+   const { threadId } = useParams();
+   const { currentThread, isLoading, error, fetchThreadById, addReply } = useCommunityStore();
 
-  const handleReplySubmit = (content) => {
-    console.log("New reply:", content);
-  };
+   useEffect(() => {
+      if (threadId) {
+         fetchThreadById(threadId);
+      }
+   }, [threadId, fetchThreadById]);
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-       <div className="mb-8">
-          <QuestionBody question={MOCK_THREAD} />
-       </div>
-       
-       <AISummary summary={MOCK_THREAD.aiSummary} />
+   const handleReplySubmit = async (content) => {
+      try {
+         await addReply(threadId, content);
+      } catch (err) {
+         console.error('Failed to add reply:', err);
+      }
+   };
 
-       <div className="space-y-8">
-          <div className="flex items-center justify-between border-b pb-4">
-             <h2 className="text-xl font-bold">{MOCK_THREAD.replies.length} Answers</h2>
-             {/* Sort dropdown could go here */}
-          </div>
+   // Loading state
+   if (isLoading && !currentThread) {
+      return (
+         <div className="max-w-4xl mx-auto px-4 py-16 flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading thread...</p>
+         </div>
+      );
+   }
 
-          <div className="space-y-6">
-             {MOCK_THREAD.replies.map(reply => (
-                <ReplyCard 
-                   key={reply.id} 
-                   reply={reply} 
-                   isAccepted={MOCK_THREAD.acceptedAnswerId === reply.id}
-                />
-             ))}
-          </div>
+   // Error state
+   if (error || !currentThread) {
+      return (
+         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+            <p className="text-destructive mb-4">{error || 'Thread not found'}</p>
+            <Link
+               to="/community"
+               className="text-primary hover:underline inline-flex items-center gap-2"
+            >
+               <ArrowLeft size={16} />
+               Back to Community
+            </Link>
+         </div>
+      );
+   }
 
-          <div className="pt-10">
-             <ReplyForm onSubmit={handleReplySubmit} />
-          </div>
-       </div>
-    </div>
-  );
+   const { thread, replies = [] } = currentThread;
+
+   // Transform thread data to match QuestionBody expectations
+   const questionData = {
+      id: thread._id,
+      title: thread.title,
+      content: thread.content,
+      author: {
+         name: thread.author?.fullName || 'Anonymous',
+         avatar: thread.author?.avatar || '',
+         role: thread.author?.role || 'Community Member',
+      },
+      createdAt: new Date(thread.createdAt),
+      views: thread.views || 0,
+      upvotes: thread.upvotes?.length || 0,
+      category: thread.category,
+      tags: thread.tags || [],
+      isSolved: thread.isSolved,
+      acceptedAnswerId: replies.find(r => r.isAcceptedAnswer)?._id,
+   };
+
+   // Transform replies to match ReplyCard expectations
+   const formattedReplies = replies.map(reply => ({
+      id: reply._id,
+      content: reply.content,
+      author: {
+         name: reply.author?.fullName || 'Anonymous',
+         avatar: reply.author?.avatar || '',
+         role: reply.author?.role || 'Community Member',
+         isLawyer: reply.author?.role === 'lawyer',
+      },
+      createdAt: new Date(reply.createdAt),
+      upvotes: reply.upvotes?.length || 0,
+      isAccepted: reply.isAcceptedAnswer,
+   }));
+
+   return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+         {/* Back link */}
+         <Link
+            to="/community"
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 mb-6 transition-colors"
+         >
+            <ArrowLeft size={16} />
+            Back to Community
+         </Link>
+
+         <div className="mb-8">
+            <QuestionBody question={questionData} />
+         </div>
+
+         {/* AI Summary - only show if solved or has replies */}
+         {(thread.isSolved || replies.length > 0) && (
+            <AISummary summary={`This thread discusses "${thread.title}" in the ${thread.category} category.`} />
+         )}
+
+         <div className="space-y-8">
+            <div className="flex items-center justify-between border-b pb-4">
+               <h2 className="text-xl font-bold">{formattedReplies.length} {formattedReplies.length === 1 ? 'Answer' : 'Answers'}</h2>
+            </div>
+
+            {formattedReplies.length === 0 ? (
+               <div className="text-center py-12 text-muted-foreground">
+                  <p>No answers yet. Be the first to help!</p>
+               </div>
+            ) : (
+               <div className="space-y-6">
+                  {formattedReplies.map(reply => (
+                     <ReplyCard
+                        key={reply.id}
+                        reply={reply}
+                        isAccepted={reply.isAccepted}
+                     />
+                  ))}
+               </div>
+            )}
+
+            <div className="pt-10">
+               <ReplyForm onSubmit={handleReplySubmit} />
+            </div>
+         </div>
+      </div>
+   );
 };
 
 export default ThreadDetailPage;

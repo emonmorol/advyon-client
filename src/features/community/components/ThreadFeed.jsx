@@ -36,11 +36,8 @@ const ThreadFeed = ({ threads, isLoading }) => {
             className="space-y-4"
         >
             {threads.map((thread) => (
-                <motion.div key={thread.id} variants={item}>
-                    <ThreadCard
-                        thread={thread}
-                        onClick={() => console.log('Navigate to thread', thread.id)}
-                    />
+                <motion.div key={thread._id || thread.id} variants={item}>
+                    <ThreadCard thread={thread} />
                 </motion.div>
             ))}
         </motion.div>

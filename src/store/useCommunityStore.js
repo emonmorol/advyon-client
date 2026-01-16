@@ -1,24 +1,158 @@
 import { create } from 'zustand';
 import api from '@/lib/api/api';
 
+const BASE = '/community';
+
+// Category mapping: UI id -> Backend category name
+const CATEGORY_MAP = {
+  family: 'Family Law',
+  criminal: 'Criminal Defense',
+  civil: 'Civil Litigation',
+  property: 'Property Law',
+  corporate: 'Corporate',
+  ip: 'Intellectual Property',
+  others: 'Others',
+};
+
 export const useCommunityStore = create((set, get) => ({
   threads: [],
+  currentThread: null,
   isLoading: false,
   error: null,
+  lastFetched: null,
 
-  fetchThreads: async () => {
-    if (get().threads.length > 0) return; // Cache
+  // Fetch all threads with optional query params
+  fetchThreads: async (params = {}, force = false) => {
+    const { lastFetched, isLoading } = get();
+
+    // Cache Strategy: Don't refetch if fetched < 30 seconds ago, unless forced
+    if (!force && lastFetched && Date.now() - lastFetched < 30000 && get().threads.length > 0) {
+      return get().threads;
+    }
+
+    if (isLoading) return;
 
     set({ isLoading: true, error: null });
     try {
-      // STATIC DATA MODE: Use mock data instead of API
-      // const { data } = await api.get('/community/threads');
-      
-      const mockData = await import('@/features/community/data/mockData.json');
-      const threads = mockData.threads || mockData.default?.threads || [];
-      set({ threads, isLoading: false });
+      const queryString = new URLSearchParams(params).toString();
+      const url = queryString ? `${BASE}/threads?${queryString}` : `${BASE}/threads`;
+      const { data } = await api.get(url);
+      const threads = data?.data || [];
+
+      set({
+        threads,
+        isLoading: false,
+        lastFetched: Date.now()
+      });
+      return threads;
     } catch (error) {
-      set({ error: error.message, isLoading: false });
+      set({ error: error.message || 'Failed to fetch threads', isLoading: false });
+      console.error('Failed to fetch threads:', error);
     }
   },
+
+  // Fetch single thread details with replies
+  fetchThreadById: async (threadId) => {
+    set({ isLoading: true, error: null, currentThread: null });
+    try {
+      const { data } = await api.get(`${BASE}/threads/${threadId}`);
+      const threadData = data?.data || data;
+      set({ currentThread: threadData, isLoading: false });
+      return threadData;
+    } catch (error) {
+      set({ error: error.message || 'Failed to fetch thread', isLoading: false });
+      console.error('Failed to fetch thread:', error);
+      return null;
+    }
+  },
+
+  // Create new thread
+  createThread: async (payload) => {
+    set({ isLoading: true, error: null });
+    try {
+      // Map UI category id to backend category name
+      const backendPayload = {
+        ...payload,
+        category: CATEGORY_MAP[payload.category] || payload.category,
+      };
+
+      const { data } = await api.post(`${BASE}/threads`, backendPayload);
+      const newThread = data?.data || data;
+
+      // Prepend new thread to list (optimistic UI)
+      set((state) => ({
+        threads: [newThread, ...state.threads],
+        isLoading: false,
+        lastFetched: null, // Invalidate cache to force refresh
+      }));
+
+      return newThread;
+    } catch (error) {
+      set({ error: error.message || 'Failed to create thread', isLoading: false });
+      throw error;
+    }
+  },
+
+  // Vote on a thread (toggle)
+  voteThread: async (threadId) => {
+    const prevThreads = get().threads;
+
+    // Optimistic update
+    set((state) => ({
+      threads: state.threads.map((t) =>
+        (t._id === threadId || t.id === threadId)
+          ? { ...t, upvotes: [...(t.upvotes || []), 'optimistic'] }
+          : t
+      ),
+    }));
+
+    try {
+      const { data } = await api.patch(`${BASE}/threads/${threadId}/vote`);
+      const updatedThread = data?.data || data;
+
+      // Update with real data
+      set((state) => ({
+        threads: state.threads.map((t) =>
+          (t._id === threadId || t.id === threadId) ? { ...t, upvotes: updatedThread.upvotes } : t
+        ),
+      }));
+
+      return updatedThread;
+    } catch (error) {
+      // Rollback on error
+      set({ threads: prevThreads, error: 'Failed to vote' });
+      throw error;
+    }
+  },
+
+  // Add reply to a thread
+  addReply: async (threadId, content) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data } = await api.post(`${BASE}/threads/${threadId}/reply`, { content });
+      const newReply = data?.data || data;
+
+      // Update current thread's replies if viewing that thread
+      set((state) => {
+        if (state.currentThread?.thread?._id === threadId) {
+          return {
+            currentThread: {
+              ...state.currentThread,
+              replies: [...(state.currentThread.replies || []), newReply],
+            },
+            isLoading: false,
+          };
+        }
+        return { isLoading: false };
+      });
+
+      return newReply;
+    } catch (error) {
+      set({ error: error.message || 'Failed to add reply', isLoading: false });
+      throw error;
+    }
+  },
+
+  // Clear cache to force refresh
+  clearCache: () => set({ lastFetched: null, threads: [] }),
 }));

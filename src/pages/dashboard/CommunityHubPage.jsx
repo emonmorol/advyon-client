@@ -12,9 +12,9 @@ import { useCommunityStore } from '@/store/useCommunityStore';
 const CommunityHubPage = () => {
     const [activeCategory, setActiveCategory] = useState('all');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    
+
     // Use Store
-    const { threads, fetchThreads, isLoading } = useCommunityStore();
+    const { threads, fetchThreads, isLoading, clearCache } = useCommunityStore();
 
     React.useEffect(() => {
         fetchThreads();
@@ -22,19 +22,34 @@ const CommunityHubPage = () => {
 
     const handleCategoryChange = (categoryId) => {
         setActiveCategory(categoryId);
-        // Store handles caching/loading
     };
 
     const handleCreateSuccess = (newThread) => {
-        // Option: re-fetch or manual add to store
-        fetchThreads(); 
+        // Clear cache and force fresh fetch
+        clearCache();
+        fetchThreads({}, true);
         console.log("Thread created successfully:", newThread);
+    };
+
+    // Category ID to backend category mapping
+    const CATEGORY_MAP = {
+        family: 'Family Law',
+        criminal: 'Criminal Defense',
+        civil: 'Civil Litigation',
+        property: 'Property Law',
+        corporate: 'Corporate',
+        ip: 'Intellectual Property',
+        others: 'Others',
     };
 
     // Filter threads based on active category
     const filteredThreads = activeCategory === 'all'
         ? threads
-        : threads.filter(t => t.category?.toLowerCase().includes(activeCategory) || t.tags?.some(tag => tag.toLowerCase().includes(activeCategory)));
+        : threads.filter(t => {
+            const categoryMatch = t.category === CATEGORY_MAP[activeCategory];
+            const tagMatch = t.tags?.some(tag => tag.toLowerCase().includes(activeCategory));
+            return categoryMatch || tagMatch;
+        });
 
     return (
         <div className="min-h-screen bg-background">
