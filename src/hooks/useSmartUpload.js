@@ -61,18 +61,22 @@ export const useSmartUpload = (caseId) => {
       setDocumentId(null);
     },
     onSuccess: (data) => {
+      console.log('Upload success response:', data);
       // Check for id directly or nested in document object (handle both response formats)
       const docId = data.data?.id || data.data?.document?.id;
       
       if (data.success && docId) {
+        console.log('Starting analysis for document:', docId);
         setDocumentId(docId);
         setStatus('analyzing');
       } else {
+        console.error('Upload failed - invalid response structure', data);
         setError(new Error('Upload failed: Invalid response'));
         setStatus('failed');
       }
     },
     onError: (err) => {
+      console.error('Upload mutation error:', err);
       setError(err);
       setStatus('failed');
     },
@@ -83,9 +87,11 @@ export const useSmartUpload = (caseId) => {
   const statusQuery = useQuery({
     queryKey: ['documentStatus', caseId, documentId],
     queryFn: async () => {
+      console.log(`Polling status for doc ${documentId}...`);
       const response = await api.get(
         `/cases/${caseId}/documents/${documentId}/status`
       );
+      console.log('Poll response:', response.data);
       return response.data;
     },
     enabled: status === 'analyzing' && !!documentId && !!caseId,
@@ -94,6 +100,7 @@ export const useSmartUpload = (caseId) => {
       // Stop polling when completed or failed
       if (data?.data?.processingStatus === 'completed' || 
           data?.data?.processingStatus === 'failed') {
+        console.log('Polling stop condition met:', data?.data?.processingStatus);
         return false;
       }
       // Continue polling every 1 second while processing
@@ -106,13 +113,16 @@ export const useSmartUpload = (caseId) => {
   useEffect(() => {
     if (statusQuery.data?.data) {
       const { processingStatus, aiAnalysis, error: statusError } = statusQuery.data.data;
+      console.log('Status update:', { processingStatus, hasAnalysis: !!aiAnalysis });
       
       if (processingStatus === 'completed' && aiAnalysis && status === 'analyzing') {
+        console.log('Analysis completed successfully:', aiAnalysis);
         setAnalysisResult(aiAnalysis);
         setStatus('completed');
         // Invalidate related queries to refresh document lists
         queryClient.invalidateQueries({ queryKey: ['documents', caseId] });
       } else if (processingStatus === 'failed' && status === 'analyzing') {
+        console.error('Analysis failed:', statusError);
         setError(new Error(statusError || 'Document processing failed'));
         setStatus('failed');
       }
@@ -120,6 +130,7 @@ export const useSmartUpload = (caseId) => {
 
     // Handle polling errors
     if (statusQuery.error && status === 'analyzing') {
+      console.error('Polling query error:', statusQuery.error);
       setError(statusQuery.error);
       setStatus('failed');
     }
