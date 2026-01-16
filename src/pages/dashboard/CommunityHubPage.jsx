@@ -11,36 +11,89 @@ import { useCommunityStore } from '@/store/useCommunityStore';
 
 const CommunityHubPage = () => {
     const [activeCategory, setActiveCategory] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortBy, setSortBy] = useState('newest');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    
-    // Use Store
-    const { threads, fetchThreads, isLoading } = useCommunityStore();
 
+    // Use Store
+    const { threads, fetchThreads, isLoading, clearCache, communityStats, fetchCommunityStats, trendingTopics, fetchTrendingTopics, topContributors, fetchTopContributors } = useCommunityStore();
+
+    // Category ID to backend category mapping
+    const CATEGORY_MAP = {
+        family: 'Family Law',
+        criminal: 'Criminal Defense',
+        civil: 'Civil Litigation',
+        property: 'Property Law',
+        corporate: 'Corporate',
+        ip: 'Intellectual Property',
+        others: 'Others',
+    };
+
+    // Debounce search
     React.useEffect(() => {
-        fetchThreads();
-    }, [fetchThreads]);
+        const timer = setTimeout(() => {
+            const params = {};
+
+            // Add search param
+            if (searchTerm) params.searchTerm = searchTerm;
+
+            // Add category param
+            if (activeCategory !== 'all') {
+                params.category = CATEGORY_MAP[activeCategory];
+            }
+
+            // Add sort param
+            switch (sortBy) {
+                case 'newest':
+                    params.sort = '-createdAt';
+                    break;
+                case 'popular':
+                    params.sort = '-upvotesCount';
+                    break;
+                case 'unanswered':
+                    params.repliesCount = 0;
+                    break;
+                default:
+                    params.sort = '-createdAt';
+            }
+
+            // Force fetch to bypass cache when filters change
+            fetchThreads(params, true);
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(timer);
+    }, [fetchThreads, activeCategory, searchTerm, sortBy]);
+
+    // Initial stats and trending topics fetch
+    React.useEffect(() => {
+        fetchCommunityStats();
+        fetchTrendingTopics();
+        fetchTopContributors();
+    }, [fetchCommunityStats, fetchTrendingTopics, fetchTopContributors]);
 
     const handleCategoryChange = (categoryId) => {
         setActiveCategory(categoryId);
-        // Store handles caching/loading
     };
 
     const handleCreateSuccess = (newThread) => {
-        // Option: re-fetch or manual add to store
-        fetchThreads(); 
+        // Clear cache and force fresh fetch
+        clearCache();
+        fetchThreads({}, true);
+        fetchCommunityStats(); // Update stats after new thread
         console.log("Thread created successfully:", newThread);
     };
 
-    // Filter threads based on active category
-    const filteredThreads = activeCategory === 'all'
-        ? threads
-        : threads.filter(t => t.category?.toLowerCase().includes(activeCategory) || t.tags?.some(tag => tag.toLowerCase().includes(activeCategory)));
+    // Map backend stats to UI expected format
+    const displayStats = {
+        discussions: communityStats?.totalThreads || 0,
+        online: communityStats?.activeUsers || 0
+    };
 
     return (
         <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
                 <CommunityHeader
-                    stats={mockData.stats}
+                    stats={displayStats}
                     onAskQuestion={() => setIsCreateModalOpen(true)}
                 />
 
@@ -51,9 +104,13 @@ const CommunityHubPage = () => {
                             categories={mockData.categories}
                             activeCategory={activeCategory}
                             onCategoryChange={handleCategoryChange}
+                            searchTerm={searchTerm}
+                            onSearchChange={setSearchTerm}
+                            sortBy={sortBy}
+                            onSortChange={setSortBy}
                         />
                         <ThreadFeed
-                            threads={filteredThreads}
+                            threads={threads}
                             isLoading={isLoading}
                         />
                     </div>
@@ -62,8 +119,8 @@ const CommunityHubPage = () => {
                     <div className="lg:col-span-4 space-y-6">
                         <div className="sticky top-24 space-y-6">
                             <TrendingSidebar
-                                contributors={mockData.topContributors}
-                                tags={mockData.popularTags}
+                                contributors={topContributors.length > 0 ? topContributors : mockData.topContributors}
+                                tags={trendingTopics.length > 0 ? trendingTopics : mockData.popularTags}
                             />
                         </div>
                     </div>

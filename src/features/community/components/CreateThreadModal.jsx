@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, Loader2 } from 'lucide-react';
+import { useCommunityStore } from '@/store/useCommunityStore';
 
 const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     const [formData, setFormData] = useState({
@@ -11,32 +12,29 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
+    const { createThread } = useCommunityStore();
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
         setIsSubmitting(true);
 
-        // Simulate API call
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const newThread = {
-                ...formData,
+            const payload = {
+                title: formData.title,
+                category: formData.category,
+                content: formData.content,
                 tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-                createdAt: new Date().toISOString(),
-                author: {
-                    name: "Current User", // Mock
-                    role: "User",
-                    avatar: "https://i.pravatar.cc/150?u=me"
-                }
             };
 
-            console.log("New thread created:", newThread);
+            const newThread = await createThread(payload);
+
+            console.log("Thread created successfully:", newThread);
             if (onSuccess) onSuccess(newThread);
             onClose();
         } catch (err) {
             console.error("Failed to create thread:", err);
-            setError("Failed to post question. Please try again.");
+            setError(err.response?.data?.message || "Failed to post question. Please try again.");
         } finally {
             setIsSubmitting(false);
         }

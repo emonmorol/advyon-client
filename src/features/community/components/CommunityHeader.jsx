@@ -26,12 +26,12 @@ const CommunityHeader = ({ stats, onAskQuestion }) => {
                 >
                     <div className="flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-primary" />
-                        <span className="font-medium text-foreground">{stats.totalThreads.toLocaleString()}</span>
+                        <span className="font-medium text-foreground">{(stats?.discussions || 0).toLocaleString()}</span>
                         <span>Discussions</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-accent" />
-                        <span className="font-medium text-foreground">{stats.activeUsers.toLocaleString()}</span>
+                        <span className="font-medium text-foreground">{(stats?.online || 0).toLocaleString()}</span>
                         <span>Online now</span>
                     </div>
                 </motion.div>
