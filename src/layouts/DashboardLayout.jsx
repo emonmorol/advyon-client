@@ -48,11 +48,11 @@ const DashboardLayout = () => {
           onMouseLeave={() => setIsSidebarCollapsed(true)}
         />
 
-        <main className="flex-1 pr-3 pb-3 overflow-y-auto h-[calc(100vh-4rem)] relative z-10">
+        <main className="flex-1 pr-1 pb-3 h-[calc(100vh-4rem)] relative z-10 flex flex-col">
           {/* Background Effects */}
           <div className="absolute inset-0 bg-primary -z-10 fixed"></div>
 
-          <div className="bg-background rounded-2xl shadow-2xl min-h-full p-6 text-gray-800">
+          <div className="bg-background rounded-2xl shadow-2xl flex-1 overflow-y-auto p-6 text-gray-800">
             <Outlet />
           </div>
         </main>
@@ -60,7 +60,7 @@ const DashboardLayout = () => {
         {/* AI Panel - Animated Placeholder (like sidebar) */}
         <motion.div
           initial={{ width: 0, marginLeft: 0 }}
-          animate={{ width: isOpen ? width : 0, marginLeft: isOpen ? 12 : 0 }}
+          animate={{ width: isOpen ? width : 0, marginLeft: isOpen ? 6 : 0 }}
           transition={{
             type: "spring",
             damping: 25,
