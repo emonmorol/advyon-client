@@ -36,7 +36,9 @@ export const useCommunityStore = create((set, get) => ({
     try {
       const queryString = new URLSearchParams(params).toString();
       const url = queryString ? `${BASE}/threads?${queryString}` : `${BASE}/threads`;
+      console.log('[CommunityStore] Fetching threads with URL:', url);
       const { data } = await api.get(url);
+      console.log('[CommunityStore] Received data:', data);
       const threads = data?.data || [];
 
       set({

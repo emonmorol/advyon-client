@@ -11,7 +11,15 @@ import {
 } from "@/components/ui/select";
 import CategoryTabs from './CategoryTabs';
 
-const CommunityFilters = ({ categories, activeCategory, onCategoryChange }) => {
+const CommunityFilters = ({
+    categories,
+    activeCategory,
+    onCategoryChange,
+    searchTerm,
+    onSearchChange,
+    sortBy,
+    onSortChange
+}) => {
     return (
         <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -20,10 +28,12 @@ const CommunityFilters = ({ categories, activeCategory, onCategoryChange }) => {
                     <Input
                         placeholder="Search discussions, topics, or keywords..."
                         className="pl-10 h-11 bg-card border-border/60 focus-visible:ring-primary text-base"
+                        value={searchTerm}
+                        onChange={(e) => onSearchChange(e.target.value)}
                     />
                 </div>
                 <div className="flex gap-3">
-                    <Select defaultValue="newest">
+                    <Select value={sortBy} onValueChange={onSortChange}>
                         <SelectTrigger className="w-[180px] h-11 bg-card border-border/60">
                             <SelectValue placeholder="Sort by" />
                         </SelectTrigger>
