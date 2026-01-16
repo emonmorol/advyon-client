@@ -48,12 +48,13 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'workspace', element: <WorkspacePage /> },
+      { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
       { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'community', element: <CommunityHubPage /> },
-      { path: 'community/ask', element: <AskQuestionPage /> },
+      { path: 'community/ask', element: <CommunityHubPage /> }, // Placeholder
+      { path: 'community/verified', element: <CommunityHubPage /> }, // Placeholder
       { path: 'community/thread/:threadId', element: <ThreadDetailPage /> },
-      { path: 'community/verified', element: <ComingSoonPage /> },
       
       { path: 'legal', element: <LegalSearchPage /> },
       { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },

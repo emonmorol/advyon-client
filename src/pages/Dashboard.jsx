@@ -88,6 +88,12 @@ const Dashboard = () => {
                 Community Hub
               </Button>
             </Link>
+            <Link to="/dashboard/profile/verify">
+              <Button variant="outline" size="sm" className="h-8 shadow-sm hover:bg-accent/10 hover:text-accent border-accent/20">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Verify Profile
+              </Button>
+            </Link>
           </div>
           <p className="text-gray-600 mt-1">
             Welcome back, {profile?.displayName || profile?.fullName || 'Advocate'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
