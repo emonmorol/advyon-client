@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { User, Settings, Shield, BadgeCheck, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Settings, Shield, BadgeCheck, FileText, Loader2 } from 'lucide-react';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
 import ProfileForm from '@/features/profile/components/ProfileForm';
 import PreferencesForm from '@/features/profile/components/PreferencesForm';
-import { mockUserPreferences } from '@/features/profile/data/mockProfileData';
 import { useAuthStore } from '@/store/useAuthStore';
+import { usePreferencesStore } from '@/store/usePreferencesStore';
 import { useUser } from '@clerk/clerk-react';
+import { toast } from 'sonner';
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('general');
   const { user: authUser, fetchProfile, updateProfile, isLoading } = useAuthStore();
-  const [preferences, setPreferences] = useState(mockUserPreferences);
+  const { 
+    preferences, 
+    fetchPreferences, 
+    updatePreferences: updatePrefs, 
+    isLoading: prefsLoading 
+  } = usePreferencesStore();
 
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+    fetchPreferences();
+  }, [fetchProfile, fetchPreferences]);
 
   const handleProfileUpdate = async (data) => {
     try {
@@ -24,9 +33,15 @@ const ProfilePage = () => {
     }
   };
 
-  const handlePreferencesUpdate = (data) => {
-    setPreferences(prev => ({ ...prev, ...data }));
-    console.log("Preferences updated:", data);
+  // Phase 1.1: Updated to persist preferences to backend
+  const handlePreferencesUpdate = async (data) => {
+    try {
+      await updatePrefs(data);
+      toast.success('Preferences saved successfully!');
+    } catch (error) {
+      console.error("Failed to update preferences:", error);
+      toast.error('Failed to save preferences');
+    }
   };
 
   const handleAvatarUpdate = async (url) => {
@@ -107,7 +122,17 @@ const ProfilePage = () => {
 
         {activeTab === 'preferences' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <PreferencesForm preferences={preferences} onSave={handlePreferencesUpdate} />
+            {prefsLoading && !preferences ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <PreferencesForm 
+                preferences={preferences || {}} 
+                onSave={handlePreferencesUpdate} 
+                isLoading={prefsLoading}
+              />
+            )}
           </div>
         )}
 
@@ -174,7 +199,7 @@ const ProfilePage = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => window.location.href = '/verify'}
+                  onClick={() => navigate('/dashboard/profile/verify')}
                   className="px-4 py-2 bg-white border border-blue-200 text-blue-700 font-medium rounded-lg text-sm hover:bg-blue-100 transition-colors"
                 >
                   View Verification
