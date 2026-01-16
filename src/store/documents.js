@@ -44,6 +44,16 @@ export const useDocumentsStore = create((set, get) => ({
     setActiveFolder: (folder) => set({ activeFolder: folder }),
     setSelectedDocument: (doc) => set({ selectedDocument: doc }),
 
+    selectedForAI: [], // Array of document IDs
+    toggleSelectedForAI: (docId) => set((state) => {
+        const current = state.selectedForAI;
+        if (current.includes(docId)) {
+            return { selectedForAI: current.filter(id => id !== docId) };
+        }
+        return { selectedForAI: [...current, docId] };
+    }),
+    clearSelectedForAI: () => set({ selectedForAI: [] }),
+
     // ---------- core actions ----------
     fetchDocuments: async ({ caseId, folder, force = false } = {}) => {
         if (!caseId) return [];

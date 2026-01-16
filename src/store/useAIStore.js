@@ -54,7 +54,9 @@ export const useAIStore = create((set) => ({
       };
       
       // If we have document context, attach it
-      if (context.documentId) {
+      if (context.documentIds && Array.isArray(context.documentIds) && context.documentIds.length > 0) {
+        payload.documentIds = context.documentIds;
+      } else if (context.documentId) {
         payload.documentId = context.documentId;
       }
       
