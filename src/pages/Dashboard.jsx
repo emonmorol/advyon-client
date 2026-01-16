@@ -108,13 +108,13 @@ const Dashboard = () => {
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Active Cases", value: activeCasesCount, sub: "Total active", icon: Briefcase, color: "text-blue-400" },
+          { title: "Active Cases", value: activeCasesCount, sub: "Total active", icon: Briefcase, color: "text-blue-400", link: "/dashboard/workspace" },
           { title: "Upcoming Hearings", value: upcomingHearingsCount, sub: "Next 7 days", icon: Gavel, color: "text-amber-400" },
           { title: "Pending Review", value: pendingReviewCount, sub: "Documents & Evidence", icon: FileText, color: "text-red-400" },
           { title: "Client Messages", value: stats?.clientMessagesCount || "08", sub: "3 new inquiries", icon: MessageSquare, color: "text-emerald-400" } 
-        ].map((stat, index) => (
-          <motion.div key={index} variants={item}>
-            <Card className={cardStyle}>
+        ].map((stat, index) => {
+          const CardComponent = (
+            <Card className={`${cardStyle} ${stat.link ? "hover:border-accent hover:ring-1 hover:ring-accent/50 transition-all" : ""}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
@@ -128,8 +128,20 @@ const Dashboard = () => {
                 </p>
               </CardContent>
             </Card>
-          </motion.div>
-        ))}
+          );
+
+          return (
+            <motion.div key={index} variants={item}>
+              {stat.link ? (
+                <Link to={stat.link} className="block h-full">
+                  {CardComponent}
+                </Link>
+              ) : (
+                CardComponent
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
