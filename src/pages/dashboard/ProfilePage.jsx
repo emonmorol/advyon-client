@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, Settings, Shield, BadgeCheck, FileText, Loader2, Eye, EyeOff } from 'lucide-react';
+import { User, Settings, Shield, Loader2, Eye, EyeOff, Calendar, Mail, MapPin } from 'lucide-react';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
 import ProfileForm from '@/features/profile/components/ProfileForm';
 import PreferencesForm from '@/features/profile/components/PreferencesForm';
@@ -10,7 +9,6 @@ import { useUser } from '@clerk/clerk-react';
 import { toast } from 'sonner';
 
 const ProfilePage = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('general');
   const { user: authUser, fetchProfile, updateProfile, changePassword, isLoading } = useAuthStore();
   const { 
@@ -47,7 +45,6 @@ const ProfilePage = () => {
     }
   };
 
-  // Phase 1.1: Updated to persist preferences to backend
   const handlePreferencesUpdate = async (data) => {
     try {
       await updatePrefs(data);
@@ -98,28 +95,48 @@ const ProfilePage = () => {
   };
 
   if (isLoading && !authUser) {
-    return <div className="flex items-center justify-center min-h-[400px]">Loading profile...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   const { user: clerkUser } = useUser();
 
   // Merge backend data with Clerk data
-  // Backend data takes precedence for business logic fields, but Clerk is source of truth for Identity (Email, initial setup)
+  // Backend data takes precedence, Clerk provides fallbacks for identity fields
   const user = {
     ...authUser,
-    displayName: authUser?.displayName || clerkUser?.fullName || '',
+    displayName: authUser?.displayName || authUser?.fullName || clerkUser?.fullName || '',
+    fullName: authUser?.fullName || clerkUser?.fullName || '',
     email: authUser?.email || clerkUser?.primaryEmailAddress?.emailAddress || '',
     avatarUrl: authUser?.avatarUrl || clerkUser?.imageUrl || '',
-    // Additional Clerk fallbacks if useful
-    phone: authUser?.phone || (clerkUser?.phoneNumbers?.[0]?.phoneNumber) || '', 
-  } || {};
+    phone: authUser?.phone || '',
+    address: authUser?.address || '',
+    bio: authUser?.bio || '',
+    timezone: authUser?.timezone || '',
+    preferredLanguage: authUser?.preferredLanguage || 'en',
+    role: authUser?.role || 'client',
+    status: authUser?.status || 'active',
+    createdAt: authUser?.createdAt,
+  };
 
   const tabs = [
     { id: 'general', label: 'General', icon: User },
     { id: 'preferences', label: 'Preferences', icon: Settings },
     { id: 'security', label: 'Security', icon: Shield },
-    ...(user.role === 'Lawyer' ? [{ id: 'verification', label: 'Verification', icon: BadgeCheck }] : []),
   ];
+
+  // Format member since date
+  const formatMemberSince = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
@@ -130,6 +147,37 @@ const ProfilePage = () => {
         onEdit={() => setActiveTab('general')} 
         onAvatarUpdate={handleAvatarUpdate}
       />
+
+      {/* Quick Info Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-card rounded-xl p-4 border border-border/50 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Mail className="w-5 h-5 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">Email</p>
+            <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border/50 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-teal-accent/10 flex items-center justify-center">
+            <Calendar className="w-5 h-5 text-teal-accent" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Member Since</p>
+            <p className="text-sm font-medium text-foreground">{formatMemberSince(user.createdAt)}</p>
+          </div>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border/50 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+            <MapPin className="w-5 h-5 text-amber-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">Location</p>
+            <p className="text-sm font-medium text-foreground truncate">{user.address || 'Not set'}</p>
+          </div>
+        </div>
+      </div>
 
       {/* Tabs Navigation */}
       <div className="border-b border-border/60 overflow-x-auto custom-scrollbar">
@@ -284,63 +332,6 @@ const ProfilePage = () => {
                 </button>
               </form>
             </div>
-          </div>
-        )}
-
-        {activeTab === 'verification' && user.role === 'Lawyer' && (
-          <div className="bg-card rounded-xl p-6 shadow-sm border border-border/50 animate-in fade-in slide-in-from-bottom-2 duration-300">
-             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-foreground">Professional Verification</h3>
-                <span className={`px-2 py-1 rounded-md text-xs font-medium border ${user.isVerified ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-                  {user.isVerified ? 'Verified' : 'Pending Verification'}
-                </span>
-             </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-muted-foreground">Bar Registration Number</label>
-                  <p className="p-3 bg-muted/30 rounded-lg border border-border text-foreground font-mono">{user.barNumber}</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-muted-foreground">Bar Council</label>
-                  <p className="p-3 bg-muted/30 rounded-lg border border-border text-foreground">{user.barCouncil}</p>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-muted-foreground">Years of Experience</label>
-                  <p className="p-3 bg-muted/30 rounded-lg border border-border text-foreground">{user.experience} Years</p>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-muted-foreground">Practice Areas</label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {user.practiceAreas.map(area => (
-                      <span key={area} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded border border-primary/20">
-                        {area}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-             </div>
-             
-             <div className="mt-8 flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-lg text-blue-700">
-                <div className="flex gap-3">
-                  <FileText className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium">Verification Documents</p>
-                    <p className="opacity-90 mt-1">
-                      Manage your professional credentials and verification status.
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => navigate('/dashboard/profile/verify')}
-                  className="px-4 py-2 bg-white border border-blue-200 text-blue-700 font-medium rounded-lg text-sm hover:bg-blue-100 transition-colors"
-                >
-                  View Verification
-                </button>
-             </div>
           </div>
         )}
       </div>
