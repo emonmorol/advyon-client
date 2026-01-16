@@ -106,6 +106,7 @@ const ThreadDetailPage = () => {
 
          {/* AI Summary - only show if solved or has replies */}
          {(thread.isSolved || replies.length > 0) && (
+            // Implement this mock summary, and create a corresponding api with ai to create summary of thread
             <AISummary summary={`This thread discusses "${thread.title}" in the ${thread.category} category.`} />
          )}
 
