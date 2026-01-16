@@ -218,4 +218,16 @@ export const useCommunityStore = create((set, get) => ({
       console.error('Failed to fetch community stats:', error);
     }
   },
+
+  // Trending Topics
+  trendingTopics: [],
+  fetchTrendingTopics: async (limit = 10) => {
+    try {
+      const { data } = await api.get(`${BASE}/trending-topics?limit=${limit}`);
+      const topics = data?.data || [];
+      set({ trendingTopics: topics });
+    } catch (error) {
+      console.error('Failed to fetch trending topics:', error);
+    }
+  },
 }));
