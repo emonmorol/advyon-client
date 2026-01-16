@@ -24,6 +24,24 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useCasesStore } from "../store/cases";
 import { useDashboardStore } from "../store/useDashboardStore";
 import { useMessageStore } from "../store/useMessageStore";
+import { useActivityStore } from "../store/useActivityStore";
+
+// Helper function to format relative time
+const formatRelativeTime = (date) => {
+  if (!date) return 'Unknown';
+  const now = new Date();
+  const activityDate = new Date(date);
+  const diffMs = now - activityDate;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return activityDate.toLocaleDateString();
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -37,6 +55,11 @@ const Dashboard = () => {
     fetchPendingCount,
     isLoading: messagesLoading 
   } = useMessageStore();
+  const {
+    activities: recentActivities,
+    fetchRecentActivities,
+    isLoading: activitiesLoading
+  } = useActivityStore();
 
   React.useEffect(() => {
     fetchProfile();
@@ -45,7 +68,9 @@ const Dashboard = () => {
     // Phase 1.2: Fetch real messages
     fetchMessages({ status: 'unread', limit: 5 });
     fetchPendingCount();
-  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount]);
+    // Phase 1.3: Fetch real activities
+    fetchRecentActivities(5);
+  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount, fetchRecentActivities]);
 
   const profile = user;
 
@@ -329,23 +354,33 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Recent Activity (Static - No API yet) */}
+          {/* Recent Activity - Phase 1.3: Now connected to API */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-background-foreground">Activity Feed</h3>
             <div className="space-y-4 rounded-xl bg-primary/10 p-4">
-              {[
-                { text: "System updated auto-backups", time: "Just now", icon: SettingsIcon },
-                { text: "Adv. Michael closed Case #892", time: "2h ago", icon: Briefcase },
-                { text: "New billing cycle started", time: "1d ago", icon: TrendingUp },
-              ].map((act, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-teal-accent" />
-                  <div>
-                    <p className="text-xs text-background-foreground">{act.text}</p>
-                    <p className="text-[10px] text-background-foreground">{act.time}</p>
-                  </div>
+              {activitiesLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-              ))}
+              ) : recentActivities.length > 0 ? (
+                recentActivities.slice(0, 5).map((act, i) => (
+                  <div key={act._id || i} className="flex gap-3">
+                    <div className="mt-1 h-2 w-2 rounded-full bg-teal-accent" />
+                    <div>
+                      <p className="text-xs text-background-foreground">
+                        {act.action || act.description || 'Activity logged'}
+                      </p>
+                      <p className="text-[10px] text-background-foreground">
+                        {formatRelativeTime(act.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  No recent activity
+                </div>
+              )}
             </div>
           </div>
 
