@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Settings, Shield, BadgeCheck, FileText } from 'lucide-react';
 import ProfileHeader from '@/features/profile/components/ProfileHeader';
 import ProfileForm from '@/features/profile/components/ProfileForm';
@@ -8,6 +9,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useUser } from '@clerk/clerk-react';
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('general');
   const { user: authUser, fetchProfile, updateProfile, isLoading } = useAuthStore();
   const [preferences, setPreferences] = useState(mockUserPreferences);
@@ -174,7 +176,7 @@ const ProfilePage = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => window.location.href = '/verify'}
+                  onClick={() => navigate('/dashboard/profile/verify')}
                   className="px-4 py-2 bg-white border border-blue-200 text-blue-700 font-medium rounded-lg text-sm hover:bg-blue-100 transition-colors"
                 >
                   View Verification

@@ -204,7 +204,11 @@ const Dashboard = () => {
 
             <div className="space-y-3">
               {allCases.slice(0, 5).map((c, i) => (
-                <Card key={c._id || c.id || i} className={`${cardStyle} group cursor-pointer border-l-4 border-l-transparent hover:border-l-accent`}>
+                <Card 
+                  key={c._id || c.id || i} 
+                  className={`${cardStyle} group cursor-pointer border-l-4 border-l-transparent hover:border-l-accent`}
+                  onClick={() => navigate(`/dashboard/workspace/${c._id || c.id}`)}
+                >
                   <CardContent className="flex items-center justify-between p-4 px-6">
                     <div className="flex items-center gap-4">
                       <div className="rounded-full bg-primary p-2 text-muted-foreground group-hover:text-primary-foreground">
