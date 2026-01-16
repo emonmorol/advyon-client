@@ -9,7 +9,7 @@ import { useCommunityStore } from '@/store/useCommunityStore';
 
 const ThreadDetailPage = () => {
    const { threadId } = useParams();
-   const { currentThread, isLoading, error, fetchThreadById, addReply } = useCommunityStore();
+   const { currentThread, isLoading, error, fetchThreadById, addReply, voteReply } = useCommunityStore();
 
    useEffect(() => {
       if (threadId) {
@@ -41,7 +41,7 @@ const ThreadDetailPage = () => {
          <div className="max-w-4xl mx-auto px-4 py-16 text-center">
             <p className="text-destructive mb-4">{error || 'Thread not found'}</p>
             <Link
-               to="/community"
+               to="/dashboard/community"
                className="text-primary hover:underline inline-flex items-center gap-2"
             >
                <ArrowLeft size={16} />
@@ -60,7 +60,7 @@ const ThreadDetailPage = () => {
       content: thread.content,
       author: {
          name: thread.author?.fullName || 'Anonymous',
-         avatar: thread.author?.avatar || '',
+         avatar: thread.author?.avatarUrl || '',
          role: thread.author?.role || 'Community Member',
       },
       createdAt: new Date(thread.createdAt),
@@ -72,18 +72,20 @@ const ThreadDetailPage = () => {
       acceptedAnswerId: replies.find(r => r.isAcceptedAnswer)?._id,
    };
 
-   // Transform replies to match ReplyCard expectations
+   // Transform replies to match ReplyCard expectations - include _id for voting
    const formattedReplies = replies.map(reply => ({
+      _id: reply._id, // Include for voting
       id: reply._id,
       content: reply.content,
       author: {
          name: reply.author?.fullName || 'Anonymous',
-         avatar: reply.author?.avatar || '',
+         avatar: reply.author?.avatarUrl || '',
          role: reply.author?.role || 'Community Member',
          isLawyer: reply.author?.role === 'lawyer',
       },
       createdAt: new Date(reply.createdAt),
       upvotes: reply.upvotes?.length || 0,
+      downvotes: reply.downvotes?.length || 0,
       isAccepted: reply.isAcceptedAnswer,
    }));
 
@@ -91,7 +93,7 @@ const ThreadDetailPage = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
          {/* Back link */}
          <Link
-            to="/community"
+            to="/dashboard/community"
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 mb-6 transition-colors"
          >
             <ArrowLeft size={16} />
@@ -123,6 +125,8 @@ const ThreadDetailPage = () => {
                         key={reply.id}
                         reply={reply}
                         isAccepted={reply.isAccepted}
+                        onUpvote={() => voteReply(reply._id, 'up')}
+                        onDownvote={() => voteReply(reply._id, 'down')}
                      />
                   ))}
                </div>

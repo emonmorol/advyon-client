@@ -153,6 +153,55 @@ export const useCommunityStore = create((set, get) => ({
     }
   },
 
+  // Vote on a reply (upvote or downvote)
+  voteReply: async (replyId, direction = 'up') => {
+    const prevThread = get().currentThread;
+
+    // Optimistic update
+    set((state) => {
+      if (!state.currentThread?.replies) return state;
+      return {
+        currentThread: {
+          ...state.currentThread,
+          replies: state.currentThread.replies.map((r) => {
+            if (r._id !== replyId) return r;
+            if (direction === 'up') {
+              return { ...r, upvotes: [...(r.upvotes || []), 'optimistic'] };
+            } else {
+              return { ...r, downvotes: [...(r.downvotes || []), 'optimistic'] };
+            }
+          }),
+        },
+      };
+    });
+
+    try {
+      const { data } = await api.patch(`${BASE}/replies/${replyId}/vote`, { direction });
+      const updatedReply = data?.data || data;
+
+      // Update with real data
+      set((state) => {
+        if (!state.currentThread?.replies) return state;
+        return {
+          currentThread: {
+            ...state.currentThread,
+            replies: state.currentThread.replies.map((r) =>
+              r._id === replyId
+                ? { ...r, upvotes: updatedReply.upvotes, downvotes: updatedReply.downvotes }
+                : r
+            ),
+          },
+        };
+      });
+
+      return updatedReply;
+    } catch (error) {
+      // Rollback on error
+      set({ currentThread: prevThread, error: 'Failed to vote' });
+      throw error;
+    }
+  },
+
   // Clear cache to force refresh
   clearCache: () => set({ lastFetched: null, threads: [] }),
 }));
