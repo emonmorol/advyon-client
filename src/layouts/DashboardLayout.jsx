@@ -13,6 +13,8 @@ const DashboardLayout = () => {
   const { syncUser } = useAuthApi();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true)
   const { isOpen, closeAI, width, setAIWidth } = useAIAssistant()
+  const [isSyncing, setIsSyncing] = useState(true);
+  const [syncError, setSyncError] = useState(null);
 
   const navigate = useNavigate();
 
@@ -22,19 +24,41 @@ const DashboardLayout = () => {
       if (isSignedIn) {
         try {
           const res = await syncUser();
-          if (res?.data?.needsOnboarding) {
+          if (res?.needsOnboarding || res?.data?.needsOnboarding) {
             navigate('/onboarding');
+            return; // Don't stop syncing state if redirecting, or maybe irrelevant as component unmounts
           }
         } catch (error) {
           console.error("Sync failed:", error);
+          setSyncError("Authentication synchronization failed.");
+        } finally {
+          setIsSyncing(false);
         }
+      } else {
+        setIsSyncing(false);
       }
     };
     
-    sync();
-  }, [isSignedIn, syncUser, navigate]);
+    if (isLoaded) {
+       sync();
+    }
+  }, [isSignedIn, isLoaded, syncUser, navigate]);
 
-  if (!isLoaded) {
+  if (syncError) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center bg-[#1C4645] text-white gap-4">
+        <p className="text-xl">{syncError}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-teal-500 rounded hover:bg-teal-600 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!isLoaded || (isSignedIn && isSyncing)) {
     return <div className="flex h-screen items-center justify-center bg-[#1C4645] text-white">Loading Advyon...</div>;
   }
 

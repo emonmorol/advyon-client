@@ -301,36 +301,72 @@ export default function OnboardingFlow() {
                                             <p className="text-slate-500">Are you practicing law?</p>
                                         </div>
 
-                                        <div
-                                            onClick={() => setRole(isLawyer ? null : 'lawyer')}
-                                            className={`
-                        flex items-center justify-between p-5 rounded-xl border-2 cursor-pointer transition-all duration-300
-                        ${isLawyer
-                                                    ? 'border-[#3A7573] bg-teal-50 shadow-md'
-                                                    : 'border-slate-200 hover:border-[#3A7573]/50 hover:bg-slate-50'
-                                                }
-                      `}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div
-                                                    className={`
-                            w-10 h-10 rounded-full flex items-center justify-center transition-colors
-                            ${isLawyer
-                                                            ? 'bg-[#3A7573] text-white'
-                                                            : 'bg-slate-200 text-slate-500'
-                                                        }
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {/* Option 1: Client/User */}
+                                            <div
+                                                onClick={() => setRole('client')}
+                                                className={`
+                            flex items-center justify-between p-5 rounded-xl border-2 cursor-pointer transition-all duration-300
+                            ${!isLawyer
+                                                        ? 'border-[#3A7573] bg-teal-50 shadow-md ring-1 ring-[#3A7573]'
+                                                        : 'border-slate-200 hover:border-[#3A7573]/50 hover:bg-slate-50'
+                                                    }
                           `}
-                                                >
-                                                    <Scale size={20} />
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div
+                                                        className={`
+                                w-10 h-10 rounded-full flex items-center justify-center transition-colors
+                                ${!isLawyer
+                                                                ? 'bg-[#3A7573] text-white'
+                                                                : 'bg-slate-200 text-slate-500'
+                                                            }
+                              `}
+                                                    >
+                                                        <User size={20} />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="font-bold text-slate-800">I need Legal Help</p>
+                                                        <p className="text-xs text-slate-500">I want to find lawyers & manage cases</p>
+                                                    </div>
                                                 </div>
-                                                <div className="text-left">
-                                                    <p className="font-bold text-slate-800">Yes, I am a Lawyer</p>
-                                                    <p className="text-xs text-slate-500">I have a Bar Council ID</p>
-                                                </div>
+                                                {!isLawyer && (
+                                                    <CheckCircle2 size={24} className="text-[#3A7573]" />
+                                                )}
                                             </div>
-                                            {isLawyer && (
-                                                <CheckCircle2 size={24} className="text-[#3A7573]" />
-                                            )}
+
+                                            {/* Option 2: Lawyer */}
+                                            <div
+                                                onClick={() => setRole('lawyer')}
+                                                className={`
+                            flex items-center justify-between p-5 rounded-xl border-2 cursor-pointer transition-all duration-300
+                            ${isLawyer
+                                                        ? 'border-[#3A7573] bg-teal-50 shadow-md ring-1 ring-[#3A7573]'
+                                                        : 'border-slate-200 hover:border-[#3A7573]/50 hover:bg-slate-50'
+                                                    }
+                          `}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div
+                                                        className={`
+                                w-10 h-10 rounded-full flex items-center justify-center transition-colors
+                                ${isLawyer
+                                                                ? 'bg-[#3A7573] text-white'
+                                                                : 'bg-slate-200 text-slate-500'
+                                                            }
+                              `}
+                                                    >
+                                                        <Scale size={20} />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="font-bold text-slate-800">I am a Lawyer</p>
+                                                        <p className="text-xs text-slate-500">I want to manage clients & practice</p>
+                                                    </div>
+                                                </div>
+                                                {isLawyer && (
+                                                    <CheckCircle2 size={24} className="text-[#3A7573]" />
+                                                )}
+                                            </div>
                                         </div>
                                     </motion.div>
                                 )}

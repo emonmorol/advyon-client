@@ -86,6 +86,9 @@ const Dashboard = () => {
   const profile = user;
 
   // --- Computed Stats ---
+  const isClient = user?.role === 'client';
+
+  // --- Computed Stats ---
   const activeCasesCount = allCases.filter(c => c.status === 'active').length;
 
   // Upcoming Hearings (Next 7 days)
@@ -100,6 +103,38 @@ const Dashboard = () => {
 
   // Pending Review (arbitrary logic: status 'review' or 'pending')
   const pendingReviewCount = allCases.filter(c => ['review', 'pending'].includes(c.status?.toLowerCase())).length;
+
+  const lawyerStats = [
+    { title: "Active Cases", value: activeCasesCount, sub: "Total active", icon: Briefcase, color: "text-blue-400", link: "/dashboard/workspace" },
+    { title: "Upcoming Hearings", value: upcomingHearingsCount, sub: "Next 7 days", icon: Gavel, color: "text-amber-400" },
+    { title: "Pending Review", value: pendingReviewCount, sub: "Documents & Evidence", icon: FileText, color: "text-red-400" },
+    { title: "Client Messages", value: pendingCount || 0, sub: `${pendingCount > 0 ? pendingCount : 'No'} new inquiries`, icon: MessageSquare, color: "text-emerald-400" } 
+  ];
+
+  const clientStats = [
+    { title: "My Active Cases", value: activeCasesCount, sub: "Ongoing legal matters", icon: Briefcase, color: "text-blue-400", link: "/dashboard/workspace" },
+    { title: "Next Hearing", value: upcomingHearingsCount, sub: "Upcoming in 7 days", icon: Gavel, color: "text-amber-400" },
+    { title: "Actions Needed", value: pendingReviewCount, sub: "Documents to sign/review", icon: FileText, color: "text-red-400" },
+    { title: "Messages", value: pendingCount || 0, sub: "Unread messages", icon: MessageSquare, color: "text-emerald-400" }
+  ];
+
+  const statsToDisplay = isClient ? clientStats : lawyerStats;
+
+  const lawyerActions = [
+    { label: "Add Client", icon: UserPlus, color: "bg-blue-500/10 text-blue-400", action: () => navigate('/dashboard/clients') }, // Redirect to clients
+    { label: "Upload File", icon: Upload, color: "bg-purple-500/10 text-purple-400", action: () => navigate('/dashboard/documents') },
+    { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400", action: () => {} },
+    { label: "AI Analysis", icon: Sparkles, color: "bg-emerald-500/10 text-emerald-400", action: () => navigate('/dashboard/ai-assistant') },
+  ];
+
+  const clientActions = [
+    { label: "Contact Lawyer", icon: MessageSquare, color: "bg-blue-500/10 text-blue-400", action: () => navigate('/dashboard/messages') },
+    { label: "Upload Document", icon: Upload, color: "bg-purple-500/10 text-purple-400", action: () => navigate('/dashboard/documents') },
+    { label: "My Cases", icon: Briefcase, color: "bg-amber-500/10 text-amber-400", action: () => navigate('/dashboard/workspace') },
+    { label: "Help Center", icon: Users, color: "bg-emerald-500/10 text-emerald-400", action: () => navigate('/dashboard/community') },
+  ];
+
+  const actionsToDisplay = isClient ? clientActions : lawyerActions;
 
   const container = {
     hidden: { opacity: 0 },
@@ -136,37 +171,36 @@ const Dashboard = () => {
                 Community Hub
               </Button>
             </Link>
-            <Link to="/dashboard/profile/verify">
-              <Button variant="outline" size="sm" className="h-8 shadow-sm hover:bg-accent/10 hover:text-accent border-accent/20">
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                Verify Profile
-              </Button>
-            </Link>
+            {!isClient && (
+              <Link to="/dashboard/profile/verify">
+                <Button variant="outline" size="sm" className="h-8 shadow-sm hover:bg-accent/10 hover:text-accent border-accent/20">
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Verify Profile
+                </Button>
+              </Link>
+            )}
           </div>
           <p className="text-gray-600 mt-1">
-            Welcome back, {profile?.displayName || profile?.fullName || 'Advocate'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
+            Welcome back, {profile?.displayName || profile?.fullName || 'User'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button
-            size="lg"
-            onClick={() => navigate('/dashboard/cases/new')}
-            className="bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            New Case
-          </Button>
-        </div>
+        {!isClient && (
+          <div className="flex gap-3">
+            <Button
+              size="lg"
+              onClick={() => navigate('/dashboard/cases/new')}
+              className="bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              New Case
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          { title: "Active Cases", value: activeCasesCount, sub: "Total active", icon: Briefcase, color: "text-blue-400", link: "/dashboard/workspace" },
-          { title: "Upcoming Hearings", value: upcomingHearingsCount, sub: "Next 7 days", icon: Gavel, color: "text-amber-400" },
-          { title: "Pending Review", value: pendingReviewCount, sub: "Documents & Evidence", icon: FileText, color: "text-red-400" },
-          { title: "Client Messages", value: pendingCount || 0, sub: `${pendingCount > 0 ? pendingCount : 'No'} new inquiries`, icon: MessageSquare, color: "text-emerald-400" } 
-        ].map((stat, index) => {
+        {statsToDisplay.map((stat, index) => {
           const CardComponent = (
             <Card className={`${cardStyle} ${stat.link ? "hover:border-accent hover:ring-1 hover:ring-accent/50 transition-all" : ""}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -204,13 +238,12 @@ const Dashboard = () => {
 
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { label: "Add Client", icon: UserPlus, color: "bg-blue-500/10 text-blue-400" },
-              { label: "Upload File", icon: Upload, color: "bg-purple-500/10 text-purple-400" },
-              { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400" },
-              { label: "AI Analysis", icon: Sparkles, color: "bg-emerald-500/10 text-emerald-400" },
-            ].map((action, i) => (
-              <button key={i} className={`flex flex-col items-center justify-center gap-3 rounded-xl ${cardStyle} p-6 transition-transform hover:-translate-y-1`}>
+            {actionsToDisplay.map((action, i) => (
+              <button 
+                key={i} 
+                className={`flex flex-col items-center justify-center gap-3 rounded-xl ${cardStyle} p-6 transition-transform hover:-translate-y-1`}
+                onClick={action.action}
+              >
                 <div className={`rounded-full p-3 ${action.color}`}>
                   <action.icon className="h-6 w-6" />
                 </div>

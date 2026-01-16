@@ -63,13 +63,10 @@ const ProfileHeader = ({ user, onEdit, onAvatarUpdate }) => {
         </div>
 
         <div className="mt-4 sm:mt-0 mb-4 sm:mb-2 self-center sm:self-center">
-          <button
+          <Edit2 
+            className="w-5 h-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
             onClick={onEdit}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-medium text-foreground hover:bg-gray-50 hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-sm"
-          >
-            <Edit2 className="w-4 h-4" />
-            Edit Profile
-          </button>
+          />
         </div>
       </div>
     </div>

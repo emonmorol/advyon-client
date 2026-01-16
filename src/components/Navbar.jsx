@@ -45,7 +45,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { sidebarItems } from "@/components/Sidebar"
+import { allSidebarItems } from "@/components/Sidebar"
 
 const caseManagement = [
   { title: "Active Cases", href: "/dashboard/workspace", description: "View and manage ongoing legal matters and deadlines." },
@@ -213,7 +213,7 @@ export function Navbar() {
                 {isDashboard && (
                   <div className="flex flex-col gap-2">
                     <h3 className="text-sm font-medium text-muted-foreground px-2">Dashboard</h3>
-                    {sidebarItems.map((item) => (
+                    {allSidebarItems.map((item) => (
                       <Link
                         key={item.href}
                         to={item.href}
