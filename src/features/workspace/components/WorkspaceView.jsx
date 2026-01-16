@@ -1,46 +1,134 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-    ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft
+    ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft,
+    CheckSquare, Square
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import DocumentItem from './DocumentItem';
 import TimerWidget from './TimerWidget';
-import { ALL_CASES } from '../mockData';
 import { useDocumentsStore } from '@/store/documents';
-
-// Define standard folders
-const FOLDERS = ['Evidence', 'Witness Statements', 'Pleadings', 'Correspondence', 'Court Orders', 'Research'];
+import { useCasesStore } from '@/store/cases';
+import { SmartFileUploader } from '@/components/SmartFileUploader';
+import { useNavigate } from 'react-router-dom';
 
 const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
+    const navigate = useNavigate();
     const [showLeftSidebar, setShowLeftSidebar] = useState(true);
     const [isCaseSwitcherOpen, setIsCaseSwitcherOpen] = useState(false);
-    const [breadcrumbs, setBreadcrumbs] = useState([activeCase.title, 'Evidence']);
+    const [breadcrumbs, setBreadcrumbs] = useState([activeCase.title]);
     const [expandedFolders, setExpandedFolders] = useState([]);
-    const [selectedFile, setSelectedFile] = useState(null);
 
     // Store Integration
-    const { fetchDocuments, getDocuments, isLoading } = useDocumentsStore();
-    const currentFolder = breadcrumbs[breadcrumbs.length - 1];
+    const { 
+        fetchDocuments, 
+        getDocuments, 
+        isLoading, 
+        selectedDocument, 
+        setSelectedDocument,
+        selectedForAI,
+        toggleSelectedForAI
+    } = useDocumentsStore();
 
-    // Fetch documents when case or folder changes
+    // Fetch ALL documents for the case on mount or case change
     React.useEffect(() => {
-        if (activeCase?.id && currentFolder) {
-            fetchDocuments({ caseId: activeCase.id, folder: currentFolder });
+        if (activeCase?.id) {
+            // Fetching with no folder param gets all documents for the case
+            fetchDocuments({ caseId: activeCase.id, force: true });
         }
-    }, [activeCase, currentFolder, fetchDocuments]);
+        return () => setSelectedDocument(null);
+    }, [activeCase?.id, fetchDocuments, setSelectedDocument]);
 
-    const rawFiles = getDocuments(activeCase.id, currentFolder);
-    const currentFiles = Array.isArray(rawFiles) ? rawFiles : [];
-    const loading = isLoading(activeCase.id, currentFolder);
+    // Get all documents for the current case
+    const allCaseDocs = getDocuments(activeCase.id) || [];
+
+    // Derive dynamic folders from documents
+    const folderStats = useMemo(() => {
+        const stats = {};
+        allCaseDocs.forEach(doc => {
+            // Ensure folderName is a string and fallback to 'General' if missing
+            const folder = doc.folderName || 'General';
+            if (!stats[folder]) {
+                stats[folder] = [];
+            }
+            stats[folder].push(doc);
+        });
+        return stats;
+    }, [allCaseDocs]);
+
+    const dynamicFolders = useMemo(() => Object.keys(folderStats).sort(), [folderStats]);
+
+    // Determine current folder:
+    // If we have clicked a folder, it's in the breadcrumbs.
+    // If not, default to the first available folder or 'General' if distinct folders exist.
+    const derivedCurrentFolder = useMemo(() => {
+        const lastCrumb = breadcrumbs[breadcrumbs.length - 1];
+        // If the last breadcrumb is the case title, it means no folder is selected yet.
+        if (lastCrumb === activeCase.title) {
+            return dynamicFolders.length > 0 ? dynamicFolders[0] : 'General';
+        }
+        // Otherwise, the last breadcrumb IS the folder name.
+        return lastCrumb;
+    }, [breadcrumbs, activeCase.title, dynamicFolders]);
+    
+    // Ensure the current folder actually exists in our derived list, otherwise fallback safely
+    const currentFolder = dynamicFolders.includes(derivedCurrentFolder) ? derivedCurrentFolder : (dynamicFolders[0] || 'General');
+
+    // Filter files for the main view
+    const currentFiles = folderStats[currentFolder] || [];
+    
+    // Check loading state for the root fetch
+    const loading = isLoading(activeCase.id); 
 
     // Filter files based on search term
     const filteredFiles = currentFiles.filter(f =>
         f.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Fetch Content for selected document
+    const { fetchDocumentContent } = useDocumentsStore();
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const [loadingPreview, setLoadingPreview] = useState(false);
+
+    React.useEffect(() => {
+        let active = true;
+        const loadPreview = async () => {
+             const docId = selectedDocument?.id || selectedDocument?._id;
+            if (!docId || !activeCase?.id) {
+                setPreviewUrl(null);
+                return;
+            }
+            
+            setLoadingPreview(true);
+            try {
+                // Check if we already have a direct URL in the document object
+                if (selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url) {
+                    setPreviewUrl(selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url);
+                } else {
+                    const url = await fetchDocumentContent(docId);
+                    if (active) {
+                        setPreviewUrl(url);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load preview url", err);
+            } finally {
+                if (active) setLoadingPreview(false);
+            }
+        };
+
+        if (selectedDocument) {
+            loadPreview();
+        } else {
+             setPreviewUrl(null);
+        }
+        
+        return () => { active = false; };
+    }, [selectedDocument, activeCase, fetchDocumentContent]);
+
+
     const handleFolderClick = (folder) => {
         setBreadcrumbs([activeCase.title, folder]);
-        setSelectedFile(null);
+        setSelectedDocument(null);
         setExpandedFolders(prev =>
             prev.includes(folder)
                 ? prev.filter(f => f !== folder)
@@ -53,7 +141,8 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         if (!expandedFolders.includes(folder)) {
             setExpandedFolders(prev => [...prev, folder]);
         }
-        setSelectedFile(file);
+        navigate(`/dashboard/workspace/doc/${file.id || file._id}`);
+        setSelectedDocument(file);
     };
 
     return (
@@ -85,7 +174,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                         <p className="text-[10px] text-muted-foreground font-bold uppercase">Switch Case</p>
                                     </div>
                                     <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                                        {ALL_CASES.filter(c => c.id !== activeCase.id).map(c => (
+                                        {useCasesStore.getState().cases.filter(c => c.id !== activeCase.id).map(c => (
                                             <button
                                                 key={c.id}
                                                 onClick={() => { onSwitchCase(c); setIsCaseSwitcherOpen(false); }}
@@ -118,11 +207,14 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                         {/* Folder Navigation Tree */}
                         <div className="mt-4 space-y-0.5">
                             <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">Folders</div>
-                            {FOLDERS.map((folder) => {
+                            {dynamicFolders.length === 0 && !loading && (
+                                <div className="text-xs text-muted-foreground px-2 italic">No folders yet</div>
+                            )}
+                            
+                            {dynamicFolders.map((folder) => {
                                 const isExpanded = expandedFolders.includes(folder);
                                 const isCurrent = currentFolder === folder;
-                                // We can fetch counts or just show what's loaded. For now, showing length of loaded items.
-                                const files = getDocuments(activeCase.id, folder);
+                                const files = folderStats[folder] || [];
 
                                 return (
                                     <div key={folder} className="mb-0.5">
@@ -145,19 +237,33 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                         {isExpanded && (
                                             <div className="ml-5 mt-0.5 space-y-0.5 border-l border-border pl-2">
                                                 {files.map((file, idx) => (
-                                                    <button
-                                                        key={idx}
-                                                        onClick={(e) => { e.stopPropagation(); handleFileClick(folder, file); }}
-                                                        className={cn(
-                                                            "w-full text-left px-2 py-0.5 text-[11px] rounded-md transition-colors truncate flex items-center gap-2",
-                                                            selectedFile?.name === file.name
-                                                                ? "bg-accent text-primary font-medium"
-                                                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                                                        )}
-                                                    >
-                                                        <span className={cn("w-1 h-1 rounded-full flex-shrink-0", selectedFile?.name === file.name ? "bg-primary" : "bg-muted-foreground")}></span>
-                                                        {file.name}
-                                                    </button>
+                                                    <div key={idx} className="flex items-center gap-0.5 group/item w-full">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); toggleSelectedForAI(file.id || file._id); }}
+                                                            className={cn(
+                                                                "p-0.5 shrink-0 rounded hover:bg-muted transition-colors",
+                                                                selectedForAI.includes(file.id || file._id) ? "text-primary opacity-100" : "text-muted-foreground opacity-0 group-hover/item:opacity-100"
+                                                            )}
+                                                            title="Select for AI Context"
+                                                        >
+                                                            {selectedForAI.includes(file.id || file._id) ? 
+                                                                <CheckSquare size={11} fill="currentColor" className="text-primary-foreground" /> : 
+                                                                <Square size={11} />
+                                                            }
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleFileClick(folder, file); }}
+                                                            className={cn(
+                                                                "flex-1 text-left px-2 py-0.5 text-[11px] rounded-md transition-colors truncate flex items-center gap-2",
+                                                                selectedDocument?.id === file.id
+                                                                    ? "bg-accent text-primary font-medium"
+                                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                                            )}
+                                                        >
+                                                            <span className={cn("w-1 h-1 rounded-full flex-shrink-0", selectedDocument?.id === file.id ? "bg-primary" : "bg-muted-foreground")}></span>
+                                                            {file.name}
+                                                        </button>
+                                                    </div>
                                                 ))}
                                                 {files.length === 0 && (
                                                     <div className="px-2 py-0.5 text-[9px] text-muted-foreground/50 italic">No files</div>
@@ -198,23 +304,65 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                    <div className="border-2 border-dashed border-teal-accent/30 rounded-xl p-6 mb-4 flex flex-col items-center justify-center text-muted-foreground hover:border-accent/50 hover:bg-secondary/50 transition-all cursor-pointer group">
-                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mb-2 group-hover:scale-110 transition-transform"><Plus size={20} className="text-teal-accent group-hover:text-accent" /></div>
-                        <p className="text-sm font-medium">Drop new {currentFolder} here</p>
-                    </div>
+                    <SmartFileUploader
+                        caseId={activeCase.id}
+                        folderName={currentFolder}
+                        className="mb-4 border-2 border-dashed border-teal-accent/30 bg-transparent hover:border-accent/50 hover:bg-secondary/50 transition-all"
+                        onUploadComplete={React.useCallback(() => {
+                            // Re-fetch all documents to update folders and lists
+                            fetchDocuments({ caseId: activeCase.id, force: true });
+                        }, [activeCase.id, fetchDocuments])}
+                    />
 
                     <div className="space-y-1">
-                        {selectedFile ? (
+                        {selectedDocument ? (
                             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                                        <DocumentItem name={selectedFile.name} type={selectedFile.type} date={selectedFile.date} status={selectedFile.status} compact />
+                                        <DocumentItem name={selectedDocument.name} type={selectedDocument.type} date={selectedDocument.date} status={selectedDocument.status} compact />
                                     </h3>
-                                    <button onClick={() => setSelectedFile(null)} className="text-xs text-teal-accent hover:text-foreground underline">Back to list</button>
+                                    <button onClick={() => setSelectedDocument(null)} className="text-xs text-teal-accent hover:text-foreground underline">Back to list</button>
                                 </div>
-                                <div className="bg-secondary/30 border border-accent/20 rounded-xl p-6 flex flex-col items-center justify-center min-h-[250px] text-muted-foreground">
-                                    <p>File Preview for <strong>{selectedFile.name}</strong></p>
-                                    <p className="text-xs opacity-50 mt-2">Preview not available in this demo.</p>
+                                <div className="bg-secondary/30 border border-accent/20 rounded-xl flex flex-col items-center justify-center min-h-[500px] text-muted-foreground overflow-hidden relative">
+                                    {(previewUrl) ? (
+                                        (() => {
+                                            const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(selectedDocument.type?.toLowerCase()) || 
+                                                           /\.(doc|docx|ppt|pptx|xls|xlsx)$/i.test(selectedDocument.name);
+                                            
+                                            // Ensure we have a valid string URL
+                                            if (!previewUrl || typeof previewUrl !== 'string') return null;
+
+                                            const finalUrl = isOffice 
+                                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`
+                                                : previewUrl;
+
+                                            return (
+                                                <iframe 
+                                                    src={finalUrl} 
+                                                    className="w-full h-[500px] border-none"
+                                                    title={selectedDocument.name}
+                                                />
+                                            );
+                                        })()
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-6 text-center">
+                                            {loadingPreview ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                                                    <p className="text-muted-foreground">Loading preview...</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="font-medium text-foreground">File Preview for <strong>{selectedDocument.name}</strong></p>
+                                                    <p className="text-xs opacity-50 mt-2 mb-4">Preview not available.</p>
+                                                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto">
+                                                        Note: Unable to load document preview.
+                                                    </p>
+                                                    <div className="hidden">{JSON.stringify(selectedDocument)}</div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ) : (
@@ -230,7 +378,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                     </div>
                                 ) : filteredFiles.length > 0 ? (
                                     filteredFiles.map((file, idx) => (
-                                        <DocumentItem key={idx} {...file} onClick={() => setSelectedFile(file)} />
+                                        <DocumentItem key={idx} {...file} onClick={() => setSelectedDocument(file)} />
                                     ))
                                 ) : (
                                     <div className="text-center py-10 opacity-50">

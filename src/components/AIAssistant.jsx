@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings, ShieldCheck, AlertCircle, MessageSquare,
@@ -7,6 +8,8 @@ import {
   Gavel, RefreshCw, ThumbsUp, ThumbsDown, Lightbulb,
   Send, Paperclip, Copy, BookOpen, TrendingUp
 } from 'lucide-react';
+import { useAIStore } from '../store/useAIStore';
+import { useDocumentsStore } from '@/store/documents';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -24,49 +27,54 @@ const AIAssistant = ({
   const [chatInput, setChatInput] = useState('');
   const [isResizing, setIsResizing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
+  // const [chatMessages, setChatMessages] = useState([]); // Moved to store
   const [isTyping, setIsTyping] = useState(false);
   const [activeTab, setActiveTab] = useState('suggestions'); // 'suggestions' or 'chat'
   const panelRef = useRef(null);
   const chatEndRef = useRef(null);
+  
+  /* AI Store Integration */
+  const { 
+      sendMessage, 
+      isSending: storeIsSending, 
+      activeContext, 
+      setContext, 
+      histories,
+      addMessage 
+  } = useAIStore();
+  
+  // Local derived state for UI from store
+  const chatMessages = histories[activeContext] || [];
+  
+  const { selectedDocument, selectedForAI } = useDocumentsStore();
+  
+  // Context Switching Logic
+  useEffect(() => {
+      if (selectedForAI && selectedForAI.length > 0) {
+          setContext('multi_select');
+      } else if (selectedDocument) {
+          setContext(`doc_${selectedDocument.id || selectedDocument._id}`);
+      } else if (caseData?.id) {
+          setContext(`case_${caseData.id}`);
+      } else {
+          setContext('global');
+      }
+  }, [caseData?.id, selectedDocument, selectedForAI, setContext]);
 
-  // Mock data for suggestions
-  const [nextSteps, setNextSteps] = useState([
-    { id: 1, text: "Prepare and file motion by Dec 15, 2024", completed: false, priority: "high" },
-    { id: 2, text: "Review witness statements for inconsistencies", completed: false, priority: "medium" },
-    { id: 3, text: "Schedule deposition with key witness", completed: true, priority: "low" }
-  ]);
+  // Mock data for suggestions - replaced with empty initial state
+  const [nextSteps, setNextSteps] = useState([]);
+  const [missingDocs, setMissingDocs] = useState([]);
+  const [legalSections, setLegalSections] = useState([]);
+  const [similarCases, setSimilarCases] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
-  const [missingDocs, setMissingDocs] = useState([
-    { id: 1, name: "Police Report - Incident #2024-892", referenced: "Case Summary" },
-    { id: 2, name: "Medical Records - Dr. Smith", referenced: "Witness Statement" }
-  ]);
-
-  const legalSections = [
-    { id: 1, code: "Section 302", title: "Punishment for murder", relevant: 95 },
-    { id: 2, code: "Section 34", title: "Acts done by several persons", relevant: 88 }
-  ];
-
-  const similarCases = [
-    { id: 1, title: "Miranda rights in traffic stops", replies: 12, views: 234 },
-    { id: 2, title: "Evidence admissibility in DUI", replies: 8, views: 156 }
-  ];
-
-  const recentOrders = [
-    { id: 1, title: "State v. Martinez - Suppression", date: "Dec 1, 2024", court: "Supreme Court" },
-    { id: 2, title: "Updated DUI guidelines", date: "Nov 28, 2024", court: "Appeals Court" }
-  ];
-
-  const quickQuestions = [
-    "Summarize this case",
-    "What's missing?",
-    "Suggest next steps",
-    "Find similar cases"
-  ];
-
-  // Handlers
   const toggleStep = (id) => {
-    setNextSteps(prev => prev.map(step =>
+    setNextSteps(prev => prev.map(step => 
       step.id === id ? { ...step, completed: !step.completed } : step
     ));
   };
@@ -79,32 +87,32 @@ const AIAssistant = ({
     setMissingDocs(prev => prev.filter(doc => doc.id !== id));
   };
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
-
-  const handleSendMessage = (message = chatInput) => {
+  const handleSendMessage = async (message = chatInput) => {
     if (!message.trim()) return;
 
-    setChatMessages(prev => [...prev, {
-      type: 'user',
-      text: message,
-      timestamp: new Date()
-    }]);
+    // formatted message for store
+    const userMsg = { text: message, type: 'user' };
+    addMessage(userMsg);
 
     setChatInput('');
-    setIsTyping(true);
+    setIsTyping(true); // Keep local typing indicator for perceived latency if needed, or rely on storeIsSending
 
-    // Simulate AI response
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        type: 'ai',
-        text: `I've analyzed your request: "${message}". Based on the current case data, here's what I found...`,
-        timestamp: new Date()
-      }]);
-      setIsTyping(false);
-    }, 1500);
+    try {
+        let context = {};
+        if (selectedForAI && selectedForAI.length > 0) {
+            context = { documentIds: selectedForAI };
+        } else if (selectedDocument) {
+            context = { documentId: selectedDocument.id || selectedDocument._id };
+        }
+
+        // Pass 'general' or actual caseId
+        await sendMessage(caseData.id || 'general', message, context);
+        // Store handles success/failure state updates
+    } catch (error) {
+        console.error("Failed to send message", error);
+    } finally {
+        setIsTyping(false);
+    }
   };
 
   const handleQuickQuestion = (question) => {
@@ -148,7 +156,7 @@ const AIAssistant = ({
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+  }, [chatMessages, isTyping]);
 
   // Animation variants
   const containerVariants = {
@@ -251,19 +259,41 @@ const AIAssistant = ({
           </div>
         </motion.div>
 
-        {/* Case Context */}
-        {caseData.caseName && (
-          <motion.div
+        {/* Case / Document Context */}
+        <motion.div
             className="p-3 bg-primary/10 border-b border-border"
             variants={itemVariants}
           >
-            <p className="text-xs text-muted-foreground">Analyzing Case:</p>
-            <p className="text-sm font-semibold text-accent">{caseData.caseName}</p>
-            {caseData.caseNumber && (
-              <p className="text-xs text-muted-foreground">{caseData.caseNumber}</p>
+            {selectedForAI && selectedForAI.length > 0 ? (
+               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <FileText size={10} /> analyzing selection:
+                  </p>
+                  <p className="text-sm font-semibold text-accent truncate">{selectedForAI.length} Documents Selected</p>
+                   <p className="text-[10px] text-muted-foreground mt-0.5">
+                     Multi-file analysis enabled
+                   </p>
+               </div>
+            ) : selectedDocument ? (
+               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <FileText size={10} /> analyzing Document:
+                  </p>
+                  <p className="text-sm font-semibold text-accent truncate">{selectedDocument.name}</p>
+                   <p className="text-[10px] text-muted-foreground mt-0.5">
+                     type: {selectedDocument.type || 'PDF'} • size: {selectedDocument.size ? Math.round(selectedDocument.size/1024)+'KB' : 'Unknown'}
+                   </p>
+               </div>
+            ) : (
+              <div>
+                <p className="text-xs text-muted-foreground">Analyzing Case:</p>
+                <p className="text-sm font-semibold text-accent">{caseData.caseName || "General Context"}</p>
+                {caseData.caseNumber && (
+                  <p className="text-xs text-muted-foreground">{caseData.caseNumber}</p>
+                )}
+              </div>
             )}
           </motion.div>
-        )}
 
         {/* Tabs */}
         <motion.div className="flex border-b border-border" variants={itemVariants}>
@@ -493,7 +523,7 @@ const AIAssistant = ({
                 className="flex flex-col h-full"
               >
                 {/* Quick Questions */}
-                <div className="p-4 border-b border-border">
+                {/* <div className="p-4 border-b border-border">
                   <h4 className="text-xs uppercase text-gray-500 font-bold mb-2">Quick Questions</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {quickQuestions.map((question, idx) => (
@@ -508,7 +538,7 @@ const AIAssistant = ({
                       </motion.button>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Chat Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -535,7 +565,15 @@ const AIAssistant = ({
                           ? "bg-primary/10 border border-primary/20 text-foreground"
                           : "bg-card border border-border text-foreground"
                       )}>
-                        <p className="text-xs">{msg.text}</p>
+                        {msg.type === 'user' ? (
+                          <p className="text-xs whitespace-pre-wrap">{msg.text}</p>
+                        ) : (
+                          <div className="prose prose-sm dark:prose-invert prose-p:text-xs prose-p:leading-relaxed prose-headings:text-sm prose-headings:font-semibold prose-ul:my-2 prose-li:my-0.5 prose-code:text-[10px] prose-code:bg-muted prose-code:px-1 prose-code:rounded max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                            <ReactMarkdown>
+                              {msg.text}
+                            </ReactMarkdown>
+                          </div>
+                        )}
                         {msg.type === 'ai' && (
                           <div className="flex items-center gap-2 mt-2">
                             <button className="text-muted-foreground hover:text-primary transition-colors">

@@ -3,13 +3,13 @@ import { buildUrl, useApiMutation, useApiSWR } from '../_shared/apiClient';
 const CASE_BASE = '/cases';
 
 export const useDocuments = (caseId, folder) =>
-  useApiSWR(caseId ? buildUrl(`${CASE_BASE}/${caseId}`, { folder }) : null);
+  useApiSWR(caseId ? buildUrl(`${CASE_BASE}/${caseId}/documents`, { folder }) : null);
 
 export const useUploadDocument = (caseId) =>
-  useApiMutation(`${CASE_BASE}/${caseId}/upload`, 'post');
+  useApiMutation(`${CASE_BASE}/${caseId}/documents`, 'post');
 
 export const useDeleteDocument = (caseId, documentId) =>
-  useApiMutation(`${CASE_BASE}/${caseId}/${documentId}`, 'delete');
+  useApiMutation(`${CASE_BASE}/${caseId}/documents/${documentId}`, 'delete');
 
 /**
  * Usage example:

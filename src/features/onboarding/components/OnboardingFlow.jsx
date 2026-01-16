@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { authService } from '@/services/auth/auth.service';
 import {
     Scale,
     CheckCircle2,
@@ -32,6 +35,7 @@ export default function OnboardingFlow() {
         resetOnboarding,
     } = useOnboardingStore();
 
+    const navigate = useNavigate();
     const [direction, setDirection] = useState(1); // 1 for forward, -1 for back
     const [loading, setLoading] = useState(false);
 
@@ -75,47 +79,53 @@ export default function OnboardingFlow() {
     const finishOnboarding = async (finalRole) => {
         setLoading(true);
 
-        // ✅ Build payload matching backend onboardValidation
-        const payload = {
-            role: finalRole, // 'client' | 'lawyer'
-            profile: {
-                fullName: profile.fullName,
-                displayName: profile.displayName,
-                phone: profile.phone || undefined,
-                avatarUrl: profile.avatarUrl || undefined,
-                preferredLanguage: profile.preferredLanguage || 'English',
-                timezone: profile.timezone || undefined,
-                address: profile.address || undefined,
+        try {
+            // ✅ Build payload matching backend onboardValidation
+            const payload = {
+                role: finalRole, // 'client' | 'lawyer'
+                profile: {
+                    fullName: profile.fullName,
+                    displayName: profile.displayName,
+                    phone: profile.phone || undefined,
+                    avatarUrl: profile.avatarUrl || undefined,
+                    preferredLanguage: profile.preferredLanguage || 'English',
+                    timezone: profile.timezone || undefined,
+                    address: profile.address || undefined,
 
-                // Only send lawyer fields if lawyer
-                barRegistrationNumber:
-                    finalRole === 'lawyer' ? profile.barRegistrationNumber || undefined : undefined,
-                barCouncilName:
-                    finalRole === 'lawyer' ? profile.barCouncilName || undefined : undefined,
-                yearsOfExperience:
-                    finalRole === 'lawyer' && profile.yearsOfExperience
-                        ? profile.yearsOfExperience
-                        : undefined,
-                primaryPracticeArea:
-                    finalRole === 'lawyer' ? profile.primaryPracticeArea || undefined : undefined,
-            },
-        };
+                    // Only send lawyer fields if lawyer
+                    barRegistrationNumber:
+                        finalRole === 'lawyer' ? profile.barRegistrationNumber || undefined : undefined,
+                    barCouncilName:
+                        finalRole === 'lawyer' ? profile.barCouncilName || undefined : undefined,
+                    yearsOfExperience:
+                        finalRole === 'lawyer' && profile.yearsOfExperience
+                            ? Number(profile.yearsOfExperience) // Ensure number
+                            : undefined,
+                    primaryPracticeArea:
+                        finalRole === 'lawyer' ? profile.primaryPracticeArea || undefined : undefined,
+                },
+            };
 
-        // TODO: Plug into real API (example):
-        // import apiClient from '@/lib/api/client';
-        // await apiClient.post('/api/v1/auth/onboard', payload);
+            // Call API
+            await authService.onboardUser(payload);
+            
+            toast.success("Profile Setup Complete!", {
+                description: finalRole === 'lawyer' ? "Welcome, Counselor." : "Welcome to Advyon."
+            });
 
-        // For now keep your simulation
-        setTimeout(() => {
-            const message =
-                finalRole === 'lawyer'
-                    ? 'Verification Submitted! Redirecting to Lawyer Workspace...'
-                    : 'Setup Complete! Redirecting to User Dashboard...';
+            // Delay slightly for UX then redirect
+            setTimeout(() => {
+                resetOnboarding();
+                navigate(finalRole === 'lawyer' ? '/dashboard/workspace' : '/dashboard');
+            }, 1000);
 
-            alert(message);
+        } catch (error) {
+            console.error("Onboarding failed:", error);
+            toast.error("Setup Failed", {
+                description: error.response?.data?.message || "Please check your details and try again."
+            });
             setLoading(false);
-            // In a real app, you would navigate and maybe resetOnboarding()
-        }, 1500);
+        }
     };
 
     // Animation Variants

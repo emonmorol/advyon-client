@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CloudUpload, Brain, CheckCircle2, AlertCircle, FileText, X } from 'lucide-react';
+import { CloudUpload, Brain, CheckCircle2, AlertCircle, FileText, X, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSmartUpload } from '@/hooks/useSmartUpload';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
  */
 export const SmartFileUploader = ({
   caseId,
+  folderName,
   onUploadComplete,
   className,
   acceptedFileTypes = {
@@ -33,22 +34,22 @@ export const SmartFileUploader = ({
   },
 }) => {
   const {
+    upload,
     isUploading,
     uploadProgress,
-    isAnalyzing,
+    status,
     analysisResult,
     error,
-    status,
-    upload,
     reset,
+    documentId,
   } = useSmartUpload(caseId);
 
   // Handle file drop
   const onDrop = useCallback((acceptedFiles) => {
     if (acceptedFiles.length > 0) {
-      upload(acceptedFiles[0]);
+      upload({ file: acceptedFiles[0], folderName });
     }
-  }, [upload]);
+  }, [upload, folderName]);
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
@@ -57,15 +58,25 @@ export const SmartFileUploader = ({
     disabled: status !== 'idle',
   });
 
+  // Guard to prevent double-firing completion
+  const completionHandledRef = React.useRef(false);
+
   // Notify parent on completion
   useEffect(() => {
-    if (status === 'completed' && analysisResult && onUploadComplete) {
+    if (status === 'completed' && analysisResult && onUploadComplete && !completionHandledRef.current) {
+      completionHandledRef.current = true;
       onUploadComplete({
         documentCategory: analysisResult.documentCategory,
         confidenceScore: analysisResult.confidenceScore,
       });
     }
   }, [status, analysisResult, onUploadComplete]);
+
+  // Reset internal state when reset is called
+  const handleReset = useCallback(() => {
+      completionHandledRef.current = false;
+      reset();
+  }, [reset]);
 
   return (
     <Card className={cn('overflow-hidden', className)}>
@@ -286,7 +297,7 @@ export const SmartFileUploader = ({
               {/* Upload Another Button */}
               <Button
                 variant="outline"
-                onClick={reset}
+                onClick={handleReset}
                 className="gap-2"
               >
                 <CloudUpload className="h-4 w-4" />
@@ -305,26 +316,54 @@ export const SmartFileUploader = ({
               transition={{ duration: 0.2 }}
               className="py-8 text-center"
             >
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-                <AlertCircle className="h-8 w-8 text-destructive" />
+              {/* Conditional Icon based on whether we have a document ID (upload succeeded) */}
+              <div className={cn(
+                "mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full",
+                documentId ? "bg-amber-100 dark:bg-amber-900/30" : "bg-destructive/10"
+              )}>
+                {documentId ? (
+                  <AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                ) : (
+                  <AlertCircle className="h-8 w-8 text-destructive" />
+                )}
               </div>
               
               <h3 className="mb-2 font-sans text-lg font-semibold text-foreground">
-                Upload Failed
+                {documentId ? 'Upload Successful' : 'Upload Failed'}
               </h3>
               
-              <p className="mb-6 text-sm text-muted-foreground">
-                {error?.message || 'An unexpected error occurred'}
-              </p>
+              <div className="mb-6 max-w-sm mx-auto">
+                <p className="text-sm text-muted-foreground">
+                  {documentId 
+                    ? "File uploaded, but AI analysis failed." 
+                    : (error?.message || 'An unexpected error occurred')}
+                </p>
+                {documentId && error?.message && (
+                  <p className="mt-2 text-xs text-destructive/80 bg-destructive/5 p-2 rounded">
+                    Error: {error.message}
+                  </p>
+                )}
+              </div>
               
-              <Button
-                variant="outline"
-                onClick={reset}
-                className="gap-2"
-              >
-                <X className="h-4 w-4" />
-                Try Again
-              </Button>
+              <div className="flex justify-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleReset}
+                  className="gap-2"
+                >
+                  {documentId ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Done
+                    </>
+                  ) : (
+                    <>
+                      <X className="h-4 w-4" />
+                      Try Again
+                    </>
+                  )}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

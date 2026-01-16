@@ -16,6 +16,10 @@ import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
 
 import CommunityHubPage from '@/pages/dashboard/CommunityHubPage';
 import LawyerVerificationPage from '@/pages/dashboard/LawyerVerificationPage';
+import LegalSearchPage from '@/pages/dashboard/LegalSearchPage';
+import AskQuestionPage from '@/pages/dashboard/AskQuestionPage';
+import ThreadDetailPage from '@/pages/dashboard/ThreadDetailPage';
+import ComingSoonPage from '@/pages/ComingSoonPage';
 
 export const router = createBrowserRouter([
   {
@@ -46,11 +50,23 @@ export const router = createBrowserRouter([
       { path: 'workspace', element: <WorkspacePage /> },
       { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
+      { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'community', element: <CommunityHubPage /> },
       { path: 'community/ask', element: <CommunityHubPage /> }, // Placeholder
       { path: 'community/verified', element: <CommunityHubPage /> }, // Placeholder
+      { path: 'community/thread/:threadId', element: <ThreadDetailPage /> },
+      
+      { path: 'legal', element: <LegalSearchPage /> },
       { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
-      { path: 'profile', element: <ProfilePage /> }
+      { path: 'profile', element: <ProfilePage /> },
+      { path: 'cases/active', element: <ComingSoonPage title="Active Cases" /> },
+      { path: 'cases/archived', element: <ComingSoonPage title="Archived Cases" /> },
+      { path: 'documents', element: <ComingSoonPage title="My Documents" /> },
+      { path: 'clients', element: <ComingSoonPage title="Clients" /> },
+      { path: 'analytics', element: <ComingSoonPage title="Analytics" /> },
+      { path: 'settings', element: <ComingSoonPage title="Settings" /> },
+      { path: 'legal-database', element: <ComingSoonPage title="Legal Database" /> },
+      { path: 'ai-assistant', element: <ComingSoonPage title="AI Tools" /> }
     ],
     errorElement: <div className="p-8 text-red-500">Dashboard Error Boundary</div>
   },
