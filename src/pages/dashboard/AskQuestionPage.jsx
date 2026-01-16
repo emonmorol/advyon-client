@@ -5,25 +5,33 @@ import { MessageSquarePlus } from 'lucide-react';
 import QuestionForm from '@/features/community/components/QuestionForm';
 import SimilarQuestions from '@/features/community/components/SimilarQuestions';
 import { Toaster, toast } from 'sonner';
+import { useCommunityStore } from '@/store/useCommunityStore';
 
 const AskQuestionPage = () => {
+
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [isSubmitting, setIsSubmitting] = useState(false); // Handled by store/local
+  const [localSubmitting, setLocalSubmitting] = useState(false);
+  
+  const { createThread } = useCommunityStore();
+  
   // Track title for "Similar Questions" component
   const [typingTitle, setTypingTitle] = useState(""); 
 
   const handleSubmit = async (data) => {
-    setIsSubmitting(true);
-    // Simulate API call
-    console.log("Submitting question:", data);
-    
-    setTimeout(() => {
-      setIsSubmitting(false);
-      toast.success("Question posted successfully!", {
-         description: "Redirecting you to the discussion...",
-      });
-      setTimeout(() => navigate('/dashboard/community'), 1500);
-    }, 1500);
+    setLocalSubmitting(true);
+    try {
+        await createThread(data);
+        toast.success("Question posted successfully!", {
+            description: "Redirecting you to the discussion...",
+        });
+        setTimeout(() => navigate('/dashboard/community'), 1500);
+    } catch (error) {
+        toast.error("Failed to post question", {
+            description: "Please try again later."
+        });
+        setLocalSubmitting(false);
+    }
   };
 
   return (
@@ -47,7 +55,7 @@ const AskQuestionPage = () => {
              animate={{ opacity: 1, y: 0 }}
              className="bg-card rounded-xl border border-border/60 shadow-sm p-6 sm:p-8"
           >
-             <QuestionForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+             <QuestionForm onSubmit={handleSubmit} isSubmitting={localSubmitting} />
           </motion.div>
         </div>
 

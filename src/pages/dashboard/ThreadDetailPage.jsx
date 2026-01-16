@@ -1,75 +1,85 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import QuestionBody from '@/features/community/components/QuestionBody';
 import ReplyCard from '@/features/community/components/ReplyCard';
 import ReplyForm from '@/features/community/components/ReplyForm';
 import AISummary from '@/features/community/components/AISummary';
-
-// Mock Data
-const MOCK_THREAD = {
-  id: '123',
-  title: 'Can I claim maintenance if I\'m working but earn significantly less than my spouse?',
-  content: 'I am going through a divorce proceedings. My husband earns 5x more than me. Even though I am employed, my salary is barely enough to cover my basic living expenses in this city. Am I eligible to claim interim maintenance? What factors will the court consider?',
-  author: { name: 'Sarah J.', avatar: '', role: 'Community Member' },
-  createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-  views: 1250,
-  upvotes: 45,
-  downvotes: 2,
-  category: 'Family Law',
-  tags: ['Divorce', 'Maintenance', 'Alimony'],
-  isSolved: true,
-  acceptedAnswerId: 'r1',
-  aiSummary: 'Under Section 24 of the Hindu Marriage Act, either spouse can claim maintenance if they do not have sufficient independent income. Courts consider the "status and standard of living" of the parties. The fact that the wife is working does not automatically disqualify her from claiming maintenance if her income is insufficient to maintain the standard of living she was accustomed to in the matrimonial home.',
-  replies: [
-    {
-      id: 'r1',
-      content: 'Yes, you can absolutely claim maintenance. The Supreme Court has clarified in multiple judgments (like Rajnesh v. Neha) that the capacity to earn or the fact that the wife is earning does not bar her from claiming maintenance. The court looks at the "lifestyle" you were used to. If there is a massive disparity in income (like 5x as you mentioned), the court usually grants maintenance to bridge that gap.',
-      author: { name: 'Adv. Rajesh Kumar', avatar: '', role: 'Family Lawyer', isLawyer: true },
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1),
-      upvotes: 28,
-      downvotes: 0
-    },
-    {
-      id: 'r2',
-      content: 'Make sure you file an affidavit of assets and liabilities correctly. That is crucial now for deciding the quantum of maintenance.',
-      author: { name: 'Priya S.', avatar: '', role: 'Community Member', isLawyer: false },
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12),
-      upvotes: 5,
-      downvotes: 0
-    }
-  ]
-};
+import { useCommunityStore } from '@/store/useCommunityStore';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const ThreadDetailPage = () => {
   const { threadId } = useParams();
-  // Fetch logic would go here
+  const navigate = useNavigate();
+  const { getThreadById, currentThread, isLoading, error } = useCommunityStore();
+
+  useEffect(() => {
+    if (threadId) {
+      getThreadById(threadId);
+    }
+  }, [threadId, getThreadById]);
 
   const handleReplySubmit = (content) => {
     console.log("New reply:", content);
+    // TODO: Implement addReply action
   };
 
+  if (isLoading) {
+      return (
+          <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-20 w-full" />
+          </div>
+      )
+  }
+
+  if (error || !currentThread) {
+      return (
+          <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+              <h2 className="text-xl font-bold mb-4">Thread not found</h2>
+              <p className="text-muted-foreground mb-6">The discussion you are looking for does not exist or has been removed.</p>
+              <Button onClick={() => navigate('/dashboard/community')}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Community
+              </Button>
+          </div>
+      )
+  }
+
+  const { thread, replies } = currentThread;
+
+  // Adapt backend data to frontend component expectation
+  // Check if structure matches. Backend sends { thread: TThread, replies: TReply[] }
+  // QuestionBody expects 'question' prop which is essentially the thread + author populated
+  
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-       <div className="mb-8">
-          <QuestionBody question={MOCK_THREAD} />
+       <div className="mb-6">
+           <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/community')} className="mb-4 text-muted-foreground">
+               <ArrowLeft className="mr-2 h-4 w-4" /> Back
+           </Button>
+           <QuestionBody question={thread} />
        </div>
        
-       <AISummary summary={MOCK_THREAD.aiSummary} />
+       {thread.aiSummary && <AISummary summary={thread.aiSummary} />}
 
-       <div className="space-y-8">
+       <div className="space-y-8 mt-8">
           <div className="flex items-center justify-between border-b pb-4">
-             <h2 className="text-xl font-bold">{MOCK_THREAD.replies.length} Answers</h2>
-             {/* Sort dropdown could go here */}
+             <h2 className="text-xl font-bold">{replies?.length || 0} Answers</h2>
           </div>
 
           <div className="space-y-6">
-             {MOCK_THREAD.replies.map(reply => (
+             {replies?.map(reply => (
                 <ReplyCard 
-                   key={reply.id} 
+                   key={reply._id || reply.id} 
                    reply={reply} 
-                   isAccepted={MOCK_THREAD.acceptedAnswerId === reply.id}
+                   isAccepted={thread.isSolved && thread.acceptedAnswerId === (reply._id || reply.id)}
                 />
              ))}
+             {replies?.length === 0 && (
+                 <p className="text-center text-muted-foreground py-8">No answers yet. Be the first to reply!</p>
+             )}
           </div>
 
           <div className="pt-10">

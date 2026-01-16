@@ -77,12 +77,13 @@ const QuestionForm = ({ onSubmit, isSubmitting }) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="family">Family Law</SelectItem>
-                    <SelectItem value="civil">Civil Litigation</SelectItem>
-                    <SelectItem value="criminal">Criminal Defense</SelectItem>
-                    <SelectItem value="corporate">Corporate</SelectItem>
-                    <SelectItem value="property">Property</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="Family Law">Family Law</SelectItem>
+                    <SelectItem value="Civil Litigation">Civil Litigation</SelectItem>
+                    <SelectItem value="Criminal Defense">Criminal Defense</SelectItem>
+                    <SelectItem value="Corporate">Corporate</SelectItem>
+                    <SelectItem value="Property Law">Property Law</SelectItem>
+                    <SelectItem value="Intellectual Property">Intellectual Property</SelectItem>
+                    <SelectItem value="Others">Others</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
