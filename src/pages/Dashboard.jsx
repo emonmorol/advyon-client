@@ -16,24 +16,36 @@ import {
   UserPlus,
   ArrowRight,
   ShieldCheck,
-  Users
+  Users,
+  Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useCasesStore } from "../store/cases";
 import { useDashboardStore } from "../store/useDashboardStore";
+import { useMessageStore } from "../store/useMessageStore";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, fetchProfile } = useAuthStore();
   const { cases: allCases, fetchCases } = useCasesStore();
   const { stats, fetchStats } = useDashboardStore();
+  const { 
+    messages: clientRequests, 
+    pendingCount, 
+    fetchMessages, 
+    fetchPendingCount,
+    isLoading: messagesLoading 
+  } = useMessageStore();
 
   React.useEffect(() => {
     fetchProfile();
     fetchCases();
     fetchStats();
-  }, [fetchProfile, fetchCases, fetchStats]);
+    // Phase 1.2: Fetch real messages
+    fetchMessages({ status: 'unread', limit: 5 });
+    fetchPendingCount();
+  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount]);
 
   const profile = user;
 
@@ -117,7 +129,7 @@ const Dashboard = () => {
           { title: "Active Cases", value: activeCasesCount, sub: "Total active", icon: Briefcase, color: "text-blue-400", link: "/dashboard/workspace" },
           { title: "Upcoming Hearings", value: upcomingHearingsCount, sub: "Next 7 days", icon: Gavel, color: "text-amber-400" },
           { title: "Pending Review", value: pendingReviewCount, sub: "Documents & Evidence", icon: FileText, color: "text-red-400" },
-          { title: "Client Messages", value: stats?.clientMessagesCount || "08", sub: "3 new inquiries", icon: MessageSquare, color: "text-emerald-400" } 
+          { title: "Client Messages", value: pendingCount || 0, sub: `${pendingCount > 0 ? pendingCount : 'No'} new inquiries`, icon: MessageSquare, color: "text-emerald-400" } 
         ].map((stat, index) => {
           const CardComponent = (
             <Card className={`${cardStyle} ${stat.link ? "hover:border-accent hover:ring-1 hover:ring-accent/50 transition-all" : ""}`}>
@@ -265,33 +277,53 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Client Requests (Static - No API yet) */}
+          {/* Client Requests - Phase 1.2: Now connected to API */}
           <Card className={cardStyle}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-card-foreground">
                 <span>Client Requests</span>
-                <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">2 New</span>
+                {pendingCount > 0 && (
+                  <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                    {pendingCount} New
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {[
-                { name: "Sarah Connor", msg: "Requesting access to case files", time: "10m ago" },
-                { name: "John Doe", msg: "Uploaded new evidence photos", time: "1h ago" },
-              ].map((req, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg bg-background border border-accent/20 shadow-sm p-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-background-foreground font-bold">
-                    {req.name[0]}
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <p className="truncate text-sm font-medium text-background-foreground">{req.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{req.msg}</p>
-                  </div>
-                  <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-primary-foreground">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+              {messagesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              ))}
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-primary">
+              ) : clientRequests.length > 0 ? (
+                clientRequests.slice(0, 3).map((req, i) => (
+                  <div 
+                    key={req._id || i} 
+                    className="flex items-center gap-3 rounded-lg bg-background border border-accent/20 shadow-sm p-3 cursor-pointer hover:border-accent/40 transition-colors"
+                    onClick={() => navigate(`/dashboard/messages/${req._id}`)}
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-background-foreground font-bold">
+                      {req.senderId?.displayName?.[0] || req.senderId?.fullName?.[0] || 'U'}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="truncate text-sm font-medium text-background-foreground">
+                        {req.senderId?.displayName || req.senderId?.fullName || 'Unknown'}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{req.subject}</p>
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-primary-foreground">
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  No pending requests
+                </div>
+              )}
+              <Button 
+                className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-primary"
+                onClick={() => navigate('/dashboard/messages')}
+              >
                 View All Requests
               </Button>
             </CardContent>
