@@ -2,6 +2,7 @@ import React from "react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
+import { useAuthStore } from "@/store/useAuthStore"
 import {
   LayoutDashboard,
   Users,
@@ -12,36 +13,45 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export const sidebarItems = [
+export const allSidebarItems = [
   {
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+    roles: ['lawyer', 'client', 'admin', 'judge']
   },
   {
     title: "Cases",
     href: "/dashboard/workspace",
     icon: FileText,
+    roles: ['lawyer', 'client', 'admin', 'judge']
   },
   {
     title: "Clients",
     href: "/dashboard/clients",
     icon: Users,
+    roles: ['lawyer', 'admin']
   },
   {
     title: "Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
+    roles: ['lawyer', 'admin']
   },
   {
     title: "Settings",
     href: "/dashboard/settings",
     icon: Settings,
+    roles: ['lawyer', 'client', 'admin', 'judge']
   },
 ]
 
 export function Sidebar({ className, isCollapsed, onMouseEnter, onMouseLeave }) {
   const location = useLocation()
+  const { user } = useAuthStore();
+  const userRole = user?.role || 'client';
+
+  const sidebarItems = allSidebarItems.filter(item => item.roles.includes(userRole));
 
   return (
     <motion.div

@@ -14,6 +14,11 @@ export const useAIStore = create((set) => ({
   analysisResult: null,
   isAnalyzing: false,
 
+  // Phase 1.4: AI Insights for Dashboard
+  myInsights: [],
+  dashboardSummary: null,
+  isLoadingInsights: false,
+
   setContext: (contextKey) => set({ activeContext: contextKey }),
 
   getHistory: () => {
@@ -38,10 +43,6 @@ export const useAIStore = create((set) => ({
     set({ isSending: true, error: null });
     const state = useAIStore.getState();
     const currentHistory = state.histories[state.activeContext] || [];
-
-    // Add user message to history immediately (optimistic update handled by component usually, but good to ensure sync)
-    // Actually component does optimistic update. We should rely on component calling addMessage or handle it here.
-    // Let's standardise: Component calls sendMessage, we update history here.
 
     try {
         // Construct history for API (last 10) - Backend also slices, but good to be safe
@@ -115,5 +116,35 @@ export const useAIStore = create((set) => ({
     } catch (error) {
       set({ error: error.message, isAnalyzing: false });
     }
-  }
+  },
+
+  // Phase 1.4: Fetch user's AI insights for dashboard
+  fetchMyInsights: async (limit = 5) => {
+    set({ isLoadingInsights: true });
+    try {
+      const { data } = await api.get('/ai-insights/me', { params: { limit } });
+      set({ 
+        myInsights: data.data || data, 
+        isLoadingInsights: false 
+      });
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch insights:', error);
+      set({ isLoadingInsights: false });
+      return { data: [] };
+    }
+  },
+
+  // Phase 1.4: Fetch dashboard AI summary
+  fetchDashboardSummary: async () => {
+    try {
+      const { data } = await api.get('/ai-insights/dashboard/summary');
+      set({ dashboardSummary: data.data || data });
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch dashboard summary:', error);
+      return null;
+    }
+  },
 }));
+

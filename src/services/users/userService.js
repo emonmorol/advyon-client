@@ -5,6 +5,7 @@ const BASE = '/users';
 export const useUsers = (params) => useApiSWR(buildUrl(BASE, params));
 
 export const useUser = (id) => useApiSWR(id ? `${BASE}/${id}` : null);
+export const useMyClients = () => useApiSWR(`${BASE}/my-clients`);
 
 export const useCreateUser = () =>
   useApiMutation(`${BASE}/create-user`, 'post');
