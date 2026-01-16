@@ -204,4 +204,16 @@ export const useCommunityStore = create((set, get) => ({
 
   // Clear cache to force refresh
   clearCache: () => set({ lastFetched: null, threads: [] }),
+
+  // Stats
+  communityStats: { totalThreads: 0, activeUsers: 0 },
+  fetchCommunityStats: async () => {
+    try {
+      const { data } = await api.get(`${BASE}/stats`);
+      const stats = data?.data || data;
+      set({ communityStats: stats });
+    } catch (error) {
+      console.error('Failed to fetch community stats:', error);
+    }
+  },
 }));

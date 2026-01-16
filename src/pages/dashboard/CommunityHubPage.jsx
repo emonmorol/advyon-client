@@ -14,11 +14,12 @@ const CommunityHubPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     // Use Store
-    const { threads, fetchThreads, isLoading, clearCache } = useCommunityStore();
+    const { threads, fetchThreads, isLoading, clearCache, communityStats, fetchCommunityStats } = useCommunityStore();
 
     React.useEffect(() => {
         fetchThreads();
-    }, [fetchThreads]);
+        fetchCommunityStats();
+    }, [fetchThreads, fetchCommunityStats]);
 
     const handleCategoryChange = (categoryId) => {
         setActiveCategory(categoryId);
@@ -28,6 +29,7 @@ const CommunityHubPage = () => {
         // Clear cache and force fresh fetch
         clearCache();
         fetchThreads({}, true);
+        fetchCommunityStats(); // Update stats after new thread
         console.log("Thread created successfully:", newThread);
     };
 
@@ -51,11 +53,17 @@ const CommunityHubPage = () => {
             return categoryMatch || tagMatch;
         });
 
+    // Map backend stats to UI expected format
+    const displayStats = {
+        discussions: communityStats?.totalThreads || 0,
+        online: communityStats?.activeUsers || 0
+    };
+
     return (
         <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
                 <CommunityHeader
-                    stats={mockData.stats}
+                    stats={displayStats}
                     onAskQuestion={() => setIsCreateModalOpen(true)}
                 />
 
