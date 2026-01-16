@@ -13,8 +13,10 @@ import ProfilePage from '@/pages/dashboard/ProfilePage';
 
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
+import RequireRole from '@/components/auth/RequireRole';
 
 import CommunityHubPage from '@/pages/dashboard/CommunityHubPage';
+import ClientsPage from '@/pages/dashboard/ClientsPage';
 import LawyerVerificationPage from '@/pages/dashboard/LawyerVerificationPage';
 import LegalSearchPage from '@/pages/dashboard/LegalSearchPage';
 import AskQuestionPage from '@/pages/dashboard/AskQuestionPage';
@@ -62,8 +64,22 @@ export const router = createBrowserRouter([
       { path: 'cases/active', element: <ComingSoonPage title="Active Cases" /> },
       { path: 'cases/archived', element: <ComingSoonPage title="Archived Cases" /> },
       { path: 'documents', element: <ComingSoonPage title="My Documents" /> },
-      { path: 'clients', element: <ComingSoonPage title="Clients" /> },
-      { path: 'analytics', element: <ComingSoonPage title="Analytics" /> },
+      { 
+        path: 'clients', 
+        element: (
+          <RequireRole allowedRoles={['lawyer', 'admin']}>
+            <ClientsPage />
+          </RequireRole>
+        ) 
+      },
+      { 
+        path: 'analytics', 
+        element: (
+          <RequireRole allowedRoles={['lawyer', 'admin']}>
+            <ComingSoonPage title="Analytics" />
+          </RequireRole>
+        ) 
+      },
       { path: 'settings', element: <ComingSoonPage title="Settings" /> },
       { path: 'legal-database', element: <ComingSoonPage title="Legal Database" /> },
       { path: 'ai-assistant', element: <ComingSoonPage title="AI Tools" /> }

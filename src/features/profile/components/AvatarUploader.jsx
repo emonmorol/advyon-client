@@ -31,21 +31,21 @@ const AvatarUploader = ({ currentUrl, onUpload }) => {
         </div>
       </div>
 
-      <button
+      {/* <button
         onClick={() => fileInputRef.current?.click()}
         className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full shadow-md hover:bg-primary/90 transition-colors sm:hidden"
         type="button"
       >
         <Camera className="w-4 h-4" />
-      </button>
+      </button> */}
 
-      <input
+      {/* <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
         accept="image/*"
         className="hidden"
-      />
+      /> */}
     </div>
   );
 };

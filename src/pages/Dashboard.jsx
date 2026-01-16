@@ -16,26 +16,77 @@ import {
   UserPlus,
   ArrowRight,
   ShieldCheck,
-  Users
+  Users,
+  Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useCasesStore } from "../store/cases";
 import { useDashboardStore } from "../store/useDashboardStore";
+import { useMessageStore } from "../store/useMessageStore";
+import { useActivityStore } from "../store/useActivityStore";
+import { useAIStore } from "../store/useAIStore";
+
+// Helper function to format relative time
+const formatRelativeTime = (date) => {
+  if (!date) return 'Unknown';
+  const now = new Date();
+  const activityDate = new Date(date);
+  const diffMs = now - activityDate;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return activityDate.toLocaleDateString();
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, fetchProfile } = useAuthStore();
   const { cases: allCases, fetchCases } = useCasesStore();
   const { stats, fetchStats } = useDashboardStore();
+  const { 
+    messages: clientRequests, 
+    pendingCount, 
+    fetchMessages, 
+    fetchPendingCount,
+    isLoading: messagesLoading 
+  } = useMessageStore();
+  const {
+    activities: recentActivities,
+    fetchRecentActivities,
+    isLoading: activitiesLoading
+  } = useActivityStore();
+  const {
+    myInsights,
+    dashboardSummary,
+    fetchMyInsights,
+    fetchDashboardSummary,
+    isLoadingInsights
+  } = useAIStore();
 
   React.useEffect(() => {
     fetchProfile();
     fetchCases();
     fetchStats();
-  }, [fetchProfile, fetchCases, fetchStats]);
+    // Phase 1.2: Fetch real messages
+    fetchMessages({ status: 'unread', limit: 5 });
+    fetchPendingCount();
+    // Phase 1.3: Fetch real activities
+    fetchRecentActivities(5);
+    // Phase 1.4: Fetch AI insights
+    fetchMyInsights(3);
+    fetchDashboardSummary();
+  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount, fetchRecentActivities, fetchMyInsights, fetchDashboardSummary]);
 
   const profile = user;
+
+  // --- Computed Stats ---
+  const isClient = user?.role === 'client';
 
   // --- Computed Stats ---
   const activeCasesCount = allCases.filter(c => c.status === 'active').length;
@@ -52,6 +103,38 @@ const Dashboard = () => {
 
   // Pending Review (arbitrary logic: status 'review' or 'pending')
   const pendingReviewCount = allCases.filter(c => ['review', 'pending'].includes(c.status?.toLowerCase())).length;
+
+  const lawyerStats = [
+    { title: "Active Cases", value: activeCasesCount, sub: "Total active", icon: Briefcase, color: "text-blue-400", link: "/dashboard/workspace" },
+    { title: "Upcoming Hearings", value: upcomingHearingsCount, sub: "Next 7 days", icon: Gavel, color: "text-amber-400" },
+    { title: "Pending Review", value: pendingReviewCount, sub: "Documents & Evidence", icon: FileText, color: "text-red-400" },
+    { title: "Client Messages", value: pendingCount || 0, sub: `${pendingCount > 0 ? pendingCount : 'No'} new inquiries`, icon: MessageSquare, color: "text-emerald-400" } 
+  ];
+
+  const clientStats = [
+    { title: "My Active Cases", value: activeCasesCount, sub: "Ongoing legal matters", icon: Briefcase, color: "text-blue-400", link: "/dashboard/workspace" },
+    { title: "Next Hearing", value: upcomingHearingsCount, sub: "Upcoming in 7 days", icon: Gavel, color: "text-amber-400" },
+    { title: "Actions Needed", value: pendingReviewCount, sub: "Documents to sign/review", icon: FileText, color: "text-red-400" },
+    { title: "Messages", value: pendingCount || 0, sub: "Unread messages", icon: MessageSquare, color: "text-emerald-400" }
+  ];
+
+  const statsToDisplay = isClient ? clientStats : lawyerStats;
+
+  const lawyerActions = [
+    { label: "Add Client", icon: UserPlus, color: "bg-blue-500/10 text-blue-400", action: () => navigate('/dashboard/clients') }, // Redirect to clients
+    { label: "Upload File", icon: Upload, color: "bg-purple-500/10 text-purple-400", action: () => navigate('/dashboard/documents') },
+    { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400", action: () => {} },
+    { label: "AI Analysis", icon: Sparkles, color: "bg-emerald-500/10 text-emerald-400", action: () => navigate('/dashboard/ai-assistant') },
+  ];
+
+  const clientActions = [
+    { label: "Contact Lawyer", icon: MessageSquare, color: "bg-blue-500/10 text-blue-400", action: () => navigate('/dashboard/messages') },
+    { label: "Upload Document", icon: Upload, color: "bg-purple-500/10 text-purple-400", action: () => navigate('/dashboard/documents') },
+    { label: "My Cases", icon: Briefcase, color: "bg-amber-500/10 text-amber-400", action: () => navigate('/dashboard/workspace') },
+    { label: "Help Center", icon: Users, color: "bg-emerald-500/10 text-emerald-400", action: () => navigate('/dashboard/community') },
+  ];
+
+  const actionsToDisplay = isClient ? clientActions : lawyerActions;
 
   const container = {
     hidden: { opacity: 0 },
@@ -88,37 +171,36 @@ const Dashboard = () => {
                 Community Hub
               </Button>
             </Link>
-            <Link to="/dashboard/profile/verify">
-              <Button variant="outline" size="sm" className="h-8 shadow-sm hover:bg-accent/10 hover:text-accent border-accent/20">
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                Verify Profile
-              </Button>
-            </Link>
+            {!isClient && (
+              <Link to="/dashboard/profile/verify">
+                <Button variant="outline" size="sm" className="h-8 shadow-sm hover:bg-accent/10 hover:text-accent border-accent/20">
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Verify Profile
+                </Button>
+              </Link>
+            )}
           </div>
           <p className="text-gray-600 mt-1">
-            Welcome back, {profile?.displayName || profile?.fullName || 'Advocate'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
+            Welcome back, {profile?.displayName || profile?.fullName || 'User'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button
-            size="lg"
-            onClick={() => navigate('/dashboard/cases/new')}
-            className="bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            New Case
-          </Button>
-        </div>
+        {!isClient && (
+          <div className="flex gap-3">
+            <Button
+              size="lg"
+              onClick={() => navigate('/dashboard/cases/new')}
+              className="bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              New Case
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          { title: "Active Cases", value: activeCasesCount, sub: "Total active", icon: Briefcase, color: "text-blue-400", link: "/dashboard/workspace" },
-          { title: "Upcoming Hearings", value: upcomingHearingsCount, sub: "Next 7 days", icon: Gavel, color: "text-amber-400" },
-          { title: "Pending Review", value: pendingReviewCount, sub: "Documents & Evidence", icon: FileText, color: "text-red-400" },
-          { title: "Client Messages", value: stats?.clientMessagesCount || "08", sub: "3 new inquiries", icon: MessageSquare, color: "text-emerald-400" } 
-        ].map((stat, index) => {
+        {statsToDisplay.map((stat, index) => {
           const CardComponent = (
             <Card className={`${cardStyle} ${stat.link ? "hover:border-accent hover:ring-1 hover:ring-accent/50 transition-all" : ""}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -156,13 +238,12 @@ const Dashboard = () => {
 
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { label: "Add Client", icon: UserPlus, color: "bg-blue-500/10 text-blue-400" },
-              { label: "Upload File", icon: Upload, color: "bg-purple-500/10 text-purple-400" },
-              { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400" },
-              { label: "AI Analysis", icon: Sparkles, color: "bg-emerald-500/10 text-emerald-400" },
-            ].map((action, i) => (
-              <button key={i} className={`flex flex-col items-center justify-center gap-3 rounded-xl ${cardStyle} p-6 transition-transform hover:-translate-y-1`}>
+            {actionsToDisplay.map((action, i) => (
+              <button 
+                key={i} 
+                className={`flex flex-col items-center justify-center gap-3 rounded-xl ${cardStyle} p-6 transition-transform hover:-translate-y-1`}
+                onClick={action.action}
+              >
                 <div className={`rounded-full p-3 ${action.color}`}>
                   <action.icon className="h-6 w-6" />
                 </div>
@@ -171,7 +252,7 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* AI Insights Panel */}
+          {/* AI Insights Panel - Phase 1.4: Now connected to API */}
           <Card className={`${cardStyle} border-accent/20 bg-teal-accent`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-primary-foreground">
@@ -180,14 +261,53 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-lg bg-background p-4 text-sm text-background-foreground border border-accent/20 shadow-sm">
-                <span className="mb-2 block font-semibold text-accent">Analysis Complete: State v. Johnson</span>
-                The evidence analysis identified 3 missing timestamps in the witness testimony. Recommendation: Request supplementary statement.
-              </div>
-              <div className="rounded-lg bg-background p-4 text-sm text-background-foreground border border-accent/20 shadow-sm ">
-                <span className="mb-2 block font-semibold text-accent">Legal Update Alert</span>
-                New Supreme Court ruling on "Digital Privacy" may impact your current case <span className="text-white underline decoration-accent/50 underline-offset-4">TechCorp v. StartUp</span>.
-              </div>
+              {isLoadingInsights ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-accent" />
+                </div>
+              ) : (
+                <>
+                  {/* AI Tips from Dashboard Summary */}
+                  {dashboardSummary?.tips?.length > 0 && (
+                    dashboardSummary.tips.slice(0, 2).map((tip, i) => (
+                      <div key={i} className={`rounded-lg bg-background p-4 text-sm text-background-foreground border shadow-sm ${
+                        tip.type === 'warning' ? 'border-amber-500/30' : 
+                        tip.type === 'info' ? 'border-blue-500/30' : 'border-accent/20'
+                      }`}>
+                        <span className={`mb-2 block font-semibold ${
+                          tip.type === 'warning' ? 'text-amber-500' : 
+                          tip.type === 'info' ? 'text-blue-400' : 'text-accent'
+                        }`}>
+                          {tip.type === 'warning' ? '⚠️ Alert' : tip.type === 'info' ? '📋 Status' : '💡 Insight'}
+                        </span>
+                        {tip.message}
+                      </div>
+                    ))
+                  )}
+                  
+                  {/* Recent AI Insights */}
+                  {myInsights.length > 0 ? (
+                    myInsights.slice(0, 2).map((insight, i) => (
+                      <div key={insight.id || i} className="rounded-lg bg-background p-4 text-sm text-background-foreground border border-accent/20 shadow-sm">
+                        <span className="mb-2 block font-semibold text-accent">
+                          Analysis: {insight.caseTitle}
+                        </span>
+                        {insight.summary ? (
+                          <p className="line-clamp-2">{insight.summary}</p>
+                        ) : (
+                          <p>Document: {insight.documentName} - Category: {insight.category || 'Uncategorized'}</p>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    !dashboardSummary?.tips?.length && (
+                      <div className="rounded-lg bg-background p-4 text-sm text-muted-foreground border border-accent/20 shadow-sm text-center">
+                        No AI insights available yet. Upload documents to get AI-powered analysis.
+                      </div>
+                    )
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -265,55 +385,85 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Client Requests (Static - No API yet) */}
+          {/* Client Requests - Phase 1.2: Now connected to API */}
           <Card className={cardStyle}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-card-foreground">
                 <span>Client Requests</span>
-                <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">2 New</span>
+                {pendingCount > 0 && (
+                  <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                    {pendingCount} New
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {[
-                { name: "Sarah Connor", msg: "Requesting access to case files", time: "10m ago" },
-                { name: "John Doe", msg: "Uploaded new evidence photos", time: "1h ago" },
-              ].map((req, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg bg-background border border-accent/20 shadow-sm p-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-background-foreground font-bold">
-                    {req.name[0]}
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <p className="truncate text-sm font-medium text-background-foreground">{req.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{req.msg}</p>
-                  </div>
-                  <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-primary-foreground">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+              {messagesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              ))}
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-primary">
+              ) : clientRequests.length > 0 ? (
+                clientRequests.slice(0, 3).map((req, i) => (
+                  <div 
+                    key={req._id || i} 
+                    className="flex items-center gap-3 rounded-lg bg-background border border-accent/20 shadow-sm p-3 cursor-pointer hover:border-accent/40 transition-colors"
+                    onClick={() => navigate(`/dashboard/messages/${req._id}`)}
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-background-foreground font-bold">
+                      {req.senderId?.displayName?.[0] || req.senderId?.fullName?.[0] || 'U'}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="truncate text-sm font-medium text-background-foreground">
+                        {req.senderId?.displayName || req.senderId?.fullName || 'Unknown'}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{req.subject}</p>
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-primary-foreground">
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  No pending requests
+                </div>
+              )}
+              <Button 
+                className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-primary"
+                onClick={() => navigate('/dashboard/messages')}
+              >
                 View All Requests
               </Button>
             </CardContent>
           </Card>
 
-          {/* Recent Activity (Static - No API yet) */}
+          {/* Recent Activity - Phase 1.3: Now connected to API */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-background-foreground">Activity Feed</h3>
             <div className="space-y-4 rounded-xl bg-primary/10 p-4">
-              {[
-                { text: "System updated auto-backups", time: "Just now", icon: SettingsIcon },
-                { text: "Adv. Michael closed Case #892", time: "2h ago", icon: Briefcase },
-                { text: "New billing cycle started", time: "1d ago", icon: TrendingUp },
-              ].map((act, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="mt-1 h-2 w-2 rounded-full bg-teal-accent" />
-                  <div>
-                    <p className="text-xs text-background-foreground">{act.text}</p>
-                    <p className="text-[10px] text-background-foreground">{act.time}</p>
-                  </div>
+              {activitiesLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-              ))}
+              ) : recentActivities.length > 0 ? (
+                recentActivities.slice(0, 5).map((act, i) => (
+                  <div key={act._id || i} className="flex gap-3">
+                    <div className="mt-1 h-2 w-2 rounded-full bg-teal-accent" />
+                    <div>
+                      <p className="text-xs text-background-foreground">
+                        {act.message || act.description || 'Activity logged'}
+                      </p>
+                      <p className="text-[10px] text-background-foreground">
+                        {formatRelativeTime(act.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  No recent activity
+                </div>
+              )}
             </div>
           </div>
 
