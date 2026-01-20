@@ -123,7 +123,7 @@ const Dashboard = () => {
   const lawyerActions = [
     { label: "Add Client", icon: UserPlus, color: "bg-blue-500/10 text-blue-400", action: () => navigate('/dashboard/clients') }, // Redirect to clients
     { label: "Upload File", icon: Upload, color: "bg-purple-500/10 text-purple-400", action: () => navigate('/dashboard/documents') },
-    { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400", action: () => {} },
+    { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400", action: () => navigate('/dashboard/schedule/new?type=hearing') },
     { label: "AI Analysis", icon: Sparkles, color: "bg-emerald-500/10 text-emerald-400", action: () => navigate('/dashboard/ai-assistant') },
   ];
 
@@ -324,7 +324,11 @@ const Dashboard = () => {
 
             <div className="space-y-3">
               {allCases.slice(0, 5).map((c, i) => (
-                <Card key={c._id || c.id || i} className={`${cardStyle} group cursor-pointer border-l-4 border-l-transparent hover:border-l-accent`}>
+                <Card 
+                  key={c._id || c.id || i} 
+                  className={`${cardStyle} group cursor-pointer border-l-4 border-l-transparent hover:border-l-accent`}
+                  onClick={() => navigate(`/dashboard/workspace/${c._id || c.id}`)}
+                >
                   <CardContent className="flex items-center justify-between p-4 px-6">
                     <div className="flex items-center gap-4">
                       <div className="rounded-full bg-primary p-2 text-muted-foreground group-hover:text-primary-foreground">

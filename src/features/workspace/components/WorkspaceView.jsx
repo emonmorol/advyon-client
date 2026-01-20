@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
     ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft,
-    CheckSquare, Square
+    CheckSquare, Square, PanelRightClose, Maximize2
 } from 'lucide-react';
+import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { cn } from "@/lib/utils";
 import DocumentItem from './DocumentItem';
 import TimerWidget from './TimerWidget';
@@ -281,9 +282,9 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                 </div>
             </aside>
 
-            {/* CENTER PANEL */}
-            <main className="flex-1 flex flex-col min-w-0 bg-background relative transition-all duration-300">
-                <div className="h-12 border-b border-accent/20 flex items-center justify-between px-4 bg-background/95 backdrop-blur-sm">
+            {/* CENTER & RIGHT PANELS */}
+            <main className="flex-1 flex flex-col min-w-0 bg-background relative transition-all duration-300 overflow-hidden">
+                <div className="h-12 border-b border-accent/20 flex items-center justify-between px-4 bg-background/95 backdrop-blur-sm shrink-0">
                     <div className="flex items-center text-sm text-muted-foreground gap-2 overflow-x-auto no-scrollbar">
                         <button onClick={onBack} className="p-1 rounded-md hover:bg-primary/10 text-teal-accent hover:text-foreground transition-colors mr-1 flex-shrink-0" title="Back to Dashboard">
                             <ArrowLeft size={16} />
@@ -303,94 +304,131 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4">
-                    <SmartFileUploader
-                        caseId={activeCase.id}
-                        folderName={currentFolder}
-                        className="mb-4 border-2 border-dashed border-teal-accent/30 bg-transparent hover:border-accent/50 hover:bg-secondary/50 transition-all"
-                        onUploadComplete={React.useCallback(() => {
-                            // Re-fetch all documents to update folders and lists
-                            fetchDocuments({ caseId: activeCase.id, force: true });
-                        }, [activeCase.id, fetchDocuments])}
-                    />
+                <div className="flex-1 overflow-hidden">
+                     <PanelGroup direction="horizontal">
+                        {/* Doc List Panel */}
+                        <Panel defaultSize={selectedDocument ? 40 : 100} minSize={30}>
+                            <div className="h-full overflow-y-auto p-4 custom-scrollbar">
+                                <SmartFileUploader
+                                    caseId={activeCase.id}
+                                    folderName={currentFolder}
+                                    className="mb-4 border-2 border-dashed border-teal-accent/30 bg-transparent hover:border-accent/50 hover:bg-secondary/50 transition-all"
+                                    onUploadComplete={React.useCallback(() => {
+                                        fetchDocuments({ caseId: activeCase.id, force: true });
+                                    }, [activeCase.id, fetchDocuments])}
+                                />
 
-                    <div className="space-y-1">
-                        {selectedDocument ? (
-                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                                        <DocumentItem name={selectedDocument.name} type={selectedDocument.type} date={selectedDocument.date} status={selectedDocument.status} compact />
-                                    </h3>
-                                    <button onClick={() => setSelectedDocument(null)} className="text-xs text-teal-accent hover:text-foreground underline">Back to list</button>
-                                </div>
-                                <div className="bg-secondary/30 border border-accent/20 rounded-xl flex flex-col items-center justify-center min-h-[500px] text-muted-foreground overflow-hidden relative">
-                                    {(previewUrl) ? (
-                                        (() => {
-                                            const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(selectedDocument.type?.toLowerCase()) || 
-                                                           /\.(doc|docx|ppt|pptx|xls|xlsx)$/i.test(selectedDocument.name);
-                                            
-                                            // Ensure we have a valid string URL
-                                            if (!previewUrl || typeof previewUrl !== 'string') return null;
-
-                                            const finalUrl = isOffice 
-                                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`
-                                                : previewUrl;
-
-                                            return (
-                                                <iframe 
-                                                    src={finalUrl} 
-                                                    className="w-full h-[500px] border-none"
-                                                    title={selectedDocument.name}
-                                                />
-                                            );
-                                        })()
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center p-6 text-center">
-                                            {loadingPreview ? (
-                                                <>
-                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                                                    <p className="text-muted-foreground">Loading preview...</p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <p className="font-medium text-foreground">File Preview for <strong>{selectedDocument.name}</strong></p>
-                                                    <p className="text-xs opacity-50 mt-2 mb-4">Preview not available.</p>
-                                                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto">
-                                                        Note: Unable to load document preview.
-                                                    </p>
-                                                    <div className="hidden">{JSON.stringify(selectedDocument)}</div>
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            <>
                                 <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
                                     <span>{currentFolder}</span>
                                     <span className="text-[9px] bg-secondary px-1.5 py-0.5 rounded-full text-foreground">{filteredFiles.length} items</span>
                                 </h3>
 
-                                {loading ? (
-                                    <div className="text-center py-12 opacity-50">
-                                        <p className="text-sm text-[#B0C4C3]">Loading...</p>
-                                    </div>
-                                ) : filteredFiles.length > 0 ? (
-                                    filteredFiles.map((file, idx) => (
-                                        <DocumentItem key={idx} {...file} onClick={() => setSelectedDocument(file)} />
-                                    ))
-                                ) : (
-                                    <div className="text-center py-10 opacity-50">
-                                        <FolderOpen size={40} className="mx-auto text-teal-accent mb-2" />
-                                        <p className="text-sm text-muted-foreground">
-                                            {searchTerm ? `No files match "${searchTerm}"` : "No files in this folder yet."}
-                                        </p>
-                                    </div>
-                                )}
-                            </>
+                                <div className="space-y-1">
+                                    {loading ? (
+                                        <div className="text-center py-12 opacity-50">
+                                            <p className="text-sm text-[#B0C4C3]">Loading...</p>
+                                        </div>
+                                    ) : filteredFiles.length > 0 ? (
+                                        filteredFiles.map((file, idx) => (
+                                            <DocumentItem 
+                                                key={idx} 
+                                                {...file} 
+                                                onClick={() => setSelectedDocument(selectedDocument?.id === file.id ? null : file)} 
+                                                isActive={selectedDocument?.id === file.id}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10 opacity-50">
+                                            <FolderOpen size={40} className="mx-auto text-teal-accent mb-2" />
+                                            <p className="text-sm text-muted-foreground">
+                                                {searchTerm ? `No files match "${searchTerm}"` : "No files in this folder yet."}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </Panel>
+
+                        {/* Resize Handle */}
+                        {selectedDocument && (
+                            <PanelResizeHandle className="w-1 bg-border hover:bg-accent ring-1 ring-border/50 transition-colors cursor-col-resize flex items-center justify-center">
+                                <div className="w-0.5 h-8 bg-muted-foreground/30 rounded-full" />
+                            </PanelResizeHandle>
                         )}
-                    </div>
+
+                        {/* Preview Panel (3rd Column) */}
+                        {selectedDocument && (
+                            <Panel defaultSize={60} minSize={30}>
+                                <div className="h-full border-l border-border bg-background flex flex-col overflow-hidden">
+                                     <div className="flex items-center justify-between p-3 border-b border-border bg-card/50">
+                                        <div className="flex items-center gap-2 truncate">
+                                            <DocumentItem name={selectedDocument.name} type={selectedDocument.type} date={selectedDocument.date} status={selectedDocument.status} compact />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => navigate(`/dashboard/workspace/doc/${selectedDocument.id || selectedDocument._id}`)} className="text-xs flex items-center gap-1 hover:text-primary transition-colors"><Maximize2 size={12}/> Expand</button>
+                                            <button onClick={() => setSelectedDocument(null)} className="text-muted-foreground hover:text-foreground"><PanelRightClose size={14} /></button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex-1 overflow-y-auto p-4 bg-secondary/10">
+                                        <div className="bg-background border border-border rounded-xl shadow-sm overflow-hidden h-full flex flex-col">
+                                            {(previewUrl) ? (
+                                                <div className="flex-1 bg-white relative">
+                                                    {(() => {
+                                                        const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(selectedDocument.type?.toLowerCase()) || 
+                                                                    /\.(doc|docx|ppt|pptx|xls|xlsx)$/i.test(selectedDocument.name);
+                                                        
+                                                        if (!previewUrl || typeof previewUrl !== 'string') return null;
+
+                                                        const finalUrl = isOffice 
+                                                            ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`
+                                                            : previewUrl;
+
+                                                        return (
+                                                            <iframe 
+                                                                src={finalUrl} 
+                                                                className="w-full h-full border-none"
+                                                                title={selectedDocument.name}
+                                                            />
+                                                        );
+                                                    })()}
+                                                </div>
+                                            ) : (
+                                                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                                                    {loadingPreview ? (
+                                                        <>
+                                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                                                            <p className="text-muted-foreground">Loading preview...</p>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <p className="font-medium text-foreground">File Preview</p>
+                                                            <p className="text-xs opacity-50 mt-2">Preview not available.</p>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Auto-filing Badge or Info */}
+                                        {selectedDocument.autoFiling && (
+                                            <div className="mt-4 p-3 bg-blue-50/10 border border-blue-500/20 rounded-lg">
+                                                <h4 className="text-xs font-semibold text-blue-400 mb-1">Auto-Filing Status</h4>
+                                                <div className="flex items-center gap-2 text-xs">
+                                                    <span className={cn("px-1.5 py-0.5 rounded capitalize", 
+                                                        selectedDocument.autoFiling.status === 'moved' ? "bg-green-500/10 text-green-400" : "bg-yellow-500/10 text-yellow-400"
+                                                    )}>
+                                                        {selectedDocument.autoFiling.status}
+                                                    </span>
+                                                    <span className="text-muted-foreground">Confidence: {Math.round(selectedDocument.autoFiling.confidenceScore * 100)}%</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </Panel>
+                        )}
+                     </PanelGroup>
                 </div>
             </main>
         </div>

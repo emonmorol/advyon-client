@@ -8,8 +8,12 @@ import Dashboard from '@/pages/Dashboard';
 import OnboardingPage from '@/pages/OnboardingPage';
 import WorkspacePage from '@/pages/WorkspacePage';
 import CreateCasePage from '@/pages/CreateCasePage';
+import CreateEventPage from '@/pages/dashboard/CreateEventPage';
+import SchedulePage from '@/pages/dashboard/SchedulePage';
 import DocumentViewerPage from '@/pages/dashboard/DocumentViewerPage';
+import TextReviewPage from '@/pages/dashboard/TextReviewPage';
 import ProfilePage from '@/pages/dashboard/ProfilePage';
+import AnalyticsPage from '@/pages/dashboard/AnalyticsPage';
 
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
@@ -52,14 +56,16 @@ export const router = createBrowserRouter([
       { path: 'workspace', element: <WorkspacePage /> },
       { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
-      { path: 'cases/new', element: <CreateCasePage /> },
+      { path: 'schedule', element: <SchedulePage /> },
+      { path: 'schedule/new', element: <CreateEventPage /> },
       { path: 'community', element: <CommunityHubPage /> },
-      { path: 'community/ask', element: <CommunityHubPage /> }, // Placeholder
-      { path: 'community/verified', element: <CommunityHubPage /> }, // Placeholder
+      { path: 'community/ask', element: <CommunityHubPage /> }, 
+      { path: 'community/verified', element: <CommunityHubPage /> }, 
       { path: 'community/thread/:threadId', element: <ThreadDetailPage /> },
       
       { path: 'legal', element: <LegalSearchPage /> },
       { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
+      { path: 'review/:docId', element: <TextReviewPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'cases/active', element: <ComingSoonPage title="Active Cases" /> },
       { path: 'cases/archived', element: <ComingSoonPage title="Archived Cases" /> },
@@ -76,7 +82,7 @@ export const router = createBrowserRouter([
         path: 'analytics', 
         element: (
           <RequireRole allowedRoles={['lawyer', 'admin']}>
-            <ComingSoonPage title="Analytics" />
+            <AnalyticsPage />
           </RequireRole>
         ) 
       },
