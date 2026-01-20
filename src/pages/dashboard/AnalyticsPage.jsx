@@ -10,6 +10,8 @@ import {
     Calendar
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAnalyticsStore } from "@/store/useAnalyticsStore";
+import { Loader2 } from "lucide-react";
 
 const StatCard = ({ title, value, description, icon: Icon, trend, color, delay }) => (
     <motion.div
@@ -42,12 +44,68 @@ const StatCard = ({ title, value, description, icon: Icon, trend, color, delay }
 );
 
 const AnalyticsPage = () => {
-    // Mock Data (In real app, fetch from backend)
+    const { 
+        stats: apiStats, 
+        caseDistribution, 
+        upcomingDeadlines, 
+        fetchAnalytics, 
+        isLoading 
+    } = useAnalyticsStore();
+
+    React.useEffect(() => {
+        fetchAnalytics();
+    }, [fetchAnalytics]);
+
+    if (isLoading && !apiStats) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    // Default stats if API fails or empty
     const stats = [
-        { title: "Active Cases", value: "24", description: "Standard load", icon: Briefcase, trend: "+2", color: "blue", delay: 0.1 },
-        { title: "Total Clients", value: "145", description: "Steady growth", icon: Users, trend: "+4%", color: "green", delay: 0.2 },
-        { title: "Filings Due", value: "7", description: "Within 7 days", icon: FileText, trend: "-2", color: "red", delay: 0.3 },
-        { title: "Billable Hours", value: "128.5", description: "This month", icon: Activity, trend: "+12%", color: "purple", delay: 0.4 },
+        { 
+            title: "Active Cases", 
+            value: apiStats?.activeCases || "0", 
+            description: "Total active", 
+            icon: Briefcase, 
+            trend: "+0", 
+            color: "blue", 
+            delay: 0.1 
+        },
+        { 
+            title: "Total Clients", 
+            value: apiStats?.totalClients || "0", 
+            description: "Registered clients", 
+            icon: Users, 
+            trend: "+0%", 
+            color: "green", 
+            delay: 0.2 
+        },
+        { 
+            title: "Filings Due", 
+            value: apiStats?.filingsDue || "0", 
+            description: "Next 7 days", 
+            icon: FileText, 
+            trend: "0", 
+            color: "red", 
+            delay: 0.3 
+        },
+        { 
+            title: "Billable Hours", 
+            value: apiStats?.billableHours || "0", 
+            description: "This month", 
+            icon: Activity, 
+            trend: "+0%", 
+            color: "purple", 
+            delay: 0.4 
+        },
+    ];
+
+    const distributionData = caseDistribution?.length > 0 ? caseDistribution : [
+        { area: 'No Data', percentage: 0 }
     ];
 
     return (
@@ -77,17 +135,17 @@ const AnalyticsPage = () => {
                         </CardHeader>
                         <CardContent>
                            <div className="space-y-4">
-                               {['Corporate Litigation', 'Family Law', 'Intellectual Property', 'Real Estate'].map((area, i) => (
+                               {distributionData.map((area, i) => (
                                    <div key={i} className="space-y-1">
                                        <div className="flex justify-between text-sm">
-                                           <span className="font-medium">{area}</span>
-                                           <span className="text-muted-foreground">{[45, 25, 20, 10][i]}%</span>
+                                           <span className="font-medium">{area.area}</span>
+                                           <span className="text-muted-foreground">{area.percentage}%</span>
                                        </div>
                                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                                            <motion.div 
                                                className="h-full bg-primary"
                                                initial={{ width: "0%" }}
-                                               animate={{ width: `${[45, 25, 20, 10][i]}%` }}
+                                               animate={{ width: `${area.percentage}%` }}
                                                transition={{ duration: 1, delay: 0.6 + (i * 0.1) }}
                                            />
                                        </div>
@@ -111,24 +169,26 @@ const AnalyticsPage = () => {
                          </CardHeader>
                          <CardContent>
                             <div className="space-y-4">
-                                {[
-                                    { case: 'Smith v. Jones', task: 'Submit Affidavit', date: 'Oct 24', color: 'red' },
-                                    { case: 'TechCorp Merger', task: 'Review Contract', date: 'Oct 25', color: 'orange' },
-                                    { case: 'Estate Plan', task: 'Client Meeting', date: 'Oct 26', color: 'blue' },
-                                ].map((item, i) => (
+                                {upcomingDeadlines?.length > 0 ? (
+                                    upcomingDeadlines.map((item, i) => (
                                     <div key={i} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
                                         <div className="flex items-center gap-3">
-                                            <div className={`h-2 w-2 rounded-full bg-${item.color}-500`} />
+                                            <div className={`h-2 w-2 rounded-full bg-${item.color || 'red'}-500`} />
                                             <div>
                                                 <p className="text-sm font-medium">{item.task}</p>
                                                 <p className="text-xs text-muted-foreground">{item.case}</p>
                                             </div>
                                         </div>
                                         <div className="text-xs font-semibold bg-background px-2 py-1 rounded border">
-                                            {item.date}
+                                            {new Date(item.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                         </div>
                                     </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <div className="text-center py-4 text-muted-foreground">
+                                        No upcoming deadlines
+                                    </div>
+                                )}
                             </div>
                          </CardContent>
                     </Card>

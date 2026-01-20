@@ -40,7 +40,7 @@ export const allSidebarItems = [
   },
   {
     title: "Settings",
-    href: "/dashboard/settings",
+    href: "/dashboard/profile#preferences",
     icon: Settings,
     roles: ['lawyer', 'client', 'admin', 'judge']
   },

@@ -26,6 +26,7 @@ import { useDashboardStore } from "../store/useDashboardStore";
 import { useMessageStore } from "../store/useMessageStore";
 import { useActivityStore } from "../store/useActivityStore";
 import { useAIStore } from "../store/useAIStore";
+import { useScheduleStore } from "../store/useScheduleStore";
 
 // Helper function to format relative time
 const formatRelativeTime = (date) => {
@@ -68,6 +69,11 @@ const Dashboard = () => {
     fetchDashboardSummary,
     isLoadingInsights
   } = useAIStore();
+  const { 
+    todayEvents, 
+    fetchTodayEvents, 
+    isLoading: scheduleLoading 
+  } = useScheduleStore();
 
   React.useEffect(() => {
     fetchProfile();
@@ -80,8 +86,11 @@ const Dashboard = () => {
     fetchRecentActivities(5);
     // Phase 1.4: Fetch AI insights
     fetchMyInsights(3);
+    fetchMyInsights(3);
     fetchDashboardSummary();
-  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount, fetchRecentActivities, fetchMyInsights, fetchDashboardSummary]);
+    // Phase 4: Fetch Today's Schedule
+    fetchTodayEvents();
+  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount, fetchRecentActivities, fetchMyInsights, fetchDashboardSummary, fetchTodayEvents]);
 
   const profile = user;
 
@@ -365,29 +374,41 @@ const Dashboard = () => {
         {/* Sidebar */}
         <motion.div variants={item} className="space-y-8">
 
-          {/* Today's Schedule (Static - No API yet) */}
-          <Card className={cardStyle}>
-            <CardHeader>
-              <CardTitle className="text-card-foreground">Today's Schedule</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {[
-                { time: "09:00 AM", event: "Team Standup", type: "Internal" },
-                { time: "11:30 AM", event: "Court Hearing: Johnson", type: "Court", urgent: true },
-                { time: "02:00 PM", event: "Client Call: TechCorp", type: "Client" },
-                { time: "04:30 PM", event: "Review Evidence", type: "Work" },
-              ].map((ev, i) => (
-                <div key={i} className="flex gap-4">
-                  <span className="w-16 text-sm font-medium text-muted-foreground">{ev.time}</span>
-                  <div className="relative flex-1 border-l-2 border-surface pl-4 pb-2 last:pb-0">
-                    <div className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ${ev.urgent ? 'bg-red-400 animate-pulse' : 'bg-accent'}`} />
-                    <p className="text-sm font-medium text-card-foreground">{ev.event}</p>
-                    <p className="text-xs text-muted-foreground">{ev.type}</p>
-                  </div>
+      {/* Today's Schedule - Phase 4: Connected to API */}
+      <Card className={cardStyle}>
+        <CardHeader>
+          <CardTitle className="text-card-foreground flex justify-between items-center">
+             <span>Today's Schedule</span>
+             <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/schedule/new')} className="h-6 w-6 p-0 rounded-full">
+                <Plus className="h-4 w-4" />
+             </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {scheduleLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : todayEvents.length > 0 ? (
+            todayEvents.map((ev, i) => (
+              <div key={ev._id || i} className="flex gap-4">
+                <span className="w-16 text-sm font-medium text-muted-foreground">
+                  {new Date(ev.startTime || ev.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+                <div className="relative flex-1 border-l-2 border-surface pl-4 pb-2 last:pb-0">
+                  <div className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ${ev.priority === 'high' ? 'bg-red-400 animate-pulse' : 'bg-accent'}`} />
+                  <p className="text-sm font-medium text-card-foreground">{ev.title}</p>
+                  <p className="text-xs text-muted-foreground">{ev.type} • {ev.location || 'Remote'}</p>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+              </div>
+            ))
+          ) : (
+             <div className="text-center py-6 text-muted-foreground text-sm">
+                No events scheduled for today.
+             </div>
+          )}
+        </CardContent>
+      </Card>
 
           {/* Client Requests - Phase 1.2: Now connected to API */}
           <Card className={cardStyle}>
