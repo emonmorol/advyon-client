@@ -20,7 +20,7 @@ import {
    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const QuestionBody = ({ question }) => {
+const QuestionBody = ({ question, onVote }) => {
    const [isShareOpen, setIsShareOpen] = useState(false);
    const [isCopied, setIsCopied] = useState(false);
 
@@ -34,7 +34,12 @@ const QuestionBody = ({ question }) => {
       <div className="flex gap-4 md:gap-6">
          {/* Vote Column */}
          <div className="hidden sm:flex flex-col items-center pt-2">
-            <VoteButtons upvotes={question.upvotes} downvotes={question.downvotes} />
+            <VoteButtons 
+                upvotes={question.upvotes} 
+                downvotes={question.downvotes} 
+                onVote={onVote}
+                userVote={question.userVote} // Assuming question object has userVote
+            />
          </div>
 
          {/* Main Content */}

@@ -9,7 +9,7 @@ import { useCommunityStore } from '@/store/useCommunityStore';
 
 const ThreadDetailPage = () => {
    const { threadId } = useParams();
-   const { currentThread, isLoading, error, fetchThreadById, addReply, voteReply } = useCommunityStore();
+   const { currentThread, isLoading, error, fetchThreadById, addReply, voteReply, voteThread } = useCommunityStore();
 
    useEffect(() => {
       if (threadId) {
@@ -23,6 +23,15 @@ const ThreadDetailPage = () => {
       } catch (err) {
          console.error('Failed to add reply:', err);
       }
+   };
+   
+   const handleThreadVote = async (direction) => {
+       if (!threadId) return;
+       try {
+           await voteThread(threadId, direction);
+       } catch (err) {
+           console.error('Failed to vote on thread:', err);
+       }
    };
 
    // Loading state
@@ -101,7 +110,10 @@ const ThreadDetailPage = () => {
          </Link>
 
          <div className="mb-8">
-            <QuestionBody question={questionData} />
+            <QuestionBody 
+                question={questionData} 
+                onVote={handleThreadVote}
+            />
          </div>
 
          {/* AI Summary - only show if solved or has replies */}

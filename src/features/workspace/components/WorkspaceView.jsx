@@ -3,7 +3,7 @@ import {
     ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft,
     CheckSquare, Square, PanelRightClose, Maximize2
 } from 'lucide-react';
-import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { cn } from "@/lib/utils";
 import DocumentItem from './DocumentItem';
 import TimerWidget from './TimerWidget';
@@ -307,7 +307,11 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                 <div className="flex-1 overflow-hidden">
                      <PanelGroup direction="horizontal">
                         {/* Doc List Panel */}
-                        <Panel defaultSize={selectedDocument ? 40 : 100} minSize={30}>
+                        <Panel 
+                            defaultSize={40} 
+                            minSize={30}
+                            maxSize={70}
+                        >
                             <div className="h-full overflow-y-auto p-4 custom-scrollbar">
                                 <SmartFileUploader
                                     caseId={activeCase.id}
@@ -349,16 +353,21 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                             </div>
                         </Panel>
 
-                        {/* Resize Handle */}
-                        {selectedDocument && (
-                            <PanelResizeHandle className="w-1 bg-border hover:bg-accent ring-1 ring-border/50 transition-colors cursor-col-resize flex items-center justify-center">
-                                <div className="w-0.5 h-8 bg-muted-foreground/30 rounded-full" />
-                            </PanelResizeHandle>
-                        )}
+                        {/* Resize Handle - ALWAYS RENDERED */}
+                        <PanelResizeHandle className="w-1 bg-border hover:bg-accent ring-1 ring-border/50 transition-colors cursor-col-resize flex items-center justify-center">
+                            <div className="w-0.5 h-8 bg-muted-foreground/30 rounded-full" />
+                        </PanelResizeHandle>
 
-                        {/* Preview Panel (3rd Column) */}
-                        {selectedDocument && (
-                            <Panel defaultSize={60} minSize={30}>
+                        {/* Preview Panel - ALWAYS RENDERED with collapsible */}
+                        <Panel 
+                            defaultSize={60} 
+                            minSize={30} 
+                            maxSize={70}
+                            collapsible={true}
+                            collapsedSize={0}
+                            defaultCollapsed={!selectedDocument}
+                        >
+                            {selectedDocument ? (
                                 <div className="h-full border-l border-border bg-background flex flex-col overflow-hidden">
                                      <div className="flex items-center justify-between p-3 border-b border-border bg-card/50">
                                         <div className="flex items-center gap-2 truncate">
@@ -426,8 +435,12 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                         )}
                                     </div>
                                 </div>
-                            </Panel>
-                        )}
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-muted-foreground bg-background/50 border-l border-border">
+                                    <p className="text-sm">Select a document to preview</p>
+                                </div>
+                            )}
+                        </Panel>
                      </PanelGroup>
                 </div>
             </main>

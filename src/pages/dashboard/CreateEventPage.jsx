@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useCasesStore } from '@/store/cases';
 // Assuming useScheduleStore will be created or direct API call
-import api from '@/services/api'; 
+import api from '@/lib/api/api'; 
 
 const CreateEventPage = () => {
     const navigate = useNavigate();

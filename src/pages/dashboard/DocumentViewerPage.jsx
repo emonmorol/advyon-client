@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
+import { cn } from '@/lib/utils';
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { 
   PDFViewer, 
   PDFToolbar, 
@@ -218,24 +219,32 @@ const DocumentViewerPage = () => {
             </div>
           </Panel>
 
-          {/* Resize Handle */}
-          {isPanelOpen && (
-            <PanelResizeHandle className="w-1 bg-border hover:bg-accent ring-1 ring-border/50 transition-colors cursor-col-resize flex items-center justify-center">
-               <div className="w-0.5 h-8 bg-muted-foreground/30 rounded-full" />
-            </PanelResizeHandle>
-          )}
+          {/* Resize Handle - ALWAYS RENDERED */}
+          <PanelResizeHandle 
+            className={cn(
+              "w-1 bg-border hover:bg-accent ring-1 ring-border/50 transition-colors cursor-col-resize flex items-center justify-center",
+              !isPanelOpen && "opacity-30 hover:opacity-100"
+            )}
+          >
+            <div className="w-0.5 h-8 bg-muted-foreground/30 rounded-full" />
+          </PanelResizeHandle>
 
-          {/* AI Analysis Panel */}
-          {isPanelOpen && (
-            <Panel defaultSize={35} minSize={20} maxSize={50} collapsible={true} onCollapse={() => setIsPanelOpen(false)}>
-              <div className="h-full overflow-y-auto bg-background border-l border-border">
-                <AIAnalysisPanel
-                   documentId={docId}
-                   analysis={docData.analysis}
-                 />
-              </div>
-            </Panel>
-          )}
+          {/* AI Analysis Panel - ALWAYS RENDERED with collapsible */}
+          <Panel 
+            defaultSize={35} 
+            minSize={20} 
+            maxSize={50} 
+            collapsible={true}
+            collapsedSize={0}
+            defaultCollapsed={!isPanelOpen}
+          >
+            <div className="h-full overflow-y-auto bg-background border-l border-border">
+              <AIAnalysisPanel
+                 documentId={docId}
+                 analysis={docData.analysis}
+               />
+            </div>
+          </Panel>
         </PanelGroup>
       </div>
 

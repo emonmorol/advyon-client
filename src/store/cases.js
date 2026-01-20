@@ -34,6 +34,7 @@ export const useCasesStore = create(persist((set, get) => ({
         const { lastFetched, isLoading } = get();
 
         // Cache Strategy: Don't refetch if fetched < 1 minute ago, unless forced
+        // Note: lastFetched is set to 0 after create/update/delete to invalidate cache
         if (!force && lastFetched && Date.now() - lastFetched < 60000) {
             return get().cases;
         }
@@ -70,7 +71,8 @@ export const useCasesStore = create(persist((set, get) => ({
             set((state) => ({
                 cases: [newCase, ...state.cases], // Prepend to list
                 isLoading: false,
-                activeCaseId: newCase.id || newCase._id // Optionally auto-select it
+                activeCaseId: newCase.id || newCase._id, // Optionally auto-select it
+                lastFetched: 0 // Invalidate cache to force refetch on next fetchCases call
             }));
             return newCase;
         } catch (err) {
@@ -93,7 +95,8 @@ export const useCasesStore = create(persist((set, get) => ({
         try {
             // 2. API Call
             await api.put(`${BASE}/${id}`, updates);
-            // Optionally refetch or rely on optimistic
+            // Invalidate cache to force refetch on next fetchCases call
+            set({ lastFetched: 0 });
         } catch (err) {
             // 3. Rollback on error
             set({ cases: prevCases, error: "Failed to update case" });
@@ -115,6 +118,8 @@ export const useCasesStore = create(persist((set, get) => ({
             if (get().activeCaseId === id) {
                 set({ activeCaseId: null });
             }
+            // Invalidate cache to force refetch on next fetchCases call
+            set({ lastFetched: 0 });
         } catch (err) {
             set({ cases: prevCases, error: "Failed to delete case" });
             throw err;
