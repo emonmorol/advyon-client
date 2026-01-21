@@ -8,6 +8,7 @@ import api from '@/lib/api/api';
 export const useScheduleStore = create((set) => ({
   events: [],
   todayEvents: [],
+  selectedEvent: null,
   isLoading: false,
   error: null,
 
@@ -33,6 +34,22 @@ export const useScheduleStore = create((set) => ({
     }
   },
 
+  // Fetch single event by ID for modal view
+  getEventById: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data } = await api.get(`/schedules/${id}`);
+      set({ selectedEvent: data, isLoading: false });
+      return data;
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Clear selected event (when closing modal)
+  clearSelectedEvent: () => set({ selectedEvent: null }),
+
   createEvent: async (eventData) => {
     set({ isLoading: true, error: null });
     try {
@@ -48,3 +65,4 @@ export const useScheduleStore = create((set) => ({
     }
   }
 }));
+

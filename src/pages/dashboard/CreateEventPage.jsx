@@ -52,21 +52,18 @@ const CreateEventPage = () => {
             // Validate
             if (!formData.caseId) {
                 toast.error("Please select a case");
+                setIsLoading(false);
                 return;
             }
 
-            // Call API
-            // const response = await api.post('/schedules', formData);
-            
-            // Mock success for now until API client is updated
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log("Creating event:", formData);
+            // Call API to create event on server
+            await api.post('/schedules', formData);
             
             toast.success("Event scheduled successfully");
             navigate('/dashboard/schedule');
         } catch (error) {
             console.error(error);
-            toast.error("Failed to create event");
+            toast.error(error.response?.data?.message || "Failed to create event");
         } finally {
             setIsLoading(false);
         }

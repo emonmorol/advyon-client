@@ -8,6 +8,7 @@ import {
   Users,
   Settings,
   FileText,
+  FolderOpen,
   BarChart3,
   HelpCircle,
   Loader2
@@ -25,6 +26,12 @@ export const allSidebarItems = [
     title: "Cases",
     href: "/dashboard/workspace",
     icon: FileText,
+    roles: ['lawyer', 'client', 'admin', 'judge']
+  },
+  {
+    title: "Documents",
+    href: "/dashboard/documents",
+    icon: FolderOpen,
     roles: ['lawyer', 'client', 'admin', 'judge']
   },
   {

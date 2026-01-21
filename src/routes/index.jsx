@@ -25,6 +25,7 @@ import LawyerVerificationPage from '@/pages/dashboard/LawyerVerificationPage';
 import LegalSearchPage from '@/pages/dashboard/LegalSearchPage';
 import AskQuestionPage from '@/pages/dashboard/AskQuestionPage';
 import ThreadDetailPage from '@/pages/dashboard/ThreadDetailPage';
+import MyDocumentsPage from '@/pages/dashboard/MyDocumentsPage';
 import ComingSoonPage from '@/pages/ComingSoonPage';
 
 export const router = createBrowserRouter([
@@ -70,7 +71,7 @@ export const router = createBrowserRouter([
       { path: 'profile', element: <ProfilePage /> },
       { path: 'cases/active', element: <ComingSoonPage title="Active Cases" /> },
       { path: 'cases/archived', element: <ComingSoonPage title="Archived Cases" /> },
-      { path: 'documents', element: <ComingSoonPage title="My Documents" /> },
+      { path: 'documents', element: <MyDocumentsPage /> },
       { 
         path: 'clients', 
         element: (

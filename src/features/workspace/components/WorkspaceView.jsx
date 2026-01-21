@@ -27,7 +27,8 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         selectedDocument, 
         setSelectedDocument,
         selectedForAI,
-        toggleSelectedForAI
+        toggleSelectedForAI,
+        deleteDocument
     } = useDocumentsStore();
 
     // Fetch ALL documents for the case on mount or case change
@@ -82,7 +83,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
 
     // Filter files based on search term
     const filteredFiles = currentFiles.filter(f =>
-        f.name.toLowerCase().includes(searchTerm.toLowerCase())
+        (f.fileName || f.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // Fetch Content for selected document
@@ -147,7 +148,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     };
 
     return (
-        <div className="flex flex-1 overflow-hidden relative z-20 animate-in fade-in slide-in-from-right-4 duration-500 h-full">
+        <div className="flex flex-1 overflow-hidden relative z-20 animate-in fade-in slide-in-from-right-4 duration-500 h-full p-0">
 
             {/* LEFT SIDEBAR */}
             <aside className={cn("bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out", showLeftSidebar ? "w-64 translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 overflow-hidden border-none")}>
@@ -198,12 +199,12 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                             <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] rounded border border-accent/30">{activeCase.status}</span>
                         </div>
 
-                        <TimerWidget />
+                        {/* <TimerWidget />
 
                         <div className="flex items-center justify-between p-2 bg-secondary/30 rounded border border-border mt-3">
                             <div className="flex items-center gap-2"><Users size={12} className="text-primary" /><span className="text-xs text-muted-foreground">Client Access</span></div>
                             <div className="relative w-7 h-3.5 bg-muted rounded-full cursor-pointer border border-border"><div className="absolute right-0.5 top-0.5 w-2.5 h-2.5 bg-primary rounded-full shadow-sm"></div></div>
-                        </div>
+                        </div> */}
 
                         {/* Folder Navigation Tree */}
                         <div className="mt-4 space-y-0.5">
@@ -262,7 +263,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                                             )}
                                                         >
                                                             <span className={cn("w-1 h-1 rounded-full flex-shrink-0", selectedDocument?.id === file.id ? "bg-primary" : "bg-muted-foreground")}></span>
-                                                            {file.name}
+                                                            {file.fileName || file.name}
                                                         </button>
                                                     </div>
                                                 ))}
@@ -312,7 +313,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                             minSize={30}
                             maxSize={70}
                         >
-                            <div className="h-full overflow-y-auto p-4 custom-scrollbar">
+                            <div className="h-full overflow-y-auto custom-scrollbar">
                                 <SmartFileUploader
                                     caseId={activeCase.id}
                                     folderName={currentFolder}
@@ -335,10 +336,23 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                     ) : filteredFiles.length > 0 ? (
                                         filteredFiles.map((file, idx) => (
                                             <DocumentItem 
-                                                key={idx} 
+                                                key={file.id || file._id || idx} 
                                                 {...file} 
                                                 onClick={() => setSelectedDocument(selectedDocument?.id === file.id ? null : file)} 
                                                 isActive={selectedDocument?.id === file.id}
+                                                onDelete={async (docId) => {
+                                                    try {
+                                                        await deleteDocument({ caseId: activeCase.id, documentId: docId, folder: currentFolder });
+                                                        // Clear selection if deleted doc was selected
+                                                        if (selectedDocument?.id === docId || selectedDocument?._id === docId) {
+                                                            setSelectedDocument(null);
+                                                        }
+                                                        // Refresh documents list
+                                                        fetchDocuments({ caseId: activeCase.id, force: true });
+                                                    } catch (err) {
+                                                        console.error('Delete failed:', err);
+                                                    }
+                                                }}
                                             />
                                         ))
                                     ) : (

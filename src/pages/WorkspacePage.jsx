@@ -38,9 +38,9 @@ const WorkspacePage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
+        <div className="min-h-screen bg-background flex flex-col p-0">
 
-            <div className="flex flex-1 relative">
+            <div className="flex flex-1 relative p-0">
                 {/* Animated Placeholder for the fixed sidebar width */}
 
 
