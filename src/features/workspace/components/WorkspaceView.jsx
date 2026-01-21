@@ -319,35 +319,47 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                     folderName={currentFolder}
                                     className="mb-4 border-2 border-dashed border-teal-accent/30 bg-transparent hover:border-accent/50 hover:bg-secondary/50 transition-all"
                                     onUploadComplete={React.useCallback(() => {
+                                        console.log('[WorkspaceView] Upload complete, refreshing documents...');
                                         fetchDocuments({ caseId: activeCase.id, force: true });
                                     }, [activeCase.id, fetchDocuments])}
                                 />
 
-                                <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
-                                    <span>{currentFolder}</span>
-                                    <span className="text-[9px] bg-secondary px-1.5 py-0.5 rounded-full text-foreground">{filteredFiles.length} items</span>
-                                </h3>
+                                {/* Header with folder info and total count */}
+                                <div className="flex items-center justify-between mb-3 px-2">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                            {currentFolder}
+                                        </h3>
+                                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                            {filteredFiles.length} files
+                                        </span>
+                                    </div>
+                                    <span className="text-[9px] text-muted-foreground">
+                                        Total: {allCaseDocs.length} docs in {dynamicFolders.length} folders
+                                    </span>
+                                </div>
 
-                                <div className="space-y-1">
+                                <div className="space-y-1 px-2">
                                     {loading ? (
                                         <div className="text-center py-12 opacity-50">
-                                            <p className="text-sm text-[#B0C4C3]">Loading...</p>
+                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                                            <p className="text-sm text-muted-foreground">Loading documents...</p>
                                         </div>
                                     ) : filteredFiles.length > 0 ? (
                                         filteredFiles.map((file, idx) => (
                                             <DocumentItem 
                                                 key={file.id || file._id || idx} 
-                                                {...file} 
+                                                {...file}
+                                                status={file.analysisStatus || file.processingStatus}
+                                                date={file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : ''}
                                                 onClick={() => setSelectedDocument(selectedDocument?.id === file.id ? null : file)} 
                                                 isActive={selectedDocument?.id === file.id}
                                                 onDelete={async (docId) => {
                                                     try {
                                                         await deleteDocument({ caseId: activeCase.id, documentId: docId, folder: currentFolder });
-                                                        // Clear selection if deleted doc was selected
                                                         if (selectedDocument?.id === docId || selectedDocument?._id === docId) {
                                                             setSelectedDocument(null);
                                                         }
-                                                        // Refresh documents list
                                                         fetchDocuments({ caseId: activeCase.id, force: true });
                                                     } catch (err) {
                                                         console.error('Delete failed:', err);
@@ -360,6 +372,9 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                             <FolderOpen size={40} className="mx-auto text-teal-accent mb-2" />
                                             <p className="text-sm text-muted-foreground">
                                                 {searchTerm ? `No files match "${searchTerm}"` : "No files in this folder yet."}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground/70 mt-1">
+                                                Upload a document above or select a different folder
                                             </p>
                                         </div>
                                     )}
