@@ -101,18 +101,25 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
             }
             
             setLoadingPreview(true);
+            console.log('[Preview] Loading for doc:', docId, 'cloudinaryUrl:', selectedDocument.cloudinaryUrl);
+            
             try {
                 // Check if we already have a direct URL in the document object
-                if (selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url) {
-                    setPreviewUrl(selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url);
+                const directUrl = selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url;
+                if (directUrl) {
+                    console.log('[Preview] Using direct cloudinary URL:', directUrl);
+                    setPreviewUrl(directUrl);
                 } else {
+                    console.log('[Preview] Fetching content URL from API...');
                     const url = await fetchDocumentContent(docId);
+                    console.log('[Preview] Fetched URL:', url);
                     if (active) {
                         setPreviewUrl(url);
                     }
                 }
             } catch (err) {
-                console.error("Failed to load preview url", err);
+                console.error("[Preview] Failed to load preview url", err);
+                setPreviewUrl(null);
             } finally {
                 if (active) setLoadingPreview(false);
             }
@@ -413,20 +420,23 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                             {(previewUrl) ? (
                                                 <div className="flex-1 bg-white relative">
                                                     {(() => {
-                                                        const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(selectedDocument.type?.toLowerCase()) || 
-                                                                    /\.(doc|docx|ppt|pptx|xls|xlsx)$/i.test(selectedDocument.name);
+                                                        const fileExt = (selectedDocument.fileName || selectedDocument.name || '').split('.').pop()?.toLowerCase();
+                                                        const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(fileExt);
+                                                        const isPdf = fileExt === 'pdf' || selectedDocument.fileType?.includes('pdf');
                                                         
                                                         if (!previewUrl || typeof previewUrl !== 'string') return null;
 
-                                                        const finalUrl = isOffice 
-                                                            ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`
+                                                        // Use Google Docs Viewer for PDFs and Office files (handles CORS)
+                                                        const finalUrl = (isPdf || isOffice)
+                                                            ? `https://docs.google.com/gview?url=${encodeURIComponent(previewUrl)}&embedded=true`
                                                             : previewUrl;
 
                                                         return (
                                                             <iframe 
                                                                 src={finalUrl} 
                                                                 className="w-full h-full border-none"
-                                                                title={selectedDocument.name}
+                                                                title={selectedDocument.fileName || selectedDocument.name}
+                                                                loading="lazy"
                                                             />
                                                         );
                                                     })()}

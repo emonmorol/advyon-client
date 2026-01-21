@@ -52,97 +52,61 @@ const SummaryContent = ({
     refinedMeta: `advyon_doc_${documentId}_refined_meta`,
   };
 
-  // Default content
-  const defaultRawSummary = `## Contract Agreement
-
-WHEREAS, TechCorp Industries ("Buyer") and Legal Partners LLP ("Seller") 
-enter into this agreement on January 15, 2024.
-
-### Section 1: Intellectual Property Transfer
-The Seller agrees to transfer all intellectual property rights, including 
-but not limited to patents, trademarks, and copyrights, to the Buyer upon 
-completion of payment as specified in Section 3.
-
-### Section 2: Terms and Conditions
-- Termination requires 30-day written notice
-- Binding arbitration in New York, NY
-- Confidentiality period: 5 years post-termination
-
-### Section 3: Payment Structure
-Total consideration: $2,500,000 USD
-- Initial payment: $500,000 (upon signing)
-- Monthly installments: $125,000 x 16 months
-- Final payment: $500,000 (upon IP transfer completion)
-
-**Signed:**
-John Smith, CEO - TechCorp Industries
-Sarah Johnson, Partner - Legal Partners LLP`;
-
-  const defaultRefinedSummary = `This legal document pertains to the contractual agreement between **TechCorp Industries** (Buyer) and **Legal Partners LLP** (Seller) regarding the acquisition of intellectual property rights.
-
-## Key Terms
-
-The agreement outlines the terms of transfer, including:
-- **Compensation Structure**: $2.5M total, paid over 24 months
-- **Warranties**: Standard IP warranties and representations
-- **Dispute Resolution**: Binding arbitration in New York
-
-## Important Provisions
-
-1. **30-day notice period** required for contract termination
-2. **Binding arbitration clause** for dispute resolution
-3. **Confidentiality obligations** extending 5 years beyond contract termination
-
-## Parties Involved
-- **Buyer**: TechCorp Industries (represented by John Smith, CEO)
-- **Seller**: Legal Partners LLP (represented by Sarah Johnson, Partner)
-
-*Effective Date: January 15, 2024*`;
-
   // State for saved content
   const [savedRawContent, setSavedRawContent] = useState('');
   const [savedRefinedContent, setSavedRefinedContent] = useState('');
   const [rawLastEdited, setRawLastEdited] = useState(null);
   const [refinedLastEdited, setRefinedLastEdited] = useState(null);
 
-  // Load saved content from localStorage on mount
+  // Load saved content from props first, then localStorage, no demo fallback
   useEffect(() => {
     const loadSavedContent = () => {
       try {
-        // Load raw content
-        const savedRaw = localStorage.getItem(STORAGE_KEYS.raw);
-        const savedRawMeta = localStorage.getItem(STORAGE_KEYS.rawMeta);
-        if (savedRaw) {
-          setSavedRawContent(savedRaw);
-          if (savedRawMeta) {
-            const meta = JSON.parse(savedRawMeta);
-            setRawLastEdited(new Date(meta.lastEdited));
-          }
+        // PRIORITY ORDER: Props data > localStorage > empty
+        
+        // Raw content: prefer prop, then localStorage
+        if (rawSummary && rawSummary.trim()) {
+          setSavedRawContent(rawSummary);
         } else {
-          setSavedRawContent(rawSummary || defaultRawSummary);
+          const savedRaw = localStorage.getItem(STORAGE_KEYS.raw);
+          const savedRawMeta = localStorage.getItem(STORAGE_KEYS.rawMeta);
+          if (savedRaw) {
+            setSavedRawContent(savedRaw);
+            if (savedRawMeta) {
+              const meta = JSON.parse(savedRawMeta);
+              setRawLastEdited(new Date(meta.lastEdited));
+            }
+          } else {
+            setSavedRawContent('');
+          }
         }
 
-        // Load refined content
-        const savedRefined = localStorage.getItem(STORAGE_KEYS.refined);
-        const savedRefinedMeta = localStorage.getItem(STORAGE_KEYS.refinedMeta);
-        if (savedRefined) {
-          setSavedRefinedContent(savedRefined);
-          if (savedRefinedMeta) {
-            const meta = JSON.parse(savedRefinedMeta);
-            setRefinedLastEdited(new Date(meta.lastEdited));
-          }
+        // Refined content: prefer prop, then localStorage
+        if (refinedSummary && refinedSummary.trim()) {
+          setSavedRefinedContent(refinedSummary);
         } else {
-          setSavedRefinedContent(refinedSummary || defaultRefinedSummary);
+          const savedRefined = localStorage.getItem(STORAGE_KEYS.refined);
+          const savedRefinedMeta = localStorage.getItem(STORAGE_KEYS.refinedMeta);
+          if (savedRefined) {
+            setSavedRefinedContent(savedRefined);
+            if (savedRefinedMeta) {
+              const meta = JSON.parse(savedRefinedMeta);
+              setRefinedLastEdited(new Date(meta.lastEdited));
+            }
+          } else {
+            setSavedRefinedContent('');
+          }
         }
       } catch (error) {
         console.error('Error loading saved content:', error);
-        setSavedRawContent(rawSummary || defaultRawSummary);
-        setSavedRefinedContent(refinedSummary || defaultRefinedSummary);
+        // Use props as final fallback
+        setSavedRawContent(rawSummary || '');
+        setSavedRefinedContent(refinedSummary || '');
       }
     };
 
     loadSavedContent();
-  }, [documentId]);
+  }, [documentId, rawSummary, refinedSummary]);
 
   const currentContent = activeView === 'raw' ? savedRawContent : savedRefinedContent;
   const currentLastEdited = activeView === 'raw' ? rawLastEdited : refinedLastEdited;
@@ -524,9 +488,21 @@ The agreement outlines the terms of transfer, including:
                 </div>
               </div>
             </div>
-          ) : (
+          ) : currentContent && currentContent.trim() ? (
             <div className="p-4 space-y-1 max-h-96 overflow-y-auto custom-scrollbar">
               {renderMarkdown(currentContent)}
+            </div>
+          ) : (
+            <div className="p-6 flex flex-col items-center justify-center text-center">
+              <Sparkles className="h-10 w-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm font-medium text-muted-foreground mb-1">
+                {activeView === 'raw' ? 'No Raw Summary Available' : 'No AI Summary Available'}
+              </p>
+              <p className="text-xs text-muted-foreground/70 max-w-[200px]">
+                {activeView === 'raw' 
+                  ? 'The raw extracted text from this document is not yet available.'
+                  : 'AI analysis has not been completed for this document yet.'}
+              </p>
             </div>
           )}
         </motion.div>

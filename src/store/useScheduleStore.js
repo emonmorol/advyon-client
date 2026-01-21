@@ -17,7 +17,8 @@ export const useScheduleStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await api.get('/schedules', { params: filters });
-      set({ events: data, isLoading: false });
+      // Handle wrapped response: { success, message, data: [...] }
+      set({ events: data.data || data || [], isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
     }
@@ -28,7 +29,8 @@ export const useScheduleStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await api.get('/schedules/today');
-      set({ todayEvents: data, isLoading: false });
+      // Handle wrapped response
+      set({ todayEvents: data.data || data || [], isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
     }
@@ -39,8 +41,9 @@ export const useScheduleStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await api.get(`/schedules/${id}`);
-      set({ selectedEvent: data, isLoading: false });
-      return data;
+      const event = data.data || data;
+      set({ selectedEvent: event, isLoading: false });
+      return event;
     } catch (error) {
       set({ error: error.message, isLoading: false });
       throw error;
@@ -54,11 +57,12 @@ export const useScheduleStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await api.post('/schedules', eventData);
+      const newEvent = data.data || data;
       set((state) => ({ 
-        events: [...state.events, data],
+        events: [...(state.events || []), newEvent],
         isLoading: false 
       }));
-      return data;
+      return newEvent;
     } catch (error) {
       set({ error: error.message, isLoading: false });
       throw error;

@@ -76,7 +76,7 @@ const SchedulePage = () => {
   };
 
   const filteredEvents = useMemo(() => {
-    let filtered = [...events];
+    let filtered = [...(events || [])];
 
     // Apply date filter
     if (activeFilter === 'today') {

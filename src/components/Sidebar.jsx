@@ -11,7 +11,8 @@ import {
   FolderOpen,
   BarChart3,
   HelpCircle,
-  Loader2
+  Loader2,
+  Calendar
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -26,6 +27,12 @@ export const allSidebarItems = [
     title: "Cases",
     href: "/dashboard/workspace",
     icon: FileText,
+    roles: ['lawyer', 'client', 'admin', 'judge']
+  },
+  {
+    title: "Schedule",
+    href: "/dashboard/schedule",
+    icon: Calendar,
     roles: ['lawyer', 'client', 'admin', 'judge']
   },
   {

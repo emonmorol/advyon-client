@@ -62,21 +62,21 @@ const KeyPointsList = ({ points = [] }) => {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`p-4 rounded-lg border ${styles.bg} ${styles.border} transition-all hover:shadow-md`}
+            className={`p-3 rounded-lg border bg-card hover:bg-muted/50 transition-all group`}
           >
             <div className="flex items-start gap-3">
-              {/* Number Badge */}
-              <div className="flex-shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                {index + 1}
-              </div>
+              {/* Importance Indicator */}
+              <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${styles.badge.split(' ')[0].replace('bg-', 'bg-')}`} />
               
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <IconComponent className={`h-4 w-4 ${styles.iconColor}`} />
+                  <span className={`text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded ${styles.badge}`}>
+                    {point.importance || 'Normal'}
+                  </span>
                   {point.category && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${styles.badge}`}>
-                      {point.category}
+                    <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                      • {point.category}
                     </span>
                   )}
                 </div>

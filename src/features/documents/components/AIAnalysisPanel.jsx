@@ -160,7 +160,7 @@ const AIAnalysisPanel = ({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-6"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -168,34 +168,51 @@ const AIAnalysisPanel = ({
               </span>
             </div>
             
-            <EntityLegend />
+            {/* EntityLegend /> - Legend implies map/chart, maybe less useful here? keeping simple */}
             
-            <div className="space-y-2">
-              {entities.map((entity, index) => {
-                const IconComponent = getEntityIcon(entity.type);
-                const colorClass = getEntityColor(entity.type);
-                
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-1.5 rounded ${colorClass}`}>
-                        <IconComponent className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-sm text-foreground">{entity.name}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground bg-background px-2 py-0.5 rounded-full">
-                      {entity.count}x
-                    </span>
-                  </motion.div>
-                );
-              })}
-            </div>
+            {['person', 'organization', 'date', 'amount', 'location', 'other'].map(type => {
+              const typeEntities = entities.filter(e => (e.type || 'other').toLowerCase() === type);
+              if (!typeEntities.length) return null;
+              
+              const IconComponent = getEntityIcon(type);
+              const colorClass = getEntityColor(type);
+              
+              return (
+                <div key={type} className="space-y-2">
+                  <h3 className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5">
+                    <IconComponent className="h-3 w-3" />
+                    {type}s
+                  </h3>
+                  <div className="space-y-1">
+                    {typeEntities.map((entity, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.02 }}
+                        className="flex items-center justify-between p-2.5 rounded-md border border-transparent hover:border-border hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`w-1.5 h-1.5 rounded-full ${colorClass.split(' ')[0]}`} />
+                          <span className="text-sm font-medium text-foreground">{entity.name}</span>
+                        </div>
+                        {entity.count > 1 && (
+                          <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                            {entity.count} matches
+                          </span>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {entities.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                    No entities detected in this document.
+                </div>
+            )}
           </motion.div>
         </TabsContent>
 
@@ -213,34 +230,56 @@ const AIAnalysisPanel = ({
             </div>
             
             <div className="space-y-3">
-              {legalRefs.map((ref, index) => (
+              {legalRefs.length > 0 ? legalRefs.map((ref, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="p-4 rounded-lg border border-border bg-background hover:border-accent/50 transition-colors cursor-pointer"
+                  className="p-3 rounded-lg border border-border bg-card/50 hover:bg-card hover:border-accent/30 transition-all shadow-sm group"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <BookOpen className="h-4 w-4 text-primary" />
+                    <div className="mt-0.5 p-1.5 rounded bg-primary/5 text-primary group-hover:bg-primary/10 transition-colors">
+                      <Scale className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-sm text-foreground">{ref.citation}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full uppercase font-medium ${
-                          ref.relevance === 'high' 
-                            ? 'bg-destructive/10 text-destructive' 
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {ref.relevance}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{ref.description}</p>
+                        {typeof ref === 'string' ? (
+                             <p className="text-sm font-medium text-foreground leading-relaxed">{ref}</p>
+                        ) : (
+                            <>
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className="font-semibold text-sm text-foreground">{ref.citation || ref.text}</span>
+                                {ref.relevance && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full uppercase font-bold tracking-wider ${
+                                    ref.relevance === 'high' 
+                                      ? 'bg-red-500/10 text-red-600 border border-red-200' 
+                                      : 'bg-muted text-muted-foreground border border-border'
+                                  }`}>
+                                    {ref.relevance}
+                                  </span>
+                                )}
+                              </div>
+                              {ref.description && (
+                                <p className="text-xs text-muted-foreground leading-relaxed pl-1 border-l-2 border-border/50">
+                                  {ref.description}
+                                </p>
+                              )}
+                            </>
+                        )}
                     </div>
                   </div>
                 </motion.div>
-              ))}
+              )) : (
+                <div className="text-center py-10">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted mb-3">
+                        <Scale className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">No legal references found</p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-[200px] mx-auto">
+                        AI analysis did not identify specific legal citations in this document.
+                    </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </TabsContent>

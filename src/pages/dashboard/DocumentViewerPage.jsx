@@ -20,7 +20,8 @@ import {
   PanelRightClose,
   PanelRight,
   Eye,
-  EyeOff
+  EyeOff,
+  Loader2
 } from 'lucide-react';
 import { useDocumentsStore } from '@/store/documents';
 import { useAIStore } from '@/store/useAIStore';
@@ -87,14 +88,16 @@ const DocumentViewerPage = () => {
                               type: e.type || 'other',
                               count: e.count || 1
                           })) || [],
-                          legalRefs: doc.aiAnalysis?.legalRefs || []
+                          legalRefs: doc.aiAnalysis?.legalRefs || [],
+                          category: doc.aiAnalysis?.documentCategory,
+                          confidence: doc.aiAnalysis?.confidenceScore
                       } || {}, 
                       entityHighlights: doc.aiAnalysis?.extractedEntities?.map(e => ({
                           id: e.name || e,
                           text: e.name || e,
                           type: e.type || 'other',
                           count: e.count || 1
-                      })) || []
+                          })) || []
                   });
                   setFileUrl(doc.cloudinaryUrl);
                   setSelectedDocument(doc);
@@ -158,8 +161,27 @@ const DocumentViewerPage = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="border-l border-border pl-4">
-            <h1 className="font-semibold text-foreground truncate max-w-md">{docData.meta.title}</h1>
-            <p className="text-xs text-muted-foreground">{docData.meta.type} • {docData.meta.size}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="font-semibold text-foreground truncate max-w-md" title={docData.meta.title}>
+                {docData.meta.title}
+              </h1>
+              {docData.analysis?.category && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent/10 text-accent border border-accent/20">
+                  {docData.analysis.category}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{docData.meta.type}</span>
+              <span className="w-1 h-1 rounded-full bg-border" />
+              <span>{docData.meta.size}</span>
+              {docData.analysis?.confidence > 0 && (
+                <>
+                  <span className="w-1 h-1 rounded-full bg-border" />
+                  <span title="AI Confidence Score">{Math.round(docData.analysis.confidence * 100)}% confidence</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
