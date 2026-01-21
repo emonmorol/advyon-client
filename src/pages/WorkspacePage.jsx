@@ -4,8 +4,10 @@ import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { motion } from 'framer-motion';
 import { useCasesStore } from '@/store/cases';
+import { useParams } from 'react-router-dom';
 
 const WorkspacePage = () => {
+    const { caseId } = useParams(); // Get caseId from URL
     const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'workspace'
     const [activeCase, setActiveCase] = useState(null);
     const [searchTerm, setSearchTerm] = useState(''); // Global search state
@@ -17,6 +19,18 @@ const WorkspacePage = () => {
         fetchCases();
     }, [fetchCases]);
 
+    // Handle URL parameter for direct case access
+    useEffect(() => {
+        if (caseId && cases.length > 0) {
+            // Find the case with matching ID (check both id and _id)
+            const caseToOpen = cases.find(c => c.id === caseId || c._id === caseId);
+            if (caseToOpen) {
+                setActiveCase(caseToOpen);
+                setCurrentView('workspace');
+            }
+        }
+    }, [caseId, cases]);
+
     const handleCaseSelect = (caseData) => {
         setActiveCase(caseData);
         setCurrentView('workspace');
@@ -24,9 +38,9 @@ const WorkspacePage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
+        <div className="min-h-screen bg-background flex flex-col p-0">
 
-            <div className="flex flex-1 relative">
+            <div className="flex flex-1 relative p-0">
                 {/* Animated Placeholder for the fixed sidebar width */}
 
 

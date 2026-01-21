@@ -61,6 +61,59 @@ const AIAssistant = ({
       }
   }, [caseData?.id, selectedDocument, selectedForAI, setContext]);
 
+  // Populate suggestions from selected document's AI analysis
+  useEffect(() => {
+      if (selectedDocument?.aiAnalysis) {
+          const analysis = selectedDocument.aiAnalysis;
+          console.log('[AIAssistant] Updating suggestions from document:', selectedDocument.fileName || selectedDocument.name, analysis);
+          
+          // Populate key points as next steps
+          if (analysis.keyPoints && analysis.keyPoints.length > 0) {
+              setNextSteps(analysis.keyPoints.map((kp, idx) => ({
+                  id: `kp-${idx}`,
+                  text: typeof kp === 'string' ? kp : kp.text,
+                  priority: 'medium',
+                  completed: false
+              })));
+          } else {
+              setNextSteps([]);
+          }
+          
+          // Populate legal refs
+          if (analysis.legalRefs && analysis.legalRefs.length > 0) {
+              setLegalSections(analysis.legalRefs.map((ref, idx) => ({
+                  id: `legal-${idx}`,
+                  code: ref.citation || 'Legal Reference',
+                  title: ref.description || 'No description',
+                  relevant: ref.relevance === 'high' ? 95 : (ref.relevance === 'medium' ? 75 : 50)
+              })));
+          } else {
+              setLegalSections([]);
+          }
+          
+          // Populate entities as similar cases (using entity names for context)
+          if (analysis.extractedEntities && analysis.extractedEntities.length > 0) {
+              setSimilarCases(analysis.extractedEntities.slice(0, 3).map((entity, idx) => ({
+                  id: `entity-${idx}`,
+                  title: `Related: ${entity.name}`,
+                  replies: entity.count || 1,
+                  views: Math.floor(Math.random() * 100) + 10
+              })));
+          } else {
+              setSimilarCases([]);
+          }
+          
+          // Clear missing docs if analysis completed
+          setMissingDocs([]);
+      } else {
+          // Reset to empty when no document selected
+          setNextSteps([]);
+          setLegalSections([]);
+          setSimilarCases([]);
+          setMissingDocs([]);
+      }
+  }, [selectedDocument]);
+
   // Mock data for suggestions - replaced with empty initial state
   const [nextSteps, setNextSteps] = useState([]);
   const [missingDocs, setMissingDocs] = useState([]);
@@ -279,9 +332,9 @@ const AIAssistant = ({
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <FileText size={10} /> analyzing Document:
                   </p>
-                  <p className="text-sm font-semibold text-accent truncate">{selectedDocument.name}</p>
+                  <p className="text-sm font-semibold text-accent truncate">{selectedDocument.fileName || selectedDocument.name || 'Untitled'}</p>
                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                     type: {selectedDocument.type || 'PDF'} • size: {selectedDocument.size ? Math.round(selectedDocument.size/1024)+'KB' : 'Unknown'}
+                     type: {selectedDocument.fileType || selectedDocument.type || 'PDF'} • size: {selectedDocument.fileSize ? Math.round(selectedDocument.fileSize/1024)+'KB' : (selectedDocument.size ? Math.round(selectedDocument.size/1024)+'KB' : 'Unknown')}
                    </p>
                </div>
             ) : (

@@ -9,7 +9,12 @@ import { useUser } from '@clerk/clerk-react';
 import { toast } from 'sonner';
 
 const ProfilePage = () => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (window.location.hash === '#preferences') return 'preferences';
+    if (window.location.hash === '#security') return 'security';
+    return 'general';
+  });
+
   const { user: authUser, fetchProfile, updateProfile, changePassword, isLoading } = useAuthStore();
   const { 
     preferences, 

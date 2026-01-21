@@ -8,8 +8,11 @@ import {
   Users,
   Settings,
   FileText,
+  FolderOpen,
   BarChart3,
-  HelpCircle
+  HelpCircle,
+  Loader2,
+  Calendar
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -27,6 +30,18 @@ export const allSidebarItems = [
     roles: ['lawyer', 'client', 'admin', 'judge']
   },
   {
+    title: "Schedule",
+    href: "/dashboard/schedule",
+    icon: Calendar,
+    roles: ['lawyer', 'client', 'admin', 'judge']
+  },
+  {
+    title: "Documents",
+    href: "/dashboard/documents",
+    icon: FolderOpen,
+    roles: ['lawyer', 'client', 'admin', 'judge']
+  },
+  {
     title: "Clients",
     href: "/dashboard/clients",
     icon: Users,
@@ -40,7 +55,7 @@ export const allSidebarItems = [
   },
   {
     title: "Settings",
-    href: "/dashboard/settings",
+    href: "/dashboard/profile#preferences",
     icon: Settings,
     roles: ['lawyer', 'client', 'admin', 'judge']
   },
@@ -48,10 +63,45 @@ export const allSidebarItems = [
 
 export function Sidebar({ className, isCollapsed, onMouseEnter, onMouseLeave }) {
   const location = useLocation()
-  const { user } = useAuthStore();
+  const { user, isLoading } = useAuthStore();
   const userRole = user?.role || 'client';
 
   const sidebarItems = allSidebarItems.filter(item => item.roles.includes(userRole));
+
+  // Show loading state while user data is being fetched
+  // This prevents showing incorrect sidebar items during initial load
+  if (!user && isLoading) {
+    return (
+      <motion.div
+        initial={{ width: 80 }}
+        animate={{ width: isCollapsed ? 80 : 250 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        className={cn(
+          "fixed left-0 top-16 bottom-0 z-40 bg-primary text-primary-foreground flex flex-col shadow-2xl",
+          className
+        )}
+      >
+        <div className="flex-1 py-6 flex flex-col items-center justify-center gap-4 overflow-hidden">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="text-sm text-muted-foreground whitespace-nowrap"
+              >
+                Loading menu...
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

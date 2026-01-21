@@ -21,11 +21,13 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
+import { useClerk } from "@clerk/clerk-react";
 import { useCasesStore } from "../store/cases";
 import { useDashboardStore } from "../store/useDashboardStore";
 import { useMessageStore } from "../store/useMessageStore";
 import { useActivityStore } from "../store/useActivityStore";
 import { useAIStore } from "../store/useAIStore";
+import { useScheduleStore } from "../store/useScheduleStore";
 
 // Helper function to format relative time
 const formatRelativeTime = (date) => {
@@ -47,6 +49,7 @@ const formatRelativeTime = (date) => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, fetchProfile } = useAuthStore();
+  const { user: clerkUser } = useClerk();
   const { cases: allCases, fetchCases } = useCasesStore();
   const { stats, fetchStats } = useDashboardStore();
   const { 
@@ -68,6 +71,11 @@ const Dashboard = () => {
     fetchDashboardSummary,
     isLoadingInsights
   } = useAIStore();
+  const { 
+    todayEvents, 
+    fetchTodayEvents, 
+    isLoading: scheduleLoading 
+  } = useScheduleStore();
 
   React.useEffect(() => {
     fetchProfile();
@@ -80,8 +88,11 @@ const Dashboard = () => {
     fetchRecentActivities(5);
     // Phase 1.4: Fetch AI insights
     fetchMyInsights(3);
+    fetchMyInsights(3);
     fetchDashboardSummary();
-  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount, fetchRecentActivities, fetchMyInsights, fetchDashboardSummary]);
+    // Phase 4: Fetch Today's Schedule
+    fetchTodayEvents();
+  }, [fetchProfile, fetchCases, fetchStats, fetchMessages, fetchPendingCount, fetchRecentActivities, fetchMyInsights, fetchDashboardSummary, fetchTodayEvents]);
 
   const profile = user;
 
@@ -123,7 +134,7 @@ const Dashboard = () => {
   const lawyerActions = [
     { label: "Add Client", icon: UserPlus, color: "bg-blue-500/10 text-blue-400", action: () => navigate('/dashboard/clients') }, // Redirect to clients
     { label: "Upload File", icon: Upload, color: "bg-purple-500/10 text-purple-400", action: () => navigate('/dashboard/documents') },
-    { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400", action: () => {} },
+    { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400", action: () => navigate('/dashboard/schedule/new?type=hearing') },
     { label: "AI Analysis", icon: Sparkles, color: "bg-emerald-500/10 text-emerald-400", action: () => navigate('/dashboard/ai-assistant') },
   ];
 
@@ -181,7 +192,7 @@ const Dashboard = () => {
             )}
           </div>
           <p className="text-gray-600 mt-1">
-            Welcome back, {profile?.displayName || profile?.fullName || 'User'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
+            Welcome back, {clerkUser?.firstName || clerkUser?.fullName || clerkUser?.username || profile?.displayName || profile?.fullName || 'User'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
           </p>
         </div>
         {!isClient && (
@@ -324,7 +335,11 @@ const Dashboard = () => {
 
             <div className="space-y-3">
               {allCases.slice(0, 5).map((c, i) => (
-                <Card key={c._id || c.id || i} className={`${cardStyle} group cursor-pointer border-l-4 border-l-transparent hover:border-l-accent`}>
+                <Card 
+                  key={c._id || c.id || i} 
+                  className={`${cardStyle} group cursor-pointer border-l-4 border-l-transparent hover:border-l-accent`}
+                  onClick={() => navigate(`/dashboard/workspace/${c._id || c.id}`)}
+                >
                   <CardContent className="flex items-center justify-between p-4 px-6">
                     <div className="flex items-center gap-4">
                       <div className="rounded-full bg-primary p-2 text-muted-foreground group-hover:text-primary-foreground">
@@ -361,29 +376,41 @@ const Dashboard = () => {
         {/* Sidebar */}
         <motion.div variants={item} className="space-y-8">
 
-          {/* Today's Schedule (Static - No API yet) */}
-          <Card className={cardStyle}>
-            <CardHeader>
-              <CardTitle className="text-card-foreground">Today's Schedule</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {[
-                { time: "09:00 AM", event: "Team Standup", type: "Internal" },
-                { time: "11:30 AM", event: "Court Hearing: Johnson", type: "Court", urgent: true },
-                { time: "02:00 PM", event: "Client Call: TechCorp", type: "Client" },
-                { time: "04:30 PM", event: "Review Evidence", type: "Work" },
-              ].map((ev, i) => (
-                <div key={i} className="flex gap-4">
-                  <span className="w-16 text-sm font-medium text-muted-foreground">{ev.time}</span>
-                  <div className="relative flex-1 border-l-2 border-surface pl-4 pb-2 last:pb-0">
-                    <div className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ${ev.urgent ? 'bg-red-400 animate-pulse' : 'bg-accent'}`} />
-                    <p className="text-sm font-medium text-card-foreground">{ev.event}</p>
-                    <p className="text-xs text-muted-foreground">{ev.type}</p>
-                  </div>
+      {/* Today's Schedule - Phase 4: Connected to API */}
+      <Card className={cardStyle}>
+        <CardHeader>
+          <CardTitle className="text-card-foreground flex justify-between items-center">
+             <span>Today's Schedule</span>
+             <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/schedule/new')} className="h-6 w-6 p-0 rounded-full">
+                <Plus className="h-4 w-4" />
+             </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {scheduleLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : todayEvents.length > 0 ? (
+            todayEvents.map((ev, i) => (
+              <div key={ev._id || i} className="flex gap-4">
+                <span className="w-16 text-sm font-medium text-muted-foreground">
+                  {new Date(ev.startTime || ev.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+                <div className="relative flex-1 border-l-2 border-surface pl-4 pb-2 last:pb-0">
+                  <div className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ${ev.priority === 'high' ? 'bg-red-400 animate-pulse' : 'bg-accent'}`} />
+                  <p className="text-sm font-medium text-card-foreground">{ev.title}</p>
+                  <p className="text-xs text-muted-foreground">{ev.type} • {ev.location || 'Remote'}</p>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+              </div>
+            ))
+          ) : (
+             <div className="text-center py-6 text-muted-foreground text-sm">
+                No events scheduled for today.
+             </div>
+          )}
+        </CardContent>
+      </Card>
 
           {/* Client Requests - Phase 1.2: Now connected to API */}
           <Card className={cardStyle}>

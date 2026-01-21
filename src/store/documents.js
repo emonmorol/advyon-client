@@ -77,8 +77,14 @@ export const useDocumentsStore = create((set, get) => ({
             const res = await api.get(`${CASE_BASE}/${caseId}/documents`, { params });
             const data = res.data;
 
-            // backend response format: { success: true, data: [...] }
-            const items = Array.isArray(data?.data) ? data.data : [];
+            // Backend response format: { success: true, data: { documents: [...], groupedByFolder: {...}, total: N } }
+            // Extract the documents array from the nested response
+            const responseData = data?.data;
+            const items = Array.isArray(responseData?.documents) 
+                ? responseData.documents 
+                : (Array.isArray(responseData) ? responseData : []);
+            
+            console.log('[DocumentsStore] Fetched', items.length, 'documents for cache key:', k);
 
             set((state) => ({
                 cache: { ...state.cache, [k]: { items, fetchedAt: Date.now() } },

@@ -5,12 +5,13 @@ import { Sidebar } from '@/components/Sidebar'
 import { AIAssistant, useAIAssistant } from '@/components'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthApi } from '../hooks/useAuthApi';
-
+import { useAuthStore } from '@/store/useAuthStore';
 import { useAuth, RedirectToSignIn } from '@clerk/clerk-react';
 
 const DashboardLayout = () => {
   const { isLoaded, isSignedIn } = useAuth();
   const { syncUser } = useAuthApi();
+  const { fetchProfile } = useAuthStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true)
   const { isOpen, closeAI, width, setAIWidth } = useAIAssistant()
   const [isSyncing, setIsSyncing] = useState(true);
@@ -18,18 +19,24 @@ const DashboardLayout = () => {
 
   const navigate = useNavigate();
 
-  // Sync user with backend on login
+  // Sync user with backend on login, then fetch profile
   React.useEffect(() => {
     const sync = async () => {
       if (isSignedIn) {
         try {
+          // Step 1: Sync user with backend
           const res = await syncUser();
+
           if (res?.needsOnboarding || res?.data?.needsOnboarding) {
             navigate('/onboarding');
             return; // Don't stop syncing state if redirecting, or maybe irrelevant as component unmounts
           }
+
+          // Step 2: Fetch user profile to populate Zustand store with role and other data
+          // This ensures the Sidebar has the correct user role immediately after login
+          await fetchProfile();
         } catch (error) {
-          console.error("Sync failed:", error);
+          console.error("Sync or profile fetch failed:", error);
           setSyncError("Authentication synchronization failed.");
         } finally {
           setIsSyncing(false);
@@ -38,11 +45,11 @@ const DashboardLayout = () => {
         setIsSyncing(false);
       }
     };
-    
+
     if (isLoaded) {
        sync();
     }
-  }, [isSignedIn, isLoaded, syncUser, navigate]);
+  }, [isSignedIn, isLoaded, syncUser, navigate, fetchProfile]);
 
   if (syncError) {
     return (
