@@ -54,6 +54,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'workspace', element: <WorkspacePage /> },
+      { path: 'workspace/:caseId', element: <WorkspacePage /> },
       { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
       { path: 'schedule', element: <SchedulePage /> },

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
+import { useClerk } from "@clerk/clerk-react";
 import { useCasesStore } from "../store/cases";
 import { useDashboardStore } from "../store/useDashboardStore";
 import { useMessageStore } from "../store/useMessageStore";
@@ -48,6 +49,7 @@ const formatRelativeTime = (date) => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, fetchProfile } = useAuthStore();
+  const { user: clerkUser } = useClerk();
   const { cases: allCases, fetchCases } = useCasesStore();
   const { stats, fetchStats } = useDashboardStore();
   const { 
@@ -190,7 +192,7 @@ const Dashboard = () => {
             )}
           </div>
           <p className="text-gray-600 mt-1">
-            Welcome back, {profile?.displayName || profile?.fullName || 'User'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
+            Welcome back, {clerkUser?.firstName || clerkUser?.fullName || clerkUser?.username || profile?.displayName || profile?.fullName || 'User'}. You have <span className="text-accent font-semibold">{allCases.filter(c => c.urgency === 'high').length} urgent tasks</span> today.
           </p>
         </div>
         {!isClient && (
