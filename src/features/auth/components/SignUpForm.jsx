@@ -20,7 +20,7 @@ const SignUpForm = () => {
             formFieldInput: 'border-gray-200 focus:border-[#3A7573] focus:ring-[#3A7573]/10',
             footerActionLink: 'text-[#3A7573] hover:text-[#1D4746]',
             // Hide GitHub social button (WBS-1.2)
-            'socialButtonsBlockButton__github': 'hidden',
+            'socialButtonsBlockButton__github': { display: 'none' },
           }
         }}
         signInUrl="/auth/signin"
