@@ -18,8 +18,14 @@ export const useCommunityStore = create((set, get) => ({
   threads: [],
   currentThread: null,
   isLoading: false,
+  isLoadingAssist: false,
   error: null,
   lastFetched: null,
+  similarThreadSuggestions: [],
+  smartTagSuggestions: [],
+  answerSuggestion: '',
+  legalReferenceSuggestions: [],
+  aiThreadSummary: null,
 
   // Fetch all threads with optional query params
   fetchThreads: async (params = {}, force = false) => {
@@ -242,4 +248,96 @@ export const useCommunityStore = create((set, get) => ({
       console.error('Failed to fetch top contributors:', error);
     }
   },
+
+  fetchSimilarThreads: async (payload) => {
+    set({ isLoadingAssist: true, error: null });
+    try {
+      const { data } = await api.post(`${BASE}/assist/similar`, payload);
+      const suggestions = data?.data || [];
+      set({ similarThreadSuggestions: suggestions, isLoadingAssist: false });
+      return suggestions;
+    } catch (error) {
+      set({
+        error: error?.response?.data?.message || 'Failed to fetch similar threads',
+        isLoadingAssist: false,
+      });
+      throw error;
+    }
+  },
+
+  fetchSmartTags: async (payload) => {
+    set({ isLoadingAssist: true, error: null });
+    try {
+      const { data } = await api.post(`${BASE}/assist/smart-tags`, payload);
+      const tags = data?.data || [];
+      set({ smartTagSuggestions: tags, isLoadingAssist: false });
+      return tags;
+    } catch (error) {
+      set({
+        error: error?.response?.data?.message || 'Failed to fetch smart tags',
+        isLoadingAssist: false,
+      });
+      throw error;
+    }
+  },
+
+  fetchAnswerSuggestion: async (payload) => {
+    set({ isLoadingAssist: true, error: null });
+    try {
+      const { data } = await api.post(`${BASE}/assist/answer-suggestion`, payload);
+      const suggestion = data?.data?.suggestion || '';
+      set({ answerSuggestion: suggestion, isLoadingAssist: false });
+      return suggestion;
+    } catch (error) {
+      set({
+        error: error?.response?.data?.message || 'Failed to generate answer suggestion',
+        isLoadingAssist: false,
+      });
+      throw error;
+    }
+  },
+
+  fetchLegalReferences: async (content) => {
+    set({ isLoadingAssist: true, error: null });
+    try {
+      const { data } = await api.post(`${BASE}/assist/legal-references`, {
+        content,
+      });
+      const references = data?.data || [];
+      set({ legalReferenceSuggestions: references, isLoadingAssist: false });
+      return references;
+    } catch (error) {
+      set({
+        error:
+          error?.response?.data?.message || 'Failed to fetch legal references',
+        isLoadingAssist: false,
+      });
+      throw error;
+    }
+  },
+
+  fetchThreadSummary: async (threadId) => {
+    set({ isLoadingAssist: true, error: null });
+    try {
+      const { data } = await api.get(`${BASE}/threads/${threadId}/summary-ai`);
+      const summary = data?.data || null;
+      set({ aiThreadSummary: summary, isLoadingAssist: false });
+      return summary;
+    } catch (error) {
+      set({
+        error: error?.response?.data?.message || 'Failed to fetch AI summary',
+        isLoadingAssist: false,
+      });
+      return null;
+    }
+  },
+
+  clearAIAssistState: () =>
+    set({
+      similarThreadSuggestions: [],
+      smartTagSuggestions: [],
+      answerSuggestion: '',
+      legalReferenceSuggestions: [],
+      aiThreadSummary: null,
+    }),
 }));
