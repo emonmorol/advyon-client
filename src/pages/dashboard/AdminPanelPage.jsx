@@ -37,7 +37,7 @@ function UsersTab() {
   });
 
   const { trigger: bulkUpdate } = useBulkUpdateUsers();
-  const users = data?.data?.data || [];
+  const users = data?.data || [];
 
   const handleBulk = async (action) => {
     if (selectedIds.length === 0) return;
@@ -153,43 +153,75 @@ function CasesTab() {
   const { data, isLoading } = useCaseOverview();
   const overview = data?.data || {};
 
+  const statusColors = {
+    active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    review: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    closed: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  };
+
   if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-2 border-primary rounded-full border-t-transparent" /></div>;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard label="Total Cases" value={overview.totalCases || 0} />
-        <StatCard label="Active Cases" value={overview.activeCases || 0} color="emerald" />
-        <StatCard label="Archived Cases" value={overview.archivedCases || 0} color="amber" />
+        <StatCard label="Active" value={overview.activeCases || 0} color="emerald" />
+        <StatCard label="Pending" value={overview.pendingCases || 0} color="amber" />
+        <StatCard label="In Review" value={overview.reviewCases || 0} color="blue" />
+        <StatCard label="Closed" value={overview.closedCases || 0} color="purple" />
       </div>
 
-      {overview.recentCases?.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold mb-3">Recent Cases</h3>
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="p-3 text-left">Case Number</th>
-                  <th className="p-3 text-left">Title</th>
-                  <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {overview.recentCases.map((c) => (
-                  <tr key={c._id} className="border-t hover:bg-muted/30">
-                    <td className="p-3 font-mono text-xs">{c.caseNumber || '—'}</td>
-                    <td className="p-3">{c.title || '—'}</td>
-                    <td className="p-3"><span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{c.status}</span></td>
-                    <td className="p-3 text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Status Breakdown */}
+      {overview.totalCases > 0 && (
+        <div className="border rounded-xl p-4 bg-card">
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">Status Breakdown</h4>
+          <div className="space-y-2">
+            {Object.entries(overview.casesByStatus || {}).map(([status, count]) => (
+              <div key={status} className="flex items-center gap-3 text-sm">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[status] || 'bg-gray-100 text-gray-700'}`}>{status}</span>
+                <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-primary/60 rounded-full transition-all"
+                    style={{ width: `${overview.totalCases > 0 ? (Number(count) / overview.totalCases * 100) : 0}%` }}
+                  />
+                </div>
+                <span className="font-semibold w-8 text-right">{String(count)}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
+
+      {/* Recent Cases Table */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Recent Cases</h3>
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="p-3 text-left">Case Number</th>
+                <th className="p-3 text-left">Title</th>
+                <th className="p-3 text-left">Status</th>
+                <th className="p-3 text-left">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(overview.recentCases || []).map((c) => (
+                <tr key={c._id} className="border-t hover:bg-muted/30">
+                  <td className="p-3 font-mono text-xs">{c.caseNumber || '—'}</td>
+                  <td className="p-3">{c.title || '—'}</td>
+                  <td className="p-3"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[c.status] || 'bg-gray-100 text-gray-700'}`}>{c.status}</span></td>
+                  <td className="p-3 text-muted-foreground">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
+                </tr>
+              ))}
+              {(!overview.recentCases || overview.recentCases.length === 0) && (
+                <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No cases found. Cases created by users will appear here.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
