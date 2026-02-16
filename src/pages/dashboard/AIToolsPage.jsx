@@ -120,8 +120,7 @@ const AIToolsPage = () => {
   };
 
   const handleExport = async (format) => {
-    const exportTool =
-      historyToolFilter !== 'all' ? historyToolFilter : selectedTool;
+    const exportTool = historyToolFilter !== 'all' ? historyToolFilter : undefined;
     const { blob } = await exportToolHistory(format, exportTool);
 
     const url = URL.createObjectURL(blob);

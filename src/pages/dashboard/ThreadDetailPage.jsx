@@ -21,14 +21,16 @@ const ThreadDetailPage = () => {
       aiThreadSummary,
       fetchLegalReferences,
       legalReferenceSuggestions,
+      clearThreadAssistState,
    } = useCommunityStore();
 
    useEffect(() => {
       if (threadId) {
+         clearThreadAssistState();
          fetchThreadById(threadId);
          fetchThreadSummary(threadId);
       }
-   }, [threadId, fetchThreadById, fetchThreadSummary]);
+   }, [threadId, clearThreadAssistState, fetchThreadById, fetchThreadSummary]);
 
    useEffect(() => {
       if (currentThread?.thread?.content) {
@@ -64,7 +66,7 @@ const ThreadDetailPage = () => {
    }
 
    // Error state
-   if (error || !currentThread) {
+   if (!currentThread) {
       return (
          <div className="max-w-4xl mx-auto px-4 py-16 text-center">
             <p className="text-destructive mb-4">{error || 'Thread not found'}</p>
