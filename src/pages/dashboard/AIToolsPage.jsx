@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Download, Loader2, Sparkles } from 'lucide-react';
+import { Download, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { useAIStore } from '@/store/useAIStore';
 import { aiToolInputSchema } from '@/features/community/schemas/communitySchemas';
 
@@ -64,6 +64,31 @@ const formatDateTime = (value) => {
   return parsed.toLocaleString();
 };
 
+const toDayLabel = (value) => {
+  if (!value) return 'Unknown Date';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Unknown Date';
+  return parsed.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+const getStatusChipClassName = (status) => {
+  if (status === 'success') {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  }
+  if (status === 'blocked') {
+    return 'border-amber-200 bg-amber-50 text-amber-700';
+  }
+  if (status === 'failed') {
+    return 'border-red-200 bg-red-50 text-red-700';
+  }
+  return 'border-input bg-background text-muted-foreground';
+};
+
 const AIToolsPage = () => {
   const enabledTools = useMemo(
     () => TOOL_CONFIG.filter((tool) => TOOL_FLAGS[tool.key]),
@@ -74,6 +99,9 @@ const AIToolsPage = () => {
     enabledTools[0]?.key || 'contract-analyzer',
   );
   const [historyToolFilter, setHistoryToolFilter] = useState('all');
+  const [historyStatusFilter, setHistoryStatusFilter] = useState('all');
+  const [historySearch, setHistorySearch] = useState('');
+  const [expandedHistoryId, setExpandedHistoryId] = useState(null);
   const [input, setInput] = useState('');
   const [inputError, setInputError] = useState('');
 
@@ -93,18 +121,54 @@ const AIToolsPage = () => {
   const activeToolConfig =
     enabledTools.find((tool) => tool.key === selectedTool) || enabledTools[0];
 
+  const filteredHistory = useMemo(() => {
+    const searchTerm = historySearch.trim().toLowerCase();
+    if (!searchTerm) return toolHistory;
+
+    return toolHistory.filter((item) =>
+      [item.toolKey, item.input, item.output, item.status]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(searchTerm),
+    );
+  }, [historySearch, toolHistory]);
+
+  const groupedHistory = useMemo(() => {
+    return filteredHistory.reduce((groups, item) => {
+      const dayLabel = toDayLabel(item.createdAt);
+      if (!groups[dayLabel]) groups[dayLabel] = [];
+      groups[dayLabel].push(item);
+      return groups;
+    }, {});
+  }, [filteredHistory]);
+
+  const historyStatusStats = useMemo(() => {
+    return toolHistory.reduce(
+      (acc, item) => {
+        acc.total += 1;
+        if (item.status === 'success') acc.success += 1;
+        if (item.status === 'blocked') acc.blocked += 1;
+        if (item.status === 'failed') acc.failed += 1;
+        return acc;
+      },
+      { total: 0, success: 0, blocked: 0, failed: 0 },
+    );
+  }, [toolHistory]);
+
   const loadHistory = async (page = 1) => {
     const params = {
       page,
       limit: 20,
       ...(historyToolFilter !== 'all' ? { toolKey: historyToolFilter } : {}),
+      ...(historyStatusFilter !== 'all' ? { status: historyStatusFilter } : {}),
     };
     await fetchToolHistory(params);
   };
 
   useEffect(() => {
     loadHistory(1).catch(() => {});
-  }, [historyToolFilter]);
+  }, [historyToolFilter, historyStatusFilter]);
 
   const handleRunTool = async (event) => {
     event.preventDefault();
@@ -157,6 +221,24 @@ const AIToolsPage = () => {
         </p>
         <div className="mt-4 text-sm text-muted-foreground">
           Daily usage: {toolUsage.todayCount}/{toolUsage.dailyLimit || '-'}
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-4">
+          <div className="rounded-lg border border-border bg-background px-3 py-2">
+            <p className="text-xs text-muted-foreground">Total Runs</p>
+            <p className="text-base font-semibold">{historyStatusStats.total}</p>
+          </div>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <p className="text-xs text-emerald-700">Success</p>
+            <p className="text-base font-semibold text-emerald-700">{historyStatusStats.success}</p>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+            <p className="text-xs text-amber-700">Blocked</p>
+            <p className="text-base font-semibold text-amber-700">{historyStatusStats.blocked}</p>
+          </div>
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+            <p className="text-xs text-red-700">Failed</p>
+            <p className="text-base font-semibold text-red-700">{historyStatusStats.failed}</p>
+          </div>
         </div>
       </header>
 
@@ -239,18 +321,55 @@ const AIToolsPage = () => {
           </div>
 
           <div className="mt-3">
-            <select
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-              value={historyToolFilter}
-              onChange={(event) => setHistoryToolFilter(event.target.value)}
-            >
-              <option value="all">All Tools</option>
-              {enabledTools.map((tool) => (
-                <option key={tool.key} value={tool.key}>
-                  {tool.label}
-                </option>
-              ))}
-            </select>
+            <div className="space-y-2">
+              <select
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                value={historyToolFilter}
+                onChange={(event) => setHistoryToolFilter(event.target.value)}
+              >
+                <option value="all">All Tools</option>
+                {enabledTools.map((tool) => (
+                  <option key={tool.key} value={tool.key}>
+                    {tool.label}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex flex-wrap gap-2">
+                {['all', 'success', 'blocked', 'failed'].map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setHistoryStatusFilter(status)}
+                    className={`rounded-full border px-2.5 py-1 text-xs capitalize ${
+                      historyStatusFilter === status
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-input text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={historySearch}
+                  onChange={(event) => setHistorySearch(event.target.value)}
+                  placeholder="Search tool history..."
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => loadHistory(toolHistoryMeta.page || 1)}
+                  className="inline-flex items-center gap-1 rounded-md border border-input px-2.5 py-2 text-xs"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Refresh
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="mt-4 max-h-[520px] space-y-3 overflow-y-auto pr-1">
@@ -264,32 +383,76 @@ const AIToolsPage = () => {
                 No AI tool runs yet for the selected filter.
               </p>
             ) : (
-              toolHistory.map((item) => (
-                <article
-                  key={item._id}
-                  className="rounded-lg border border-border bg-background p-3 text-sm"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium">{item.toolKey}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDateTime(item.createdAt)}
-                      </p>
-                    </div>
-                    <span className="rounded-full border border-input px-2 py-0.5 text-xs">
-                      {item.status}
-                    </span>
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-                    Input: {item.input}
+              Object.entries(groupedHistory).map(([dayLabel, items]) => (
+                <div key={dayLabel} className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {dayLabel}
                   </p>
-                  <p className="mt-1 line-clamp-3 text-xs">
-                    Output: {item.output}
-                  </p>
-                </article>
+                  {items.map((item) => {
+                    const isExpanded = expandedHistoryId === item._id;
+                    return (
+                      <article
+                        key={item._id}
+                        className="rounded-lg border border-border bg-background p-3 text-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium">{item.toolKey}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDateTime(item.createdAt)}
+                            </p>
+                            {typeof item.latencyMs === 'number' && (
+                              <p className="text-xs text-muted-foreground">
+                                Latency: {item.latencyMs} ms
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            className={`rounded-full border px-2 py-0.5 text-xs ${getStatusChipClassName(
+                              item.status,
+                            )}`}
+                          >
+                            {item.status}
+                          </span>
+                        </div>
+                        <p className={`mt-2 text-xs text-muted-foreground ${isExpanded ? '' : 'line-clamp-2'}`}>
+                          Input: {item.input}
+                        </p>
+                        <p className={`mt-1 text-xs ${isExpanded ? '' : 'line-clamp-3'}`}>
+                          Output: {item.output}
+                        </p>
+                        <button
+                          type="button"
+                          className="mt-2 text-xs font-medium text-primary"
+                          onClick={() =>
+                            setExpandedHistoryId(isExpanded ? null : item._id)
+                          }
+                        >
+                          {isExpanded ? 'Show less' : 'Show full details'}
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
               ))
             )}
           </div>
+
+          {toolExecutionResult?.historyId && (
+            <div className="mt-3 rounded-lg border border-border bg-background p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Latest Run
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                History ID: {toolExecutionResult.historyId}
+              </p>
+              {typeof toolExecutionResult?.usage?.todayCount === 'number' && (
+                <p className="text-xs text-muted-foreground">
+                  Usage: {toolExecutionResult.usage.todayCount}/{toolExecutionResult.usage.dailyLimit}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
             <span>
