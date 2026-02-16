@@ -3,7 +3,7 @@
  * Shows current plan, available plans, payment history.
  * Integrates with Stripe Checkout and Customer Portal.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise } from '@/lib/stripe/stripeClient';
 import {
@@ -13,6 +13,7 @@ import {
   useCreatePortal,
   useCancelSubscription,
   useMyPayments,
+  useVerifyCheckout,
 } from '@/services/billing/billingService';
 import {
   CreditCard, CheckCircle, Star, ArrowRight,
@@ -51,7 +52,7 @@ function PlanCard({ plan, billingInterval, currentPlan, onSelect, isLoading }) {
 
   return (
     <div
-      className={`relative rounded-2xl border p-6 bg-gradient-to-br ${PLAN_COLORS[plan.id] || PLAN_COLORS.free} transition-all duration-300 ${
+      className={`relative rounded-2xl border p-6 bg-gradient-to-br flex flex-col h-full ${PLAN_COLORS[plan.id] || PLAN_COLORS.free} transition-all duration-300 ${
         isCurrent ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md hover:-translate-y-0.5'
       }`}
     >
@@ -73,7 +74,7 @@ function PlanCard({ plan, billingInterval, currentPlan, onSelect, isLoading }) {
         {!isFree && <span className="text-sm text-muted-foreground">{period}</span>}
       </div>
 
-      <ul className="space-y-2 mb-6">
+      <ul className="space-y-2 mb-6 flex-1">
         {plan.features?.map((feature, idx) => (
           <li key={idx} className="flex items-center gap-2 text-sm">
             <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
@@ -207,6 +208,24 @@ export default function BillingPage() {
   const subscription = subData?.data || { plan: 'free', status: 'active' };
   const currentPlan = subscription.plan || 'free';
   const isFreePlan = currentPlan === 'free';
+  const { trigger: verifyCheckout } = useVerifyCheckout();
+
+  // Auto-verify subscription after successful Stripe Checkout redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const sessionId = params.get('session_id');
+
+    if (success === 'true' && sessionId) {
+      verifyCheckout({ sessionId })
+        .then(() => {
+          refreshSub();
+          // Clean up URL params
+          window.history.replaceState({}, '', '/dashboard/billing');
+        })
+        .catch((err) => console.error('Verify checkout error:', err));
+    }
+  }, []);
 
   const handleSelectPlan = async (planId) => {
     setLoadingPlan(planId);
@@ -214,7 +233,7 @@ export default function BillingPage() {
       const result = await createCheckout({
         plan: planId,
         billingInterval,
-        successUrl: `${window.location.origin}/dashboard/billing?success=true`,
+        successUrl: `${window.location.origin}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/dashboard/billing?canceled=true`,
       });
       if (result?.data?.url) {

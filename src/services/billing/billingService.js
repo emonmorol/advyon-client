@@ -20,6 +20,10 @@ export const useCreatePortal = () =>
 export const useCancelSubscription = () =>
   useApiMutation('/subscriptions/cancel', 'post');
 
+/** Verify a completed checkout session and sync subscription */
+export const useVerifyCheckout = () =>
+  useApiMutation('/subscriptions/verify-checkout', 'post');
+
 // ─── Payment History ─────────────────────────────────────────────
 
 /** Get current user's payment history */
