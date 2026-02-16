@@ -26,7 +26,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     } = useCommunityStore();
     const titleLength = formData.title.trim().length;
     const contentLength = formData.content.trim().length;
-    const canUseAssist = titleLength >= 5 && contentLength >= 10;
+    const canUseAssist = titleLength >= 5 && contentLength >= 5;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -72,7 +72,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
 
     const handleSuggestTags = async () => {
         if (!canUseAssist) {
-            setError('Add at least 5 title characters and 10 detail characters to use AI assistance.');
+            setError('Add at least 5 title characters and 5 detail characters to use AI assistance.');
             return;
         }
 
@@ -88,7 +88,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
 
     const handleSuggestSimilar = async () => {
         if (!canUseAssist) {
-            setError('Add at least 5 title characters and 10 detail characters to use AI assistance.');
+            setError('Add at least 5 title characters and 5 detail characters to use AI assistance.');
             return;
         }
 
