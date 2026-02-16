@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Download, Loader2, Sparkles } from 'lucide-react';
 import { useAIStore } from '@/store/useAIStore';
+import { aiToolInputSchema } from '@/features/community/schemas/communitySchemas';
 
 const TOOL_CONFIG = [
   {
@@ -74,6 +75,7 @@ const AIToolsPage = () => {
   );
   const [historyToolFilter, setHistoryToolFilter] = useState('all');
   const [input, setInput] = useState('');
+  const [inputError, setInputError] = useState('');
 
   const {
     runTool,
@@ -106,8 +108,13 @@ const AIToolsPage = () => {
 
   const handleRunTool = async (event) => {
     event.preventDefault();
-    if (!input.trim()) return;
+    const parsed = aiToolInputSchema.safeParse(input);
+    if (!parsed.success) {
+      setInputError(parsed.error.issues?.[0]?.message || 'Invalid tool input');
+      return;
+    }
 
+    setInputError('');
     await runTool(selectedTool, input.trim());
     await loadHistory(1);
   };
@@ -178,8 +185,12 @@ const AIToolsPage = () => {
               className="min-h-[220px] w-full rounded-lg border border-input bg-background px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-primary"
               placeholder={activeToolConfig?.placeholder}
               value={input}
-              onChange={(event) => setInput(event.target.value)}
+              onChange={(event) => {
+                setInputError('');
+                setInput(event.target.value);
+              }}
             />
+            {inputError && <p className="text-xs text-destructive">{inputError}</p>}
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
                 Legal and platform-only requests are accepted.
@@ -314,4 +325,3 @@ const AIToolsPage = () => {
 };
 
 export default AIToolsPage;
-

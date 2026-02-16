@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Send, Loader2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCommunityStore } from '@/store/useCommunityStore';
+import { createThreadSchema } from '@/features/community/schemas/communitySchemas';
 
 const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
 
     const {
         createThread,
@@ -25,6 +27,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setFieldErrors({});
         setIsSubmitting(true);
 
         try {
@@ -34,6 +37,21 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                 content: formData.content,
                 tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
             };
+
+            const parsed = createThreadSchema.safeParse(payload);
+            if (!parsed.success) {
+                const nextFieldErrors = {};
+                parsed.error.issues.forEach((issue) => {
+                    const key = issue.path?.[0];
+                    if (key && !nextFieldErrors[key]) {
+                        nextFieldErrors[key] = issue.message;
+                    }
+                });
+                setFieldErrors(nextFieldErrors);
+                setError(parsed.error.issues?.[0]?.message || 'Please fix the highlighted fields.');
+                setIsSubmitting(false);
+                return;
+            }
 
             const newThread = await createThread(payload);
 
@@ -106,6 +124,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         />
+                        {fieldErrors.title && <p className="text-xs text-destructive">{fieldErrors.title}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -119,6 +138,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                                 <option key={cat.id} value={cat.id}>{cat.label}</option>
                             ))}
                         </select>
+                        {fieldErrors.category && <p className="text-xs text-destructive">{fieldErrors.category}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -131,6 +151,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             value={formData.content}
                             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                         />
+                        {fieldErrors.content && <p className="text-xs text-destructive">{fieldErrors.content}</p>}
                         <div className="flex flex-wrap gap-2 pt-1">
                             <button
                                 type="button"
@@ -203,6 +224,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             value={formData.tags}
                             onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                         />
+                        {fieldErrors.tags && <p className="text-xs text-destructive">{fieldErrors.tags}</p>}
                     </div>
 
                     <div className="pt-4 flex justify-end gap-3">

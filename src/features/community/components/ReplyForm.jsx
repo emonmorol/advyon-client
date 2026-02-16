@@ -3,17 +3,24 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import { useCommunityStore } from '@/store/useCommunityStore';
+import { replySchema } from '@/features/community/schemas/communitySchemas';
 
 const ReplyForm = ({ onSubmit, threadId }) => {
   const [content, setContent] = useState('');
+  const [replyError, setReplyError] = useState('');
   const { fetchAnswerSuggestion, answerSuggestion, isLoadingAssist } = useCommunityStore();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (content.trim()) {
-      onSubmit(content);
-      setContent('');
+    const parsed = replySchema.safeParse({ content });
+    if (!parsed.success) {
+      setReplyError(parsed.error.issues?.[0]?.message || 'Reply content is invalid.');
+      return;
     }
+
+    setReplyError('');
+    onSubmit(content);
+    setContent('');
   };
 
   const handleGenerateSuggestion = async () => {
@@ -33,10 +40,14 @@ const ReplyForm = ({ onSubmit, threadId }) => {
        <form onSubmit={handleSubmit} className="space-y-4">
           <RichTextEditor 
              value={content}
-             onChange={setContent}
+             onChange={(value) => {
+               setReplyError('');
+               setContent(value);
+             }}
              placeholder="Write a helpful, detailed answer..."
              className="min-h-[200px]"
           />
+          {replyError && <p className="text-xs text-destructive">{replyError}</p>}
           {answerSuggestion && (
             <p className="text-xs text-muted-foreground">
               AI suggestion loaded. Edit before posting if needed.
