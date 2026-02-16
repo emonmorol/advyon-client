@@ -9,32 +9,13 @@ import { useCommunityStore } from '@/store/useCommunityStore';
 
 const ThreadDetailPage = () => {
    const { threadId } = useParams();
-   const {
-      currentThread,
-      isLoading,
-      error,
-      fetchThreadById,
-      addReply,
-      voteReply,
-      voteThread,
-      fetchThreadSummary,
-      aiThreadSummary,
-      fetchLegalReferences,
-      legalReferenceSuggestions,
-   } = useCommunityStore();
+   const { currentThread, isLoading, error, fetchThreadById, addReply, voteReply, voteThread } = useCommunityStore();
 
    useEffect(() => {
       if (threadId) {
          fetchThreadById(threadId);
-         fetchThreadSummary(threadId);
       }
-   }, [threadId, fetchThreadById, fetchThreadSummary]);
-
-   useEffect(() => {
-      if (currentThread?.thread?.content) {
-         fetchLegalReferences(currentThread.thread.content).catch(() => {});
-      }
-   }, [currentThread?.thread?.content, fetchLegalReferences]);
+   }, [threadId, fetchThreadById]);
 
    const handleReplySubmit = async (content) => {
       try {
@@ -137,17 +118,8 @@ const ThreadDetailPage = () => {
 
          {/* AI Summary - only show if solved or has replies */}
          {(thread.isSolved || replies.length > 0) && (
-            <AISummary
-              summary={
-                aiThreadSummary?.summary ||
-                `This thread discusses "${thread.title}" in the ${thread.category} category.`
-              }
-              legalReferences={
-                aiThreadSummary?.legalReferences?.length
-                  ? aiThreadSummary.legalReferences
-                  : legalReferenceSuggestions
-              }
-            />
+            // Implement this mock summary, and create a corresponding api with ai to create summary of thread
+            <AISummary summary={`This thread discusses "${thread.title}" in the ${thread.category} category.`} />
          )}
 
          <div className="space-y-8">
@@ -174,7 +146,7 @@ const ThreadDetailPage = () => {
             )}
 
             <div className="pt-10">
-               <ReplyForm onSubmit={handleReplySubmit} threadId={threadId} />
+               <ReplyForm onSubmit={handleReplySubmit} />
             </div>
          </div>
       </div>

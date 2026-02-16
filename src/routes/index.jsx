@@ -27,7 +27,6 @@ import AskQuestionPage from '@/pages/dashboard/AskQuestionPage';
 import ThreadDetailPage from '@/pages/dashboard/ThreadDetailPage';
 import MyDocumentsPage from '@/pages/dashboard/MyDocumentsPage';
 import ComingSoonPage from '@/pages/ComingSoonPage';
-import AIToolsPage from '@/pages/dashboard/AIToolsPage';
 
 export const router = createBrowserRouter([
   {
@@ -91,7 +90,7 @@ export const router = createBrowserRouter([
       },
       { path: 'settings', element: <ComingSoonPage title="Settings" /> },
       { path: 'legal-database', element: <ComingSoonPage title="Legal Database" /> },
-      { path: 'ai-assistant', element: <AIToolsPage /> }
+      { path: 'ai-assistant', element: <ComingSoonPage title="AI Tools" /> }
     ],
     errorElement: <div className="p-8 text-red-500">Dashboard Error Boundary</div>
   },
