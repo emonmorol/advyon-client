@@ -1,6 +1,11 @@
 import React from 'react';
 import { SignUp } from "@clerk/clerk-react";
 
+/**
+ * SignUpForm — WBS-1.2
+ * GitHub social login removed; only Google + email/password remain.
+ * GitHub OAuth should also be disabled in the Clerk Dashboard.
+ */
 const SignUpForm = () => {
   return (
     <div className="w-full flex justify-center">
@@ -13,7 +18,9 @@ const SignUpForm = () => {
             headerSubtitle: 'text-gray-500',
             socialButtonsBlockButton: 'border-gray-200 hover:bg-gray-50 text-gray-700',
             formFieldInput: 'border-gray-200 focus:border-[#3A7573] focus:ring-[#3A7573]/10',
-            footerActionLink: 'text-[#3A7573] hover:text-[#1D4746]'
+            footerActionLink: 'text-[#3A7573] hover:text-[#1D4746]',
+            // Hide GitHub social button (WBS-1.2)
+            'socialButtonsBlockButton__github': 'hidden',
           }
         }}
         signInUrl="/auth/signin"
