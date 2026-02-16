@@ -26,6 +26,7 @@ import LegalSearchPage from '@/pages/dashboard/LegalSearchPage';
 import AskQuestionPage from '@/pages/dashboard/AskQuestionPage';
 import ThreadDetailPage from '@/pages/dashboard/ThreadDetailPage';
 import MyDocumentsPage from '@/pages/dashboard/MyDocumentsPage';
+import AdminPanelPage from '@/pages/dashboard/AdminPanelPage';
 import ComingSoonPage from '@/pages/ComingSoonPage';
 
 export const router = createBrowserRouter([
@@ -90,7 +91,19 @@ export const router = createBrowserRouter([
       },
       { path: 'settings', element: <ComingSoonPage title="Settings" /> },
       { path: 'legal-database', element: <ComingSoonPage title="Legal Database" /> },
-      { path: 'ai-assistant', element: <ComingSoonPage title="AI Tools" /> }
+      { path: 'ai-assistant', element: <ComingSoonPage title="AI Tools" /> },
+      {
+        path: 'admin',
+        element: (
+          <RequireRole allowedRoles={['admin', 'superAdmin']}>
+            <AdminPanelPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'billing',
+        element: <ComingSoonPage title="Billing" />,
+      },
     ],
     errorElement: <div className="p-8 text-red-500">Dashboard Error Boundary</div>
   },
