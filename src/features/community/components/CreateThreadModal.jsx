@@ -5,9 +5,10 @@ import { useCommunityStore } from '@/store/useCommunityStore';
 import { createThreadSchema } from '@/features/community/schemas/communitySchemas';
 
 const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
+    const selectableCategories = (categories || []).filter((category) => category.id !== 'all');
     const [formData, setFormData] = useState({
         title: '',
-        category: categories?.[0]?.id || 'general',
+        category: selectableCategories?.[0]?.id || 'family',
         content: '',
         tags: ''
     });
@@ -23,6 +24,9 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
         similarThreadSuggestions,
         isLoadingAssist,
     } = useCommunityStore();
+    const titleLength = formData.title.trim().length;
+    const contentLength = formData.content.trim().length;
+    const canUseAssist = titleLength >= 5 && contentLength >= 10;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -67,18 +71,36 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     };
 
     const handleSuggestTags = async () => {
-        await fetchSmartTags({
-            title: formData.title,
-            content: formData.content,
-        });
+        if (!canUseAssist) {
+            setError('Add at least 5 title characters and 10 detail characters to use AI assistance.');
+            return;
+        }
+
+        try {
+            await fetchSmartTags({
+                title: formData.title,
+                content: formData.content,
+            });
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to suggest smart tags right now.');
+        }
     };
 
     const handleSuggestSimilar = async () => {
-        await fetchSimilarThreads({
-            title: formData.title,
-            content: formData.content,
-            limit: 5,
-        });
+        if (!canUseAssist) {
+            setError('Add at least 5 title characters and 10 detail characters to use AI assistance.');
+            return;
+        }
+
+        try {
+            await fetchSimilarThreads({
+                title: formData.title,
+                content: formData.content,
+                limit: 5,
+            });
+        } catch (err) {
+            setError(err.response?.data?.message || 'Unable to suggest similar threads right now.');
+        }
     };
 
     const applySuggestedTag = (tag) => {
@@ -134,7 +156,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                         >
-                            {categories?.map(cat => (
+                            {selectableCategories?.map(cat => (
                                 <option key={cat.id} value={cat.id}>{cat.label}</option>
                             ))}
                         </select>
@@ -156,7 +178,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             <button
                                 type="button"
                                 onClick={handleSuggestSimilar}
-                                disabled={isLoadingAssist || !formData.title || !formData.content}
+                                disabled={isLoadingAssist || !canUseAssist}
                                 className="inline-flex items-center gap-1 rounded-md border border-input px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
                             >
                                 {isLoadingAssist ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
@@ -165,7 +187,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             <button
                                 type="button"
                                 onClick={handleSuggestTags}
-                                disabled={isLoadingAssist || !formData.title || !formData.content}
+                                disabled={isLoadingAssist || !canUseAssist}
                                 className="inline-flex items-center gap-1 rounded-md border border-input px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
                             >
                                 {isLoadingAssist ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}

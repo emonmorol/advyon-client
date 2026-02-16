@@ -9,12 +9,23 @@ describe('communitySchemas', () => {
   it('validates create-thread payload', () => {
     const result = createThreadSchema.safeParse({
       title: 'Need help with contract breach timeline',
-      category: 'Family Law',
+      category: 'family',
       content: 'I need legal guidance on filing deadlines and evidence handling.',
       tags: ['contract', 'timeline'],
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it('rejects broad "all" category selection', () => {
+    const result = createThreadSchema.safeParse({
+      title: 'Need help with contract breach timeline',
+      category: 'all',
+      content: 'I need legal guidance on filing deadlines and evidence handling.',
+      tags: ['contract', 'timeline'],
+    });
+
+    expect(result.success).toBe(false);
   });
 
   it('rejects short replies', () => {
@@ -27,4 +38,3 @@ describe('communitySchemas', () => {
     expect(result.success).toBe(false);
   });
 });
-

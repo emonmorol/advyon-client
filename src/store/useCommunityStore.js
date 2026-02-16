@@ -81,6 +81,10 @@ export const useCommunityStore = create((set, get) => ({
   createThread: async (payload) => {
     set({ isLoading: true, error: null });
     try {
+      if (payload.category === 'all') {
+        throw new Error('Please select a specific category before posting.');
+      }
+
       // Map UI category id to backend category name
       const backendPayload = {
         ...payload,
@@ -99,7 +103,11 @@ export const useCommunityStore = create((set, get) => ({
 
       return newThread;
     } catch (error) {
-      set({ error: error.message || 'Failed to create thread', isLoading: false });
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to create thread';
+      set({ error: message, isLoading: false });
       throw error;
     }
   },
@@ -260,8 +268,10 @@ export const useCommunityStore = create((set, get) => ({
       set({ similarThreadSuggestions: suggestions, isLoadingAssist: false });
       return suggestions;
     } catch (error) {
+      const message =
+        error?.response?.data?.message || 'Failed to fetch similar threads';
       set({
-        assistError: error?.response?.data?.message || 'Failed to fetch similar threads',
+        assistError: message,
         isLoadingAssist: false,
       });
       throw error;
@@ -276,8 +286,9 @@ export const useCommunityStore = create((set, get) => ({
       set({ smartTagSuggestions: tags, isLoadingAssist: false });
       return tags;
     } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to fetch smart tags';
       set({
-        assistError: error?.response?.data?.message || 'Failed to fetch smart tags',
+        assistError: message,
         isLoadingAssist: false,
       });
       throw error;
