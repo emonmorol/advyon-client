@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
+import RouteErrorBoundary from '@/components/RouteErrorBoundary';
 import AppLayout from '@/layouts/AppLayout';
 import Home from '@/pages/Home';
 import SignInPage from '@/pages/auth/SignInPage';
@@ -54,44 +55,44 @@ export const router = createBrowserRouter([
     element: <DashboardLayout />,
     children: [
       { index: true, element: <Dashboard /> },
-      { path: 'workspace', element: <WorkspacePage /> },
-      { path: 'workspace/:caseId', element: <WorkspacePage /> },
+      { path: 'workspace', element: <RouteErrorBoundary routeName="Workspace"><WorkspacePage /></RouteErrorBoundary> },
+      { path: 'workspace/:caseId', element: <RouteErrorBoundary routeName="Workspace"><WorkspacePage /></RouteErrorBoundary> },
       { path: 'cases/new', element: <CreateCasePage /> },
       { path: 'profile/verify', element: <LawyerVerificationPage /> },
       { path: 'schedule', element: <SchedulePage /> },
       { path: 'schedule/new', element: <CreateEventPage /> },
       { path: 'community', element: <CommunityHubPage /> },
-      { path: 'community/ask', element: <CommunityHubPage /> }, 
-      { path: 'community/verified', element: <CommunityHubPage /> }, 
+      { path: 'community/ask', element: <CommunityHubPage /> },
+      { path: 'community/verified', element: <CommunityHubPage /> },
       { path: 'community/thread/:threadId', element: <ThreadDetailPage /> },
-      
+
       { path: 'legal', element: <LegalSearchPage /> },
-      { path: 'workspace/doc/:docId', element: <DocumentViewerPage /> },
-      { path: 'review/:docId', element: <TextReviewPage /> },
+      { path: 'workspace/doc/:docId', element: <RouteErrorBoundary routeName="DocumentViewer"><DocumentViewerPage /></RouteErrorBoundary> },
+      { path: 'review/:docId', element: <RouteErrorBoundary routeName="TextReview"><TextReviewPage /></RouteErrorBoundary> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'cases/active', element: <ComingSoonPage title="Active Cases" /> },
       { path: 'cases/archived', element: <ComingSoonPage title="Archived Cases" /> },
-      { path: 'documents', element: <MyDocumentsPage /> },
-      { 
-        path: 'clients', 
+      { path: 'documents', element: <RouteErrorBoundary routeName="MyDocuments"><MyDocumentsPage /></RouteErrorBoundary> },
+      {
+        path: 'clients',
         element: (
           <RequireRole allowedRoles={['lawyer', 'admin']}>
             <ClientsPage />
           </RequireRole>
-        ) 
+        )
       },
-      { 
-        path: 'analytics', 
+      {
+        path: 'analytics',
         element: (
           <RequireRole allowedRoles={['lawyer', 'admin']}>
             <AnalyticsPage />
           </RequireRole>
-        ) 
+        )
       },
       { path: 'settings', element: <ComingSoonPage title="Settings" /> },
       { path: 'legal-database', element: <ComingSoonPage title="Legal Database" /> },
       { path: 'ai-assistant', element: <ComingSoonPage title="AI Tools" /> }
     ],
-    errorElement: <div className="p-8 text-red-500">Dashboard Error Boundary</div>
+    errorElement: <RouteErrorBoundary routeName="Dashboard" />
   },
 ]);
