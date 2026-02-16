@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, Send, Loader2 } from 'lucide-react';
+import { X, Send, Loader2, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCommunityStore } from '@/store/useCommunityStore';
+import { createThreadSchema } from '@/features/community/schemas/communitySchemas';
 
 const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     const [formData, setFormData] = useState({
@@ -11,12 +13,21 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
 
-    const { createThread } = useCommunityStore();
+    const {
+        createThread,
+        fetchSmartTags,
+        fetchSimilarThreads,
+        smartTagSuggestions,
+        similarThreadSuggestions,
+        isLoadingAssist,
+    } = useCommunityStore();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setFieldErrors({});
         setIsSubmitting(true);
 
         try {
@@ -26,6 +37,21 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                 content: formData.content,
                 tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
             };
+
+            const parsed = createThreadSchema.safeParse(payload);
+            if (!parsed.success) {
+                const nextFieldErrors = {};
+                parsed.error.issues.forEach((issue) => {
+                    const key = issue.path?.[0];
+                    if (key && !nextFieldErrors[key]) {
+                        nextFieldErrors[key] = issue.message;
+                    }
+                });
+                setFieldErrors(nextFieldErrors);
+                setError(parsed.error.issues?.[0]?.message || 'Please fix the highlighted fields.');
+                setIsSubmitting(false);
+                return;
+            }
 
             const newThread = await createThread(payload);
 
@@ -38,6 +64,35 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleSuggestTags = async () => {
+        await fetchSmartTags({
+            title: formData.title,
+            content: formData.content,
+        });
+    };
+
+    const handleSuggestSimilar = async () => {
+        await fetchSimilarThreads({
+            title: formData.title,
+            content: formData.content,
+            limit: 5,
+        });
+    };
+
+    const applySuggestedTag = (tag) => {
+        const currentTags = formData.tags
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean);
+
+        if (currentTags.includes(tag)) return;
+
+        setFormData({
+            ...formData,
+            tags: [...currentTags, tag].join(', '),
+        });
     };
 
     return (
@@ -69,6 +124,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         />
+                        {fieldErrors.title && <p className="text-xs text-destructive">{fieldErrors.title}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -82,6 +138,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                                 <option key={cat.id} value={cat.id}>{cat.label}</option>
                             ))}
                         </select>
+                        {fieldErrors.category && <p className="text-xs text-destructive">{fieldErrors.category}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -94,7 +151,69 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             value={formData.content}
                             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                         />
+                        {fieldErrors.content && <p className="text-xs text-destructive">{fieldErrors.content}</p>}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                            <button
+                                type="button"
+                                onClick={handleSuggestSimilar}
+                                disabled={isLoadingAssist || !formData.title || !formData.content}
+                                className="inline-flex items-center gap-1 rounded-md border border-input px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+                            >
+                                {isLoadingAssist ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                Suggest Similar Threads
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSuggestTags}
+                                disabled={isLoadingAssist || !formData.title || !formData.content}
+                                className="inline-flex items-center gap-1 rounded-md border border-input px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+                            >
+                                {isLoadingAssist ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                Suggest Smart Tags
+                            </button>
+                        </div>
                     </div>
+
+                    {similarThreadSuggestions?.length > 0 && (
+                        <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                Similar Threads
+                            </p>
+                            <div className="space-y-2">
+                                {similarThreadSuggestions.map((thread) => (
+                                    <Link
+                                        key={thread._id}
+                                        to={`/dashboard/community/thread/${thread._id}`}
+                                        className="block rounded-md border border-border px-2 py-1 text-sm hover:bg-accent/20"
+                                        onClick={onClose}
+                                    >
+                                        <p className="font-medium">{thread.title}</p>
+                                        <p className="text-xs text-muted-foreground">{thread.category}</p>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {smartTagSuggestions?.length > 0 && (
+                        <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                Smart Tag Suggestions
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {smartTagSuggestions.map((tag) => (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        onClick={() => applySuggestedTag(tag)}
+                                        className="rounded-full border border-input px-2.5 py-1 text-xs hover:bg-accent/20"
+                                    >
+                                        #{tag}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Tags (comma separated)</label>
@@ -105,6 +224,7 @@ const CreateThreadModal = ({ onClose, onSuccess, categories }) => {
                             value={formData.tags}
                             onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                         />
+                        {fieldErrors.tags && <p className="text-xs text-destructive">{fieldErrors.tags}</p>}
                     </div>
 
                     <div className="pt-4 flex justify-end gap-3">

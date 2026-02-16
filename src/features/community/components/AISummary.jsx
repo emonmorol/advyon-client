@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 
-const AISummary = ({ summary }) => {
+const AISummary = ({ summary, legalReferences = [] }) => {
   if (!summary) return null;
 
   return (
@@ -13,6 +13,18 @@ const AISummary = ({ summary }) => {
        <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
           {summary}
        </p>
+       {legalReferences.length > 0 && (
+          <div className="mt-3">
+             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Suggested Legal References
+             </p>
+             <ul className="mt-1 space-y-1 text-xs text-foreground/80">
+                {legalReferences.map((reference) => (
+                  <li key={reference}>- {reference}</li>
+                ))}
+             </ul>
+          </div>
+       )}
        <p className="text-xs text-muted-foreground mt-3 italic">
           This summary is AI-generated based on the discussion thread.
        </p>
