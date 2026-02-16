@@ -12,7 +12,9 @@ import {
   BarChart3,
   HelpCircle,
   Loader2,
-  Calendar
+  Calendar,
+  CreditCard,
+  ShieldCheck
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -52,6 +54,18 @@ export const allSidebarItems = [
     href: "/dashboard/analytics",
     icon: BarChart3,
     roles: ['lawyer', 'admin']
+  },
+  {
+    title: "Billing",
+    href: "/dashboard/billing",
+    icon: CreditCard,
+    roles: ['lawyer', 'client', 'admin', 'judge']
+  },
+  {
+    title: "Admin Panel",
+    href: "/dashboard/admin",
+    icon: ShieldCheck,
+    roles: ['admin', 'superAdmin']
   },
   {
     title: "Settings",
