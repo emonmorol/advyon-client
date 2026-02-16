@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
     ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft,
     CheckSquare, Square, PanelRightClose, Maximize2
@@ -91,6 +91,16 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     const { fetchDocumentContent } = useDocumentsStore();
     const [previewUrl, setPreviewUrl] = useState(null);
     const [loadingPreview, setLoadingPreview] = useState(false);
+    const previewPanelRef = useRef(null);
+
+    // Auto-expand / collapse the preview panel when a document is selected
+    React.useEffect(() => {
+        if (selectedDocument) {
+            previewPanelRef.current?.expand();
+        } else {
+            previewPanelRef.current?.collapse();
+        }
+    }, [selectedDocument]);
 
     React.useEffect(() => {
         let active = true;
@@ -109,18 +119,18 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                 const directUrl = selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url;
                 if (directUrl) {
                     console.log('[Preview] Using direct cloudinary URL:', directUrl);
-                    setPreviewUrl(directUrl);
+                    if (active) setPreviewUrl(directUrl);
                 } else {
                     console.log('[Preview] Fetching content URL from API...');
                     const url = await fetchDocumentContent(docId);
                     console.log('[Preview] Fetched URL:', url);
                     if (active) {
-                        setPreviewUrl(url);
+                        setPreviewUrl(url || null);
                     }
                 }
             } catch (err) {
                 console.error("[Preview] Failed to load preview url", err);
-                setPreviewUrl(null);
+                if (active) setPreviewUrl(null);
             } finally {
                 if (active) setLoadingPreview(false);
             }
@@ -397,12 +407,12 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
 
                         {/* Preview Panel - ALWAYS RENDERED with collapsible */}
                         <Panel
+                            ref={previewPanelRef}
                             defaultSize={60}
                             minSize={30}
                             maxSize={70}
                             collapsible={true}
                             collapsedSize={0}
-                            defaultCollapsed={!selectedDocument}
                         >
                             {selectedDocument ? (
                                 <div className="h-full border-l border-border bg-background flex flex-col overflow-hidden">
