@@ -9,7 +9,6 @@ const keyOf = (caseId, folder) => `${caseId}::${folder || "__root__"}`;
 export const useDocumentsStore = create((set, get) => ({
     // ---------- UI state ----------
     activeCaseId: null,
-    activeCaseId: null,
     activeFolder: "Evidence",
     selectedDocument: null, // Shared selected document state
 
@@ -80,10 +79,10 @@ export const useDocumentsStore = create((set, get) => ({
             // Backend response format: { success: true, data: { documents: [...], groupedByFolder: {...}, total: N } }
             // Extract the documents array from the nested response
             const responseData = data?.data;
-            const items = Array.isArray(responseData?.documents) 
-                ? responseData.documents 
+            const items = Array.isArray(responseData?.documents)
+                ? responseData.documents
                 : (Array.isArray(responseData) ? responseData : []);
-            
+
             console.log('[DocumentsStore] Fetched', items.length, 'documents for cache key:', k);
 
             set((state) => ({
@@ -113,7 +112,7 @@ export const useDocumentsStore = create((set, get) => ({
             // Let's keep this compatible but maybe use the new route if needed.
             const endpoint = `/documents/id/${documentId}`;
             const response = await api.get(endpoint);
-            
+
             if (response.data && response.data.data) {
                 return response.data.data.cloudinaryUrl;
             }
@@ -133,7 +132,7 @@ export const useDocumentsStore = create((set, get) => ({
                 console.log('[Client Store] Document processing complete:', result.data);
                 // pollInterval is not defined in this scope, assuming it's handled externally
                 // clearInterval(pollInterval); 
-                
+
                 // Re-fetch document list to get fresh data with folder update
                 // caseId is not available in this scope, assuming it's handled externally or passed
                 // get().fetchDocuments({ caseId: /* some caseId */, folder: /* some folder */, force: true });
@@ -152,6 +151,14 @@ export const useDocumentsStore = create((set, get) => ({
         if (!caseId) throw new Error("uploadDocument: caseId is required");
         if (!file) throw new Error("uploadDocument: file is required");
 
+        // WBS-SM-KPI-03: Upload funnel — START
+        const uploadStartTime = Date.now();
+        const uploadMeta = { caseId, folder: folderName, fileName: file.name, fileSize: file.size, fileType: file.type };
+        console.info('[UploadFunnel] UPLOAD_START', uploadMeta);
+        if (typeof window.__telemetry === 'function') {
+            window.__telemetry('UPLOAD_START', uploadMeta);
+        }
+
         // POST /cases/:caseId/documents
         const formData = new FormData();
         formData.append("file", file);
@@ -162,12 +169,31 @@ export const useDocumentsStore = create((set, get) => ({
             if (v !== undefined && v !== null) formData.append(k, v);
         });
 
-        const res = await api.post(`${CASE_BASE}/${caseId}/documents`, formData);
+        try {
+            const res = await api.post(`${CASE_BASE}/${caseId}/documents`, formData);
 
-        // After upload, refresh that folder cache (force)
-        await get().fetchDocuments({ caseId, folder: folderName, force: true });
+            // WBS-SM-KPI-03: Upload funnel — SUCCESS
+            const durationMs = Date.now() - uploadStartTime;
+            console.info('[UploadFunnel] UPLOAD_SUCCESS', { ...uploadMeta, durationMs, documentId: res.data?.data?._id });
+            if (typeof window.__telemetry === 'function') {
+                window.__telemetry('UPLOAD_SUCCESS', { ...uploadMeta, durationMs });
+            }
 
-        return res.data;
+            // After upload, refresh that folder cache (force)
+            await get().fetchDocuments({ caseId, folder: folderName, force: true });
+
+            return res.data;
+        } catch (err) {
+            // WBS-SM-KPI-03: Upload funnel — FAIL
+            const durationMs = Date.now() - uploadStartTime;
+            const errorCode = err?.response?.status || 'NETWORK';
+            const errorMsg = err?.response?.data?.message || err.message;
+            console.error('[UploadFunnel] UPLOAD_FAIL', { ...uploadMeta, durationMs, errorCode, errorMsg });
+            if (typeof window.__telemetry === 'function') {
+                window.__telemetry('UPLOAD_FAIL', { ...uploadMeta, durationMs, errorCode, errorMsg });
+            }
+            throw err;
+        }
     },
 
     deleteDocument: async ({ caseId, documentId, folder } = {}) => {

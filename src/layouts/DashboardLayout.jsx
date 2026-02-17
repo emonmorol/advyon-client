@@ -8,59 +8,97 @@ import { useAuthApi } from '../hooks/useAuthApi';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useAuth, RedirectToSignIn } from '@clerk/clerk-react';
 
+/**
+ * DashboardLayout — WBS-1.3
+ * Uses syncUserWithRetry for resilient post-login synchronization
+ * with fallback to onboarding on unrecoverable failures.
+ */
 const DashboardLayout = () => {
   const { isLoaded, isSignedIn } = useAuth();
-  const { syncUser } = useAuthApi();
+  const { syncUserWithRetry } = useAuthApi();
   const { fetchProfile } = useAuthStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true)
   const { isOpen, closeAI, width, setAIWidth } = useAIAssistant()
   const [isSyncing, setIsSyncing] = useState(true);
   const [syncError, setSyncError] = useState(null);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const navigate = useNavigate();
 
-  // Sync user with backend on login, then fetch profile
-  React.useEffect(() => {
-    const sync = async () => {
-      if (isSignedIn) {
-        try {
-          // Step 1: Sync user with backend
-          const res = await syncUser();
+  // WBS-1.3: Resilient sync with retry logic
+  const performSync = React.useCallback(async () => {
+    setIsSyncing(true);
+    setSyncError(null);
 
-          if (res?.needsOnboarding || res?.data?.needsOnboarding) {
-            navigate('/onboarding');
-            return; // Don't stop syncing state if redirecting, or maybe irrelevant as component unmounts
-          }
+    try {
+      const { data: res, error } = await syncUserWithRetry();
 
-          // Step 2: Fetch user profile to populate Zustand store with role and other data
-          // This ensures the Sidebar has the correct user role immediately after login
-          await fetchProfile();
-        } catch (error) {
-          console.error("Sync or profile fetch failed:", error);
-          setSyncError("Authentication synchronization failed.");
-        } finally {
-          setIsSyncing(false);
-        }
-      } else {
-        setIsSyncing(false);
+      if (error) {
+        setSyncError(error);
+        return;
       }
-    };
 
-    if (isLoaded) {
-       sync();
+      if (res?.needsOnboarding || res?.data?.needsOnboarding) {
+        navigate('/onboarding');
+        return;
+      }
+
+      // Fetch user profile to populate Zustand store with role/data
+      await fetchProfile();
+    } catch (error) {
+      console.error("Unexpected sync failure:", error);
+      setSyncError("Authentication synchronization failed. Please try again.");
+    } finally {
+      setIsSyncing(false);
+      setIsRetrying(false);
     }
-  }, [isSignedIn, isLoaded, syncUser, navigate, fetchProfile]);
+  }, [syncUserWithRetry, navigate, fetchProfile]);
+
+  // Initial sync on login
+  React.useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      performSync();
+    } else if (isLoaded) {
+      setIsSyncing(false);
+    }
+  }, [isSignedIn, isLoaded]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // WBS-1.3: Manual retry handler
+  const handleRetry = () => {
+    setIsRetrying(true);
+    performSync();
+  };
+
+  // WBS-1.3: Fallback to onboarding if sync is unrecoverable
+  const handleFallbackOnboarding = () => {
+    navigate('/onboarding');
+  };
 
   if (syncError) {
     return (
-      <div className="flex flex-col h-screen items-center justify-center bg-[#1C4645] text-white gap-4">
-        <p className="text-xl">{syncError}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="px-4 py-2 bg-teal-500 rounded hover:bg-teal-600 transition"
-        >
-          Retry
-        </button>
+      <div className="flex flex-col h-screen items-center justify-center bg-[#1C4645] text-white gap-4 px-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-2">
+          <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-semibold">Sync Failed</h2>
+        <p className="text-gray-300 max-w-md">{syncError}</p>
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={handleRetry}
+            disabled={isRetrying}
+            className="px-6 py-2 bg-teal-500 rounded-lg hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRetrying ? 'Retrying...' : 'Try Again'}
+          </button>
+          <button
+            onClick={handleFallbackOnboarding}
+            className="px-6 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition border border-white/20"
+          >
+            Go to Setup
+          </button>
+        </div>
       </div>
     );
   }

@@ -1,10 +1,12 @@
 import axios from 'axios';
+import { attachErrorInterceptor } from './apiErrorHandler';
 
 /**
  * Production-ready Axios instance configured for a Clerk-authenticated
  * Express backend. The instance:
  *  - reads the base URL from VITE_API_URL (defaults to localhost)
  *  - attaches a Clerk session token to requests via an interceptor
+ *  - normalises all API errors into a shared envelope (WBS-TD-CQ-01)
  */
 
 const API_BASE_URL =
@@ -44,13 +46,7 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Basic response interceptor placeholder (extend as needed)
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Central place for auth / refresh handling or logging
-    return Promise.reject(error);
-  }
-);
+// WBS-TD-CQ-01: Normalise all API errors into shared envelope
+attachErrorInterceptor(api);
 
 export default api;
