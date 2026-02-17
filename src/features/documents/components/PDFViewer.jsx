@@ -44,6 +44,8 @@ const PDFViewer = ({
   fileUrl,
   documentId,
   fileSize,
+  fileName,
+  fileType,
   onPageChange,
   currentPage = 1,
   zoom = 1,
@@ -148,25 +150,91 @@ const PDFViewer = ({
     );
   }
 
-  // ─── PDF render ─────────────────────────────────────────────────
+  // Determine file type from various sources
+  const getFileExtension = () => {
+    if (fileName) {
+      return fileName.split('.').pop()?.toLowerCase();
+    }
+    if (fileType) {
+      // Handle mime types like "application/pdf"
+      return fileType.split('/').pop()?.toLowerCase();
+    }
+    return null;
+  };
+
+  const fileExt = getFileExtension();
+  const isPdf = fileExt === 'pdf' || (fileType && fileType.includes('pdf'));
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(fileExt) || 
+                  (fileType && fileType.startsWith('image/'));
+  const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(fileExt);
+
+  // ─── Document render ─────────────────────────────────────────────────
   return (
     <div
       ref={containerRef}
       className="relative h-full w-full overflow-auto bg-muted/30 rounded-lg custom-scrollbar"
     >
       {resolvedUrl ? (
-        <iframe
-          src={`${resolvedUrl}#page=${currentPage}`}
-          className="w-full h-full border-0"
-          title="PDF Document"
-          style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: 'top left',
-            width: zoom !== 1 ? `${100 / zoom}%` : '100%',
-            height: zoom !== 1 ? `${100 / zoom}%` : '100%',
-          }}
-          onLoad={() => setIsLoading(false)}
-        />
+        <div className="w-full h-full">
+          {/* PDF Documents */}
+          {isPdf && (
+            <iframe
+              src={`${resolvedUrl}#page=${currentPage}&toolbar=1&navpanes=1`}
+              className="w-full h-full border-0"
+              title={fileName || "PDF Document"}
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top left',
+                width: zoom !== 1 ? `${100 / zoom}%` : '100%',
+                height: zoom !== 1 ? `${100 / zoom}%` : '100%',
+              }}
+              onLoad={() => setIsLoading(false)}
+            />
+          )}
+
+          {/* Image Files */}
+          {isImage && (
+            <div className="flex items-center justify-center min-h-full p-4">
+              <img
+                src={resolvedUrl}
+                alt={fileName || "Document"}
+                className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
+                style={{ transform: `scale(${zoom})` }}
+                onLoad={() => setIsLoading(false)}
+                onError={() => setError('Failed to load image')}
+              />
+            </div>
+          )}
+
+          {/* Office Documents - Use Google Docs Viewer */}
+          {isOffice && (
+            <iframe
+              src={`https://docs.google.com/gview?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
+              className="w-full h-full border-0"
+              title={fileName || "Office Document"}
+              onLoad={() => setIsLoading(false)}
+            />
+          )}
+
+          {/* Other file types - Show download option */}
+          {!isPdf && !isImage && !isOffice && (
+            <div className="flex flex-col items-center justify-center h-full gap-4 p-6 text-center">
+              <FileText className="h-16 w-16 text-muted-foreground" />
+              <p className="font-medium text-foreground">{fileName || "Document"}</p>
+              <p className="text-sm text-muted-foreground">
+                This file type cannot be previewed directly
+              </p>
+              {onDownload && (
+                <button
+                  onClick={onDownload}
+                  className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" /> Download to View
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       ) : (
         /* Fallback placeholder when no URL */
         <motion.div

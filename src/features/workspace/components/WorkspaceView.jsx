@@ -12,6 +12,7 @@ import { useCasesStore } from '@/store/cases';
 import { SmartFileUploader } from '@/components/SmartFileUploader';
 import { useNavigate } from 'react-router-dom';
 import DocumentErrorBoundary from '@/features/documents/components/DocumentErrorBoundary';
+import PDFViewer from '@/features/documents/components/PDFViewer';
 
 const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     const navigate = useNavigate();
@@ -105,27 +106,36 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     React.useEffect(() => {
         let active = true;
         const loadPreview = async () => {
+            // Robust ID check
             const docId = selectedDocument?.id || selectedDocument?._id;
-            if (!docId || !activeCase?.id) {
-                setPreviewUrl(null);
+            const caseId = activeCase?.id || activeCase?._id;
+
+            if (!docId) {
+                if (active) setPreviewUrl(null);
                 return;
             }
 
             setLoadingPreview(true);
-            console.log('[Preview] Loading for doc:', docId, 'cloudinaryUrl:', selectedDocument.cloudinaryUrl);
 
             try {
-                // Check if we already have a direct URL in the document object
-                const directUrl = selectedDocument.cloudinaryUrl || selectedDocument.url || selectedDocument.secure_url;
-                if (directUrl) {
-                    console.log('[Preview] Using direct cloudinary URL:', directUrl);
+                // STRATEGY 1: Check if we already have a direct URL in the document object
+                // We check multiple possible field names to be safe
+                const directUrl = selectedDocument.cloudinaryUrl ||
+                    selectedDocument.url ||
+                    selectedDocument.secure_url ||
+                    selectedDocument.fileUrl; // Potential other field name
+
+                if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('http')) {
                     if (active) setPreviewUrl(directUrl);
                 } else {
-                    console.log('[Preview] Fetching content URL from API...');
+                    // STRATEGY 2: Fetch content URL from API
                     const url = await fetchDocumentContent(docId);
-                    console.log('[Preview] Fetched URL:', url);
+
+                    // Handle potential object response if fetchDocumentContent returns { data: ... }
+                    const finalUrl = (typeof url === 'object' && url?.cloudinaryUrl) ? url.cloudinaryUrl : url;
+
                     if (active) {
-                        setPreviewUrl(url || null);
+                        setPreviewUrl(finalUrl || null);
                     }
                 }
             } catch (err) {
@@ -427,53 +437,28 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                     </div>
 
                                     <div className="flex-1 overflow-y-auto p-4 bg-secondary/10">
-                                        {/* WBS-5.3: Error boundary wrapping preview pane */}
-                                        <DocumentErrorBoundary context="WorkspaceView.Preview" title="Preview Failed" message="This document couldn't be rendered. Try clicking retry or open it in a new viewer.">
+                                        {/* WBS-5.3: Error boundary wrapping preview pane with PDFViewer component */}
+                                        <DocumentErrorBoundary 
+                                            context="WorkspaceView.Preview" 
+                                            title="Preview Failed" 
+                                            message="This document couldn't be rendered. Try clicking retry or open it in a new viewer."
+                                            onDownloadFallback={() => navigate(`/dashboard/documents/${selectedDocument.id || selectedDocument._id}/download`)}
+                                        >
                                             <div className="bg-background border border-border rounded-xl shadow-sm overflow-hidden h-full flex flex-col">
-                                                {(previewUrl) ? (
-                                                    <div className="flex-1 bg-white relative">
-                                                        {(() => {
-                                                            const fileExt = (selectedDocument.fileName || selectedDocument.name || '').split('.').pop()?.toLowerCase();
-                                                            const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(fileExt);
-                                                            const isPdf = fileExt === 'pdf' || selectedDocument.fileType?.includes('pdf');
-
-                                                            if (!previewUrl || typeof previewUrl !== 'string') return null;
-
-                                                            // Use Google Docs Viewer for PDFs and Office files (handles CORS)
-                                                            const finalUrl = (isPdf || isOffice)
-                                                                ? `https://docs.google.com/gview?url=${encodeURIComponent(previewUrl)}&embedded=true`
-                                                                : previewUrl;
-
-                                                            return (
-                                                                <iframe
-                                                                    src={finalUrl}
-                                                                    className="w-full h-full border-none"
-                                                                    title={selectedDocument.fileName || selectedDocument.name}
-                                                                    loading="lazy"
-                                                                />
-                                                            );
-                                                        })()}
-                                                    </div>
+                                                {selectedDocument ? (
+                                                    <PDFViewer
+                                                        fileUrl={previewUrl}
+                                                        documentId={selectedDocument.id || selectedDocument._id}
+                                                        fileSize={selectedDocument.fileSize}
+                                                        fileName={selectedDocument.fileName || selectedDocument.name}
+                                                        fileType={selectedDocument.fileType}
+                                                        onDownload={() => navigate(`/dashboard/documents/${selectedDocument.id || selectedDocument._id}/download`)}
+                                                        onPageChange={(page) => console.log('[PDFViewer] Page changed:', page)}
+                                                    />
                                                 ) : (
                                                     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                                                        {loadingPreview ? (
-                                                            /* WBS-5.3: Skeleton loading state */
-                                                            <div className="w-full max-w-md space-y-3 animate-pulse">
-                                                                <div className="h-4 bg-muted rounded w-3/4 mx-auto" />
-                                                                <div className="h-3 bg-muted/60 rounded w-full" />
-                                                                <div className="h-3 bg-muted/60 rounded w-11/12" />
-                                                                <div className="h-3 bg-muted/60 rounded w-10/12" />
-                                                                <div className="h-3 bg-muted/60 rounded w-9/12" />
-                                                                <div className="h-6" />
-                                                                <div className="h-3 bg-muted/60 rounded w-full" />
-                                                                <div className="h-3 bg-muted/60 rounded w-11/12" />
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                <p className="font-medium text-foreground">File Preview</p>
-                                                                <p className="text-xs opacity-50 mt-2">Preview not available.</p>
-                                                            </>
-                                                        )}
+                                                        <p className="font-medium text-foreground">File Preview</p>
+                                                        <p className="text-xs opacity-50 mt-2">Select a document to preview</p>
                                                     </div>
                                                 )}
                                             </div>

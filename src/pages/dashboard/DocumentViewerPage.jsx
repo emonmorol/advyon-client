@@ -3,11 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import {
   DocumentAdapter,
   PDFToolbar,
-  AIAnalysisPanel,
   EntityHighlight
 } from '@/features/documents';
 import {
@@ -17,8 +15,6 @@ import {
   Share2,
   Maximize2,
   Minimize2,
-  PanelRightClose,
-  PanelRight,
   Eye,
   EyeOff,
   Loader2,
@@ -55,7 +51,7 @@ const DocumentViewerPage = () => {
   const [rotation, setRotation] = useState(0);
 
   // Panel State
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  // Panel State
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showEntities, setShowEntities] = useState(true);
 
@@ -218,82 +214,47 @@ const DocumentViewerPage = () => {
           <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsPanelOpen(!isPanelOpen)} className={isPanelOpen ? 'text-accent bg-accent/10' : ''}>
-            {isPanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
-          </Button>
         </div>
       </motion.header>
 
-      {/* Main Content with Split Pane */}
-      <div className="flex-1 overflow-hidden">
-        <PanelGroup direction="horizontal">
-          {/* Document Viewer Panel */}
-          <Panel defaultSize={65} minSize={30} className="flex flex-col min-w-0">
-            <div className="flex-1 flex flex-col h-full">
-              <PDFToolbar
-                zoom={zoom}
-                page={currentPage}
-                totalPages={totalPages}
-                onZoom={setZoom}
-                onPageChange={setCurrentPage}
-                onSearch={handleSearch}
-                onRotate={handleRotate}
-                onFitToWidth={handleFitToWidth}
-              />
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col h-full">
+          <PDFToolbar
+            zoom={zoom}
+            page={currentPage}
+            totalPages={totalPages}
+            onZoom={setZoom}
+            onPageChange={setCurrentPage}
+            onSearch={handleSearch}
+            onRotate={handleRotate}
+            onFitToWidth={handleFitToWidth}
+          />
 
-              <div ref={viewerContainerRef} className="flex-1 relative overflow-hidden bg-gray-100/50">
-                <div className="h-full" style={{ transform: `rotate(${rotation}deg)` }}>
-                  <DocumentAdapter
-                    fileUrl={fileUrl || docData.meta.fileUrl}
-                    fileType={docData.meta.type}
-                    fileName={docData.meta.title}
-                    fileSize={docData.meta.rawSize}
-                    documentId={docId}
-                    currentPage={currentPage}
-                    zoom={zoom}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                    onDownload={handleDownload}
-                  />
-                </div>
-                {showEntities && (
-                  <EntityHighlight
-                    entities={docData.entityHighlights}
-                    activeEntity={activeEntity}
-                    onEntityClick={handleEntityClick}
-                  />
-                )}
-              </div>
-            </div>
-          </Panel>
-
-          {/* Resize Handle - ALWAYS RENDERED */}
-          <PanelResizeHandle
-            className={cn(
-              "w-1 bg-border hover:bg-accent ring-1 ring-border/50 transition-colors cursor-col-resize flex items-center justify-center",
-              !isPanelOpen && "opacity-30 hover:opacity-100"
-            )}
-          >
-            <div className="w-0.5 h-8 bg-muted-foreground/30 rounded-full" />
-          </PanelResizeHandle>
-
-          {/* AI Analysis Panel - ALWAYS RENDERED with collapsible */}
-          <Panel
-            defaultSize={35}
-            minSize={20}
-            maxSize={50}
-            collapsible={true}
-            collapsedSize={0}
-            defaultCollapsed={!isPanelOpen}
-          >
-            <div className="h-full overflow-y-auto bg-background border-l border-border">
-              <AIAnalysisPanel
+          <div ref={viewerContainerRef} className="flex-1 relative overflow-hidden bg-gray-100/50">
+            <div className="h-full" style={{ transform: `rotate(${rotation}deg)` }}>
+              <DocumentAdapter
+                fileUrl={fileUrl || docData.meta.fileUrl}
+                fileType={docData.meta.type}
+                fileName={docData.meta.title}
+                fileSize={docData.meta.rawSize}
                 documentId={docId}
-                analysis={docData.analysis}
+                currentPage={currentPage}
+                zoom={zoom}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                onDownload={handleDownload}
               />
             </div>
-          </Panel>
-        </PanelGroup>
+            {showEntities && (
+              <EntityHighlight
+                entities={docData.entityHighlights}
+                activeEntity={activeEntity}
+                onEntityClick={handleEntityClick}
+              />
+            )}
+          </div>
+        </div>
       </div>
 
       <motion.footer className="flex items-center justify-center py-2 bg-card border-t border-border mt-auto">
