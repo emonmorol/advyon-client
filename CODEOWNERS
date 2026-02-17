@@ -1,0 +1,12 @@
+# Team ownership mapping for client-side admin and billing modules.
+
+# Admin and billing pages
+/src/pages/dashboard/AdminPanelPage.jsx @team5-leads
+/src/pages/dashboard/BillingPage.jsx @team5-leads
+
+# Service layers
+/src/services/admin/ @team5-leads
+/src/services/billing/ @team5-leads
+
+# Stripe client
+/src/lib/stripe/ @team5-leads
