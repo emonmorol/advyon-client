@@ -23,6 +23,7 @@ import RippleBackground from '@/components/ui/RippleBackground';
 
 // ✅ import your zustand store
 import { useOnboardingStore } from '@/store/onboarding';
+import { onboardingSchema, validateForm } from '@/lib/validation/authSchemas';
 
 export default function OnboardingFlow() {
     const {
@@ -42,10 +43,21 @@ export default function OnboardingFlow() {
     const isLawyer = role === 'lawyer';
     const totalSteps = isLawyer ? 5 : 4;
 
-    // Validation Logic
+    // WBS-SM-MVP-02: Zod-backed per-step validation
     const isStepValid = () => {
-        if (step === 2 && !profile.fullName.trim()) return false;
-        if (step === 3 && !profile.displayName.trim()) return false;
+        if (step === 2) {
+            const result = onboardingSchema.safeParse({
+                role: role || 'client',
+                profile: { fullName: profile.fullName || '' },
+            });
+            // Check if fullName specifically has errors
+            if (!result.success) {
+                const nameError = result.error.issues.find(i => i.path.includes('fullName'));
+                if (nameError) return false;
+            }
+            return (profile.fullName || '').trim().length >= 2;
+        }
+        if (step === 3 && !(profile.displayName || '').trim()) return false;
         return true;
     };
 
@@ -106,9 +118,18 @@ export default function OnboardingFlow() {
                 },
             };
 
+            // WBS-SM-MVP-02: Validate full payload with Zod before API call
+            const { success, errors } = validateForm(onboardingSchema, payload);
+            if (!success) {
+                const firstError = Object.values(errors)[0];
+                toast.error('Validation Error', { description: firstError || 'Please fix the highlighted fields.' });
+                setLoading(false);
+                return;
+            }
+
             // Call API
             await authService.onboardUser(payload);
-            
+
             toast.success("Profile Setup Complete!", {
                 description: finalRole === 'lawyer' ? "Welcome, Counselor." : "Welcome to Advyon."
             });
