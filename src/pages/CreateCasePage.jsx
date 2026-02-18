@@ -76,17 +76,17 @@ const CreateCasePage = () => {
     ];
 
     // Input class shared across fields
-    const inputClass = "w-full bg-background/60 backdrop-blur-sm border border-border/50 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-teal-accent focus:bg-background/80 focus:ring-2 focus:ring-teal-accent/15 transition-all duration-200";
-    const labelClass = "text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] pl-0.5 group-focus-within:text-teal-accent transition-colors";
+    const inputClass = "w-full bg-background/60 backdrop-blur-sm border border-border/50 rounded-xl px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-teal-accent focus:bg-background/80 focus:ring-2 focus:ring-teal-accent/15 transition-all duration-200";
+    const labelClass = "text-[11px] font-bold text-muted-foreground uppercase tracking-[0.15em] pl-0.5 group-focus-within:text-teal-accent transition-colors";
 
     return (
-        <div className="h-[calc(100vh-64px)] bg-background text-foreground relative overflow-hidden flex flex-col">
+        <div className="h-[calc(100vh-56px)] bg-background text-foreground relative overflow-hidden flex flex-col">
             {/* Background Ambience */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-teal-accent/15 rounded-full blur-[150px] -z-10 translate-x-1/3 -translate-y-1/3" />
             <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[120px] -z-10 -translate-x-1/4 translate-y-1/4" />
 
             {/* Top Bar */}
-            <div className="max-w-7xl mx-auto w-full px-6 sm:px-10 pt-5 pb-2 flex-shrink-0">
+            <div className="max-w-7xl mx-auto w-full px-6 sm:px-10 pt-3 pb-1 flex-shrink-0">
                 <button
                     onClick={() => navigate(-1)}
                     className="inline-flex items-center gap-2 text-muted-foreground hover:text-teal-accent transition-colors group"
@@ -97,8 +97,8 @@ const CreateCasePage = () => {
             </div>
 
             {/* Main Content — fills remaining height */}
-            <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-6 sm:px-10 pb-6">
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10 h-full items-stretch">
+            <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-6 sm:px-10 pb-4">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 h-full items-stretch">
 
                     {/* ============ LEFT: Form (3/5) ============ */}
                     <motion.div
@@ -108,14 +108,14 @@ const CreateCasePage = () => {
                         className="lg:col-span-3 flex flex-col"
                     >
                         {/* Header */}
-                        <motion.div variants={itemVariants} className="mb-5 flex-shrink-0">
+                        <motion.div variants={itemVariants} className="mb-4 flex-shrink-0">
                             <div className="flex items-center gap-2.5 mb-2">
-                                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-teal-accent flex items-center justify-center shadow-md shadow-primary/20">
-                                    <Scale className="text-white" size={16} />
+                                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-teal-accent flex items-center justify-center shadow-md shadow-primary/20">
+                                    <Scale className="text-white" size={18} />
                                 </div>
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-teal-accent">New Legal Matter</p>
+                                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-accent">New Legal Matter</p>
                             </div>
-                            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-1">
+                            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-1">
                                 Initiate New Matter
                             </h1>
                             <p className="text-sm text-muted-foreground font-light">
@@ -124,7 +124,7 @@ const CreateCasePage = () => {
                         </motion.div>
 
                         {/* Form */}
-                        <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-5 min-h-0">
+                        <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-4 min-h-0">
                             {error && (
                                 <motion.div variants={itemVariants} className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl flex items-center gap-2.5 text-destructive flex-shrink-0">
                                     <AlertCircle size={16} className="flex-shrink-0" />
@@ -136,7 +136,7 @@ const CreateCasePage = () => {
                             <motion.div variants={itemVariants} className="bg-surface/[0.03] backdrop-blur-sm border border-border/30 rounded-2xl p-5 sm:p-6 space-y-4">
                                 <div className="flex items-center gap-2">
                                     <BookOpen className="text-teal-accent" size={16} />
-                                    <h3 className="text-sm font-semibold text-foreground">Core Details</h3>
+                                    <h3 className="text-base font-semibold text-foreground">Core Details</h3>
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -168,7 +168,7 @@ const CreateCasePage = () => {
                             <motion.div variants={itemVariants} className="bg-surface/[0.03] backdrop-blur-sm border border-border/30 rounded-2xl p-5 sm:p-6 space-y-4">
                                 <div className="flex items-center gap-2">
                                     <Scale className="text-teal-accent" size={16} />
-                                    <h3 className="text-sm font-semibold text-foreground">Classification</h3>
+                                    <h3 className="text-base font-semibold text-foreground">Classification</h3>
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -200,7 +200,7 @@ const CreateCasePage = () => {
                                                 return (
                                                     <button key={p} type="button"
                                                         onClick={() => setFormData({ ...formData, urgency: p })}
-                                                        className={`py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${isActive ? activeClass : 'text-muted-foreground hover:bg-surface/30 hover:text-foreground'}`}
+                                                        className={`py-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${isActive ? activeClass : 'text-muted-foreground hover:bg-surface/30 hover:text-foreground'}`}
                                                     >
                                                         {p}
                                                     </button>
@@ -212,11 +212,11 @@ const CreateCasePage = () => {
                             </motion.div>
 
                             {/* Submit — pushed to bottom */}
-                            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-auto flex-shrink-0 pt-1">
+                            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0">
                                 <button type="submit" disabled={isMutating}
-                                    className="flex-1 bg-gradient-to-r from-primary to-teal-accent hover:from-teal-800 hover:to-teal-600 text-white text-sm font-bold py-3.5 rounded-xl shadow-lg shadow-primary/15 hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
+                                    className="flex-1 bg-gradient-to-r from-primary to-teal-accent hover:from-teal-800 hover:to-teal-600 text-white text-[15px] font-bold py-4 rounded-xl shadow-lg shadow-primary/15 hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.99] flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:pointer-events-none"
                                 >
-                                    {isMutating ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                                    {isMutating ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
                                     Create Case Workspace
                                 </button>
                                 <button type="button" onClick={() => navigate(-1)}
@@ -233,19 +233,19 @@ const CreateCasePage = () => {
                         initial={{ opacity: 0, x: 30 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.25, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                        className="hidden lg:flex lg:col-span-2 flex-col gap-4"
+                        className="hidden lg:flex lg:col-span-2 flex-col gap-3"
                     >
                         {/* AI Features Card */}
-                        <div className="relative flex-1 bg-gradient-to-br from-surface/50 to-surface/20 rounded-2xl border border-white/[0.06] backdrop-blur-md p-6 overflow-hidden flex flex-col">
+                        <div className="relative bg-gradient-to-br from-surface/50 to-surface/20 rounded-2xl border border-white/[0.06] backdrop-blur-md p-5 overflow-hidden">
                             <div className="absolute top-0 right-0 w-40 h-40 bg-teal-accent/8 rounded-full blur-[50px] translate-x-1/4 -translate-y-1/4" />
 
-                            <div className="relative z-10 flex-1 flex flex-col">
+                            <div className="relative z-10">
                                 <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
                                     <Sparkles className="text-accent" size={18} />
                                     AI Workspace Preview
                                 </h3>
 
-                                <div className="space-y-2.5 flex-1">
+                                <div className="space-y-2.5">
                                     {aiFeatures.map((feature, i) => (
                                         <motion.div
                                             key={feature.title}
