@@ -31,6 +31,7 @@ import AdminPanelPage from '@/pages/dashboard/AdminPanelPage';
 import BillingPage from '@/pages/dashboard/BillingPage';
 import ComingSoonPage from '@/pages/ComingSoonPage';
 import AIToolsPage from '@/pages/dashboard/AIToolsPage';
+import ContactPage from '@/pages/ContactPage';
 
 export const router = createBrowserRouter([
   {
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
       {
         path: 'onboarding',
         element: <OnboardingPage />,
+      },
+      {
+        path: 'contact',
+        element: <ContactPage />,
       },
     ],
   },
