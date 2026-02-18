@@ -9,13 +9,34 @@ import { useCommunityStore } from '@/store/useCommunityStore';
 
 const ThreadDetailPage = () => {
    const { threadId } = useParams();
-   const { currentThread, isLoading, error, fetchThreadById, addReply, voteReply, voteThread } = useCommunityStore();
+   const {
+      currentThread,
+      isLoading,
+      error,
+      fetchThreadById,
+      addReply,
+      voteReply,
+      voteThread,
+      fetchThreadSummary,
+      aiThreadSummary,
+      fetchLegalReferences,
+      legalReferenceSuggestions,
+      clearThreadAssistState,
+   } = useCommunityStore();
 
    useEffect(() => {
       if (threadId) {
+         clearThreadAssistState();
          fetchThreadById(threadId);
+         fetchThreadSummary(threadId);
       }
-   }, [threadId, fetchThreadById]);
+   }, [threadId, clearThreadAssistState, fetchThreadById, fetchThreadSummary]);
+
+   useEffect(() => {
+      if (currentThread?.thread?.content) {
+         fetchLegalReferences(currentThread.thread.content).catch(() => {});
+      }
+   }, [currentThread?.thread?.content, fetchLegalReferences]);
 
    const handleReplySubmit = async (content) => {
       try {
@@ -45,7 +66,7 @@ const ThreadDetailPage = () => {
    }
 
    // Error state
-   if (error || !currentThread) {
+   if (!currentThread) {
       return (
          <div className="max-w-4xl mx-auto px-4 py-16 text-center">
             <p className="text-destructive mb-4">{error || 'Thread not found'}</p>
@@ -118,8 +139,17 @@ const ThreadDetailPage = () => {
 
          {/* AI Summary - only show if solved or has replies */}
          {(thread.isSolved || replies.length > 0) && (
-            // Implement this mock summary, and create a corresponding api with ai to create summary of thread
-            <AISummary summary={`This thread discusses "${thread.title}" in the ${thread.category} category.`} />
+            <AISummary
+              summary={
+                aiThreadSummary?.summary ||
+                `This thread discusses "${thread.title}" in the ${thread.category} category.`
+              }
+              legalReferences={
+                aiThreadSummary?.legalReferences?.length
+                  ? aiThreadSummary.legalReferences
+                  : legalReferenceSuggestions
+              }
+            />
          )}
 
          <div className="space-y-8">
@@ -146,7 +176,7 @@ const ThreadDetailPage = () => {
             )}
 
             <div className="pt-10">
-               <ReplyForm onSubmit={handleReplySubmit} />
+               <ReplyForm onSubmit={handleReplySubmit} threadId={threadId} />
             </div>
          </div>
       </div>
