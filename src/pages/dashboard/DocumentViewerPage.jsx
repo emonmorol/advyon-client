@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import {
   DocumentAdapter,
   PDFToolbar,
@@ -22,7 +21,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDocumentsStore } from '@/store/documents';
-import { useAIStore } from '@/store/useAIStore';
 import useDocumentDownload from '@/hooks/useDocumentDownload';
 
 /**
@@ -36,7 +34,6 @@ const DocumentViewerPage = () => {
 
   // Store Hooks
   const { fetchDocumentById, setSelectedDocument } = useDocumentsStore();
-  const { analyzeDocument, isAnalyzing } = useAIStore();
   const { downloadFile, isDownloading } = useDocumentDownload();
 
   // Local State for Doc Data
@@ -67,6 +64,8 @@ const DocumentViewerPage = () => {
       try {
         const doc = await fetchDocumentById(docId);
         if (doc) {
+          const analysisSource = doc.aiAnalysis || {};
+          const extractedEntities = analysisSource.extractedEntities || [];
           setDocData({
             meta: {
               title: doc.fileName || `Document ${docId}`,
@@ -78,23 +77,23 @@ const DocumentViewerPage = () => {
               caseId: doc.caseId?._id || doc.caseId?.id || doc.caseId || '',
             },
             analysis: {
-              refinedSummary: doc.aiAnalysis?.summary || '',
-              rawSummary: doc.aiAnalysis?.rawSummary || doc.aiAnalysis?.summary || '',
-              keyPoints: (doc.aiAnalysis?.keyPoints || []).map(kp => ({
+              refinedSummary: analysisSource.summary || '',
+              rawSummary: analysisSource.rawSummary || analysisSource.summary || '',
+              keyPoints: (analysisSource.keyPoints || []).map(kp => ({
                 text: kp,
                 importance: 'medium',
                 category: 'General'
               })),
-              entities: doc.aiAnalysis?.extractedEntities?.map(e => ({
+              entities: extractedEntities.map(e => ({
                 name: e.name || e,
                 type: e.type || 'other',
                 count: e.count || 1
               })) || [],
-              legalRefs: doc.aiAnalysis?.legalRefs || [],
-              category: doc.aiAnalysis?.documentCategory,
-              confidence: doc.aiAnalysis?.confidenceScore
-            } || {},
-            entityHighlights: doc.aiAnalysis?.extractedEntities?.map(e => ({
+              legalRefs: analysisSource.legalRefs || [],
+              category: analysisSource.documentCategory,
+              confidence: analysisSource.confidenceScore
+            },
+            entityHighlights: extractedEntities.map(e => ({
               id: e.name || e,
               text: e.name || e,
               type: e.type || 'other',

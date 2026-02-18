@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardView, WorkspaceView } from '../features/workspace';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
@@ -13,23 +13,21 @@ const WorkspacePage = () => {
     const [searchTerm, setSearchTerm] = useState(''); // Global search state
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
-    const { cases, fetchCases, isLoading } = useCasesStore();
+    const { cases, fetchCases } = useCasesStore();
 
     useEffect(() => {
         fetchCases();
     }, [fetchCases]);
 
-    // Handle URL parameter for direct case access
-    useEffect(() => {
-        if (caseId && cases.length > 0) {
-            // Find the case with matching ID (check both id and _id)
-            const caseToOpen = cases.find(c => c.id === caseId || c._id === caseId);
-            if (caseToOpen) {
-                setActiveCase(caseToOpen);
-                setCurrentView('workspace');
-            }
+    const routeSelectedCase = useMemo(() => {
+        if (!caseId || cases.length === 0) {
+            return null;
         }
+        return cases.find(c => c.id === caseId || c._id === caseId) || null;
     }, [caseId, cases]);
+
+    const effectiveCurrentView = routeSelectedCase ? 'workspace' : currentView;
+    const effectiveActiveCase = routeSelectedCase || activeCase || cases[0] || null;
 
     const handleCaseSelect = (caseData) => {
         setActiveCase(caseData);
@@ -53,11 +51,11 @@ const WorkspacePage = () => {
 
                 {/* Workspace Content */}
                 <div className="flex-1 flex flex-col overflow-hidden">
-                    {currentView === 'dashboard' ? (
+                    {effectiveCurrentView === 'dashboard' ? (
                         <DashboardView onSelectCase={handleCaseSelect} searchTerm={searchTerm} />
                     ) : (
                         <WorkspaceView
-                            activeCase={activeCase || cases[0]}
+                            activeCase={effectiveActiveCase}
                             onSwitchCase={handleCaseSelect}
                             onBack={() => setCurrentView('dashboard')}
                             searchTerm={searchTerm}
