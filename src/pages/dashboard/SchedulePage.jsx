@@ -98,6 +98,154 @@ const SchedulePage = () => {
 
     // Apply type filter
     if (typeFilter !== 'all') {
+      filtered = filtered.filter(e => e.eventType === typeFilter);
+    }
+
+    // Sort by date
+    filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return filtered;
+  }, [events, activeFilter, typeFilter]);
+
+  const formatEventDate = (date) => {
+    try {
+      const d = new Date(date);
+      if (isToday(d)) return 'Today';
+      return format(d, 'EEE, MMM d');
+    } catch {
+      return 'Invalid date';
+    }
+  };
+
+  const formatTime = (time) => {
+    if (!time) return '';
+    if (typeof time === 'string' && time.includes(':')) {
+      const [hours, minutes] = time.split(':');
+      const h = parseInt(hours);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const hour12 = h % 12 || 12;
+      return `${hour12}:${minutes} ${ampm}`;
+    }
+    return time;
+  };
+
+  const cardStyle = "border-border/40 bg-card backdrop-blur-sm shadow-lg transition-all hover:border-accent/40 hover:shadow-xl cursor-pointer";
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
+
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+  };
+
+  return (
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-6 p-6 md:p-8 bg-background min-h-screen"
+    >
+      {/* Header */}
+      <motion.div variants={item} className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <CalendarDays className="h-8 w-8 text-accent" />
+            Schedule & Calendar
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your hearings, meetings, and important deadlines
+          </p>
+        </div>
+        <Button
+          onClick={() => navigate('/dashboard/schedule/new')}
+          className="bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all"
+        >
+          <Plus className="mr-2 h-5 w-5" />
+          Schedule New Event
+        </Button>
+      </motion.div>
+
+      {/* Filter Tabs & Type Filter */}
+      <motion.div variants={item} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        {/* Date Filter Tabs */}
+        <div className="flex gap-2 bg-secondary/50 rounded-lg p-1">
+          {filterTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium rounded-md transition-all",
+                activeFilter === tab.id
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Type Filter */}
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="hearing">Court Hearing</SelectItem>
+              <SelectItem value="meeting">Meeting</SelectItem>
+              <SelectItem value="filing">Filing Deadline</SelectItem>
+              <SelectItem value="deadline">Deadline</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </motion.div>
+
+      {/* Events Grid */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-20">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-500 font-medium">Failed to load events</p>
+          <p className="text-muted-foreground text-sm mt-1">{error}</p>
+          <Button variant="outline" className="mt-4" onClick={() => fetchEvents()}>
+            Try Again
+          </Button>
+        </div>
+      ) : filteredEvents.length === 0 ? (
+        <motion.div variants={item} className="text-center py-20">
+          <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">No events found</h3>
+          <p className="text-muted-foreground mb-6">
+            {activeFilter === 'all' 
+              ? "You haven't scheduled any events yet." 
+              : `No ${activeFilter} events to display.`}
+          </p>
+          <Button onClick={() => navigate('/dashboard/schedule/new')} className="bg-accent text-accent-foreground">
+            <Plus className="mr-2 h-4 w-4" />
+            Schedule Your First Event
+          </Button>
+        </motion.div>
+      ) : (
+        <motion.div variants={item} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredEvents.map((event, index) => {
+            const eventType = eventTypeConfig[event.eventType] || eventTypeConfig.other;
+            const EventIcon = eventType.icon;
+            const status = statusConfig[event.status] || statusConfig.scheduled;
+
+            return (
               <motion.div
                 key={event._id || index}
                 variants={item}
