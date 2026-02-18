@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react-hooks';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 
 /**
  * WBS-TD-TS-01 — Unit tests for useAuthApi retry logic.
@@ -40,12 +40,16 @@ vi.mock('@/lib/api/api', () => ({
 }));
 
 // Import after mocks
-const { useAuthApi } = await import('../../useAuthApi');
+const { useAuthApi } = await import('../useAuthApi');
 
 describe('useAuthApi', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     describe('syncUser (single attempt)', () => {
@@ -89,7 +93,9 @@ describe('useAuthApi', () => {
             mockPost.mockResolvedValueOnce({ data: { success: true } });
 
             const { result } = renderHook(() => useAuthApi());
-            const response = await act(() => result.current.syncUserWithRetry());
+            const responsePromise = result.current.syncUserWithRetry();
+            await vi.runAllTimersAsync();
+            const response = await responsePromise;
 
             expect(response).toEqual({ data: { success: true }, error: null, retries: 1 });
             expect(mockPost).toHaveBeenCalledTimes(2);
@@ -100,7 +106,9 @@ describe('useAuthApi', () => {
             mockPost.mockRejectedValue(error);
 
             const { result } = renderHook(() => useAuthApi());
-            const response = await act(() => result.current.syncUserWithRetry());
+            const responsePromise = result.current.syncUserWithRetry();
+            await vi.runAllTimersAsync();
+            const response = await responsePromise;
 
             expect(response.data).toBeNull();
             expect(response.error).toBe('Server down');
@@ -117,7 +125,9 @@ describe('useAuthApi', () => {
             mockPost.mockRejectedValue(error);
 
             const { result } = renderHook(() => useAuthApi());
-            const response = await act(() => result.current.syncUserWithRetry());
+            const responsePromise = result.current.syncUserWithRetry();
+            await vi.runAllTimersAsync();
+            const response = await responsePromise;
 
             expect(response.error).toBe('Rate limited');
         });

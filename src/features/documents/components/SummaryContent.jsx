@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { 
@@ -14,6 +14,9 @@ import {
   Clock,
   Database
 } from 'lucide-react';
+
+const FALLBACK_RAW_SUMMARY = 'No raw summary available yet.';
+const FALLBACK_REFINED_SUMMARY = 'No refined summary available yet.';
 
 /**
  * SummaryContent - Markdown editor with Raw and Refined subviews
@@ -45,12 +48,12 @@ const SummaryContent = ({
   const [saveStatus, setSaveStatus] = useState(null); // 'saving', 'saved', 'error'
 
   // Storage keys based on document ID
-  const STORAGE_KEYS = {
+  const STORAGE_KEYS = useMemo(() => ({
     raw: `advyon_doc_${documentId}_raw`,
     rawMeta: `advyon_doc_${documentId}_raw_meta`,
     refined: `advyon_doc_${documentId}_refined`,
     refinedMeta: `advyon_doc_${documentId}_refined_meta`,
-  };
+  }), [documentId]);
 
   // State for saved content
   const [savedRawContent, setSavedRawContent] = useState('');
@@ -220,8 +223,8 @@ const SummaryContent = ({
   // Clear saved content (for testing/reset)
   const handleClearSaved = () => {
     Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
-    setSavedRawContent(rawSummary || defaultRawSummary);
-    setSavedRefinedContent(refinedSummary || defaultRefinedSummary);
+    setSavedRawContent(rawSummary || FALLBACK_RAW_SUMMARY);
+    setSavedRefinedContent(refinedSummary || FALLBACK_REFINED_SUMMARY);
     setRawLastEdited(null);
     setRefinedLastEdited(null);
   };

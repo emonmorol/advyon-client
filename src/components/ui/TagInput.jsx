@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,24 +13,20 @@ const TagInput = ({
   className 
 }) => {
   const [input, setInput] = useState('');
-  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
-
-  useEffect(() => {
-    if (input.trim()) {
-      const filtered = suggestions.filter(s => 
-        s.toLowerCase().includes(input.toLowerCase()) && !tags.includes(s)
-      );
-      setFilteredSuggestions(filtered);
-    } else {
-      setFilteredSuggestions([]);
+  const filteredSuggestions = useMemo(() => {
+    if (!input.trim()) {
+      return [];
     }
+
+    return suggestions.filter(s =>
+      s.toLowerCase().includes(input.toLowerCase()) && !tags.includes(s)
+    );
   }, [input, suggestions, tags]);
 
   const addTag = (tag) => {
     if (tag.trim() && !tags.includes(tag.trim())) {
       onChange([...tags, tag.trim()]);
       setInput('');
-      setFilteredSuggestions([]);
     }
   };
 
