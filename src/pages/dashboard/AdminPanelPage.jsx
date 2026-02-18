@@ -7,9 +7,6 @@ import { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   useAdminUsers,
-  useUpdateUserRole,
-  useUpdateUserStatus,
-  useDeleteAdminUser,
   useBulkUpdateUsers,
   useCaseOverview,
   useSystemSettings,
