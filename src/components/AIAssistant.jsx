@@ -119,7 +119,7 @@ const AIAssistant = ({
   const [missingDocs, setMissingDocs] = useState([]);
   const [legalSections, setLegalSections] = useState([]);
   const [similarCases, setSimilarCases] = useState([]);
-  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentOrders] = useState([]);
   
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -207,9 +207,11 @@ const AIAssistant = ({
     };
   }, [isResizing, onWidthChange]);
 
+  const isAssistantTyping = isTyping || storeIsSending;
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages, isTyping]);
+  }, [chatMessages, isAssistantTyping]);
 
   // Animation variants
   const containerVariants = {
@@ -644,7 +646,7 @@ const AIAssistant = ({
                     </motion.div>
                   ))}
 
-                  {isTyping && (
+                {isAssistantTyping && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}

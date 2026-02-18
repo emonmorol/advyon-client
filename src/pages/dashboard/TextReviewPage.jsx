@@ -29,7 +29,7 @@ const TextReviewPage = () => {
           // Simulating OCR text retrieval - in real app would fetch from backend/AI analysis
           setOcrText(doc.aiAnalysis?.rawSummary || "OCR extracted text would appear here...");
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to load document");
       } finally {
         setLoading(false);
@@ -45,7 +45,7 @@ const TextReviewPage = () => {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
       toast.success("Text extraction saved");
       navigate(-1);
-    } catch (err) {
+    } catch {
       toast.error("Failed to save");
     } finally {
       setIsSaving(false);

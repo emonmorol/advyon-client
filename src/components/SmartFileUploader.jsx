@@ -35,7 +35,6 @@ export const SmartFileUploader = ({
 }) => {
   const {
     upload,
-    isUploading,
     uploadProgress,
     status,
     analysisResult,
