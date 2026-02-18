@@ -27,6 +27,8 @@ import LegalSearchPage from '@/pages/dashboard/LegalSearchPage';
 import AskQuestionPage from '@/pages/dashboard/AskQuestionPage';
 import ThreadDetailPage from '@/pages/dashboard/ThreadDetailPage';
 import MyDocumentsPage from '@/pages/dashboard/MyDocumentsPage';
+import AdminPanelPage from '@/pages/dashboard/AdminPanelPage';
+import BillingPage from '@/pages/dashboard/BillingPage';
 import ComingSoonPage from '@/pages/ComingSoonPage';
 import AIToolsPage from '@/pages/dashboard/AIToolsPage';
 
@@ -92,7 +94,19 @@ export const router = createBrowserRouter([
       },
       { path: 'settings', element: <ComingSoonPage title="Settings" /> },
       { path: 'legal-database', element: <ComingSoonPage title="Legal Database" /> },
-      { path: 'ai-assistant', element: <AIToolsPage /> }
+      { path: 'ai-assistant', element: <RouteErrorBoundary routeName="AITools"><AIToolsPage /></RouteErrorBoundary> },
+      {
+        path: 'admin',
+        element: (
+          <RequireRole allowedRoles={['admin', 'superAdmin']}>
+            <AdminPanelPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'billing',
+        element: <BillingPage />,
+      },
     ],
     errorElement: <RouteErrorBoundary routeName="Dashboard" />
   },
