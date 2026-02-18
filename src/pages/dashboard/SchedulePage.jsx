@@ -239,7 +239,15 @@ const SchedulePage = () => {
           </Button>
         </motion.div>
       ) : (
-        <motion.div variants={item} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={{
+            hidden: { opacity: 0 },
+            show: { opacity: 1, transition: { staggerChildren: 0.05 } }
+          }}
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredEvents.map((event, index) => {
             const eventType = eventTypeConfig[event.eventType] || eventTypeConfig.other;
             const EventIcon = eventType.icon;
@@ -249,6 +257,8 @@ const SchedulePage = () => {
               <motion.div
                 key={event._id || index}
                 variants={item}
+                initial="hidden"
+                animate="show"
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
               >

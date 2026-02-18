@@ -18,12 +18,7 @@ export const useScheduleStore = create((set) => ({
     try {
       const { data } = await api.get('/schedules', { params: filters });
       // Handle wrapped response: { success, message, data: [...] }
-      console.log('[ScheduleStore] Raw axios data:', data);
-      console.log('[ScheduleStore] data.data:', data.data);
-      console.log('[ScheduleStore] Is array?', Array.isArray(data.data));
-      const eventList = data.data || data || [];
-      console.log('[ScheduleStore] eventList:', eventList, 'length:', eventList.length);
-      set({ events: eventList, isLoading: false });
+      set({ events: data.data || data || [], isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });
     }
