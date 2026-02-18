@@ -76,6 +76,8 @@ export const router = createBrowserRouter([
       { path: 'cases/active', element: <ComingSoonPage title="Active Cases" /> },
       { path: 'cases/archived', element: <ComingSoonPage title="Archived Cases" /> },
       { path: 'documents', element: <RouteErrorBoundary routeName="MyDocuments"><MyDocumentsPage /></RouteErrorBoundary> },
+      { path: 'messages', element: <ComingSoonPage title="Messages" /> },
+      { path: 'messages/:messageId', element: <ComingSoonPage title="Message Details" /> },
       {
         path: 'clients',
         element: (

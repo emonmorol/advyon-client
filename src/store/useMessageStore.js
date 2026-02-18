@@ -17,12 +17,18 @@ export const useMessageStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await api.get('/messages', { params });
+      const payload = data?.data || data;
+      const messages = Array.isArray(payload)
+        ? payload
+        : payload?.messages || [];
+      const meta = payload?.meta || data?.meta || null;
+
       set({ 
-        messages: data.data || data, 
-        meta: data.meta,
+        messages,
+        meta,
         isLoading: false 
       });
-      return data;
+      return payload;
     } catch (error) {
       set({ error: error.message, isLoading: false });
       return { messages: [] };
@@ -32,9 +38,10 @@ export const useMessageStore = create((set) => ({
   // Fetch pending/unread count
   fetchPendingCount: async () => {
     try {
-      const { data } = await api.get('/messages/pending-count');
-      set({ pendingCount: data.count || 0 });
-      return data.count;
+      const { data } = await api.get('/messages/pending/count');
+      const count = data?.data?.count ?? data?.count ?? 0;
+      set({ pendingCount: count });
+      return count;
     } catch (error) {
       console.error('Failed to fetch pending count:', error);
       return 0;
@@ -59,7 +66,7 @@ export const useMessageStore = create((set) => ({
   // Archive a message
   archiveMessage: async (messageId) => {
     try {
-      await api.patch(`/messages/${messageId}/archive`);
+      await api.delete(`/messages/${messageId}`);
       set((state) => ({
         messages: state.messages.filter((msg) => msg._id !== messageId),
       }));
@@ -73,11 +80,12 @@ export const useMessageStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await api.post('/messages', payload);
+      const createdMessage = data?.data || data;
       set((state) => ({
-        messages: [data, ...state.messages],
+        messages: [createdMessage, ...state.messages],
         isLoading: false,
       }));
-      return data;
+      return createdMessage;
     } catch (error) {
       set({ error: error.message, isLoading: false });
       throw error;
