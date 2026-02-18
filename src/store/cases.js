@@ -66,7 +66,7 @@ export const useCasesStore = create(persist((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const res = await api.post(BASE, caseData);
-            const newCase = res.data; // Assuming backend returns the created object
+            const newCase = res.data?.data || res.data;
 
             set((state) => ({
                 cases: [newCase, ...state.cases], // Prepend to list

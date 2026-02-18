@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMyClients } from '@/services/users/userService';
+import { shareCaseAccess, revokeCaseAccess } from '@/services/caseAccess/caseAccessService';
+import { useCasesStore } from '@/store/cases';
 import { 
   Table, 
   TableBody, 
@@ -15,31 +17,123 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   Search, 
-  MessageSquare, 
+  Mail,
   Eye, 
   UserPlus, 
-  MoreHorizontal,
-  Mail,
   Phone
 } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export default function ClientsPage() {
-  const { data: response, isLoading } = useMyClients();
+  const navigate = useNavigate();
+  const { data: response, isLoading, mutate } = useMyClients();
+  const { cases, fetchCases } = useCasesStore();
   const clients = response?.data || [];
   const [search, setSearch] = useState('');
+  const [isAddClientOpen, setIsAddClientOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    caseId: '',
+    role: 'viewer',
+  });
+  const [isInviting, setIsInviting] = useState(false);
+  const [removingClientId, setRemovingClientId] = useState('');
 
+  useEffect(() => {
+    fetchCases();
+  }, [fetchCases]);
+ 
   const filteredClients = clients.filter(client => 
-    client.displayName?.toLowerCase().includes(search.toLowerCase()) || 
+    (client.displayName || client.fullName)?.toLowerCase().includes(search.toLowerCase()) || 
     client.email?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleInviteClient = async (event) => {
+    event.preventDefault();
+
+    if (!inviteForm.email.trim()) {
+      toast.error('Client email is required');
+      return;
+    }
+
+    if (!inviteForm.caseId) {
+      toast.error('Please select a case');
+      return;
+    }
+
+    setIsInviting(true);
+    try {
+      await shareCaseAccess({
+        email: inviteForm.email.trim(),
+        caseId: inviteForm.caseId,
+        role: inviteForm.role,
+      });
+
+      toast.success('Client access granted successfully');
+      setIsAddClientOpen(false);
+      setInviteForm({ email: '', caseId: '', role: 'viewer' });
+      await mutate();
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to add client access';
+      toast.error(message);
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleRemoveAccess = async (client) => {
+    if (!client?.caseId || !client?.id) {
+      toast.error('Missing case or client identifier');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Remove ${client.displayName || client.fullName || client.email} from this case?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setRemovingClientId(client.id);
+    try {
+      await revokeCaseAccess(client.caseId, client.id);
+      toast.success('Client access removed');
+      await mutate();
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to remove client access';
+      toast.error(message);
+    } finally {
+      setRemovingClientId('');
+    }
+  };
+
+  const handleOpenCase = (client) => {
+    if (!client?.caseId) {
+      toast.error('No linked case found for this client');
+      return;
+    }
+
+    navigate(`/dashboard/workspace/${client.caseId}`);
+  };
+
+  const handleEmailClient = (client) => {
+    if (!client?.email) {
+      toast.error('Client email not available');
+      return;
+    }
+
+    const subject = encodeURIComponent('Case update from Advyon');
+    window.location.href = `mailto:${client.email}?subject=${subject}`;
+  };
 
   if (isLoading) {
     return (
@@ -56,7 +150,7 @@ export default function ClientsPage() {
            <h1 className="text-3xl font-bold tracking-tight text-foreground">My Clients</h1>
            <p className="text-muted-foreground mt-1">Manage your client relationships and cases.</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button className="bg-primary hover:bg-primary/90" onClick={() => setIsAddClientOpen(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
           Add Client
         </Button>
@@ -88,7 +182,7 @@ export default function ClientsPage() {
                   <TableHead>Client Details</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Quick Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -102,7 +196,7 @@ export default function ClientsPage() {
                             <AvatarFallback>{client.displayName?.slice(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-foreground">{client.displayName}</p>
+                            <p className="font-medium text-foreground">{client.displayName || client.fullName || 'Client'}</p>
                             <p className="text-xs text-muted-foreground">{client.email}</p>
                           </div>
                         </div>
@@ -120,30 +214,38 @@ export default function ClientsPage() {
                           {client.accessStatus || 'Active'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <MessageSquare className="mr-2 h-4 w-4" />
-                              Send Message
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                               <Eye className="mr-2 h-4 w-4" />
-                               View Case Details
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
-                              Remove Access
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => handleOpenCase(client)}
+                          >
+                            <Eye className="mr-1.5 h-3.5 w-3.5" />
+                            Open Case
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => handleEmailClient(client)}
+                          >
+                            <Mail className="mr-1.5 h-3.5 w-3.5" />
+                            Email
+                          </Button>
+
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => handleRemoveAccess(client)}
+                            disabled={removingClientId === client.id}
+                          >
+                            {removingClientId === client.id ? 'Removing...' : 'Remove Access'}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -159,6 +261,89 @@ export default function ClientsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Existing Client</DialogTitle>
+            <DialogDescription>
+              Link an existing user account to one of your cases by email.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4" onSubmit={handleInviteClient}>
+            <div className="space-y-2">
+              <label htmlFor="client-email" className="text-sm font-medium text-foreground">
+                Client Email
+              </label>
+              <Input
+                id="client-email"
+                type="email"
+                placeholder="client@example.com"
+                value={inviteForm.email}
+                onChange={(event) =>
+                  setInviteForm((prev) => ({ ...prev, email: event.target.value }))
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="client-case" className="text-sm font-medium text-foreground">
+                Assign Case
+              </label>
+              <select
+                id="client-case"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={inviteForm.caseId}
+                onChange={(event) =>
+                  setInviteForm((prev) => ({ ...prev, caseId: event.target.value }))
+                }
+                required
+              >
+                <option value="">Select a case</option>
+                {cases.map((item) => (
+                  <option key={item.id || item._id} value={item.id || item._id}>
+                    {item.title} ({item.ref || item.caseNumber || item.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="client-role" className="text-sm font-medium text-foreground">
+                Access Role
+              </label>
+              <select
+                id="client-role"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={inviteForm.role}
+                onChange={(event) =>
+                  setInviteForm((prev) => ({ ...prev, role: event.target.value }))
+                }
+              >
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddClientOpen(false)}
+                disabled={isInviting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isInviting}>
+                {isInviting ? 'Adding...' : 'Add Client'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
