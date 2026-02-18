@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import {
     ChevronDown, Users, Folder, Settings, PanelLeft, PanelRight, Plus, ChevronRight, Search, FolderOpen, ArrowLeft,
-    CheckSquare, Square, PanelRightClose, Maximize2
+    CheckSquare, Square, PanelRightClose, Maximize2, UserPlus
 } from 'lucide-react';
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { cn } from "@/lib/utils";
@@ -13,13 +13,28 @@ import { SmartFileUploader } from '@/components/SmartFileUploader';
 import { useNavigate } from 'react-router-dom';
 import DocumentErrorBoundary from '@/features/documents/components/DocumentErrorBoundary';
 import PDFViewer from '@/features/documents/components/PDFViewer';
+import { useAuthStore } from '@/store/useAuthStore';
+import { shareCaseAccess } from '@/services/caseAccess/caseAccessService';
+import { toast } from 'sonner';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     const navigate = useNavigate();
+    const { user } = useAuthStore();
     const [showLeftSidebar, setShowLeftSidebar] = useState(true);
     const [isCaseSwitcherOpen, setIsCaseSwitcherOpen] = useState(false);
     const [breadcrumbs, setBreadcrumbs] = useState([activeCase.title]);
     const [expandedFolders, setExpandedFolders] = useState([]);
+    const [isAddClientOpen, setIsAddClientOpen] = useState(false);
+    const [clientEmail, setClientEmail] = useState('');
+    const [clientRole, setClientRole] = useState('viewer');
+    const [isInvitingClient, setIsInvitingClient] = useState(false);
 
     // Store Integration
     const {
@@ -93,6 +108,42 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [loadingPreview, setLoadingPreview] = useState(false);
     const previewPanelRef = useRef(null);
+
+    const caseIdentifier = activeCase?.id || activeCase?._id;
+    const canManageAccess = ['lawyer', 'admin', 'superAdmin'].includes(user?.role);
+
+    const handleInviteClientToCase = async (event) => {
+        event.preventDefault();
+
+        if (!clientEmail.trim()) {
+            toast.error('Client email is required');
+            return;
+        }
+
+        if (!caseIdentifier) {
+            toast.error('Case is not ready yet');
+            return;
+        }
+
+        setIsInvitingClient(true);
+        try {
+            await shareCaseAccess({
+                email: clientEmail.trim(),
+                caseId: caseIdentifier,
+                role: clientRole,
+            });
+
+            toast.success('Client added to this case');
+            setClientEmail('');
+            setClientRole('viewer');
+            setIsAddClientOpen(false);
+        } catch (error) {
+            const message = error?.response?.data?.message || 'Failed to add client to case';
+            toast.error(message);
+        } finally {
+            setIsInvitingClient(false);
+        }
+    };
 
     // Auto-expand / collapse the preview panel when a document is selected
     React.useEffect(() => {
@@ -329,6 +380,15 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                         ))}
                     </div>
                     <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                        {canManageAccess && (
+                            <button
+                                onClick={() => setIsAddClientOpen(true)}
+                                className="flex items-center gap-1.5 border border-accent/30 bg-background hover:bg-accent/10 text-muted-foreground hover:text-foreground px-3 py-1 rounded-md text-xs font-semibold transition-all"
+                            >
+                                <UserPlus size={14} />
+                                <span className="hidden sm:inline">Add Client</span>
+                            </button>
+                        )}
                         <button className="flex items-center gap-1.5 bg-accent hover:bg-accent/90 text-accent-foreground px-3 py-1 rounded-md text-xs font-semibold transition-all shadow-sm"><Plus size={14} /><span className="hidden sm:inline">Upload File</span></button>
                     </div>
                 </div>
@@ -489,6 +549,68 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                     </PanelGroup>
                 </div>
             </main>
+
+            <Dialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Add Client to Case</DialogTitle>
+                        <DialogDescription>
+                            Link an existing client account to this case using their email.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form className="space-y-4" onSubmit={handleInviteClientToCase}>
+                        <div className="space-y-2">
+                            <label htmlFor="workspace-client-email" className="text-sm font-medium text-foreground">
+                                Client Email
+                            </label>
+                            <input
+                                id="workspace-client-email"
+                                type="email"
+                                value={clientEmail}
+                                onChange={(event) => setClientEmail(event.target.value)}
+                                placeholder="client@example.com"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="workspace-client-role" className="text-sm font-medium text-foreground">
+                                Access Role
+                            </label>
+                            <select
+                                id="workspace-client-role"
+                                value={clientRole}
+                                onChange={(event) => setClientRole(event.target.value)}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            >
+                                <option value="viewer">Viewer</option>
+                                <option value="editor">Editor</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-1">
+                            <button
+                                type="button"
+                                onClick={() => setIsAddClientOpen(false)}
+                                className="px-3 py-2 text-xs font-semibold border border-border rounded-md hover:bg-muted transition-colors"
+                                disabled={isInvitingClient}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-3 py-2 text-xs font-semibold bg-accent text-accent-foreground rounded-md hover:bg-accent/90 transition-colors disabled:opacity-60"
+                                disabled={isInvitingClient}
+                            >
+                                {isInvitingClient ? 'Adding...' : 'Add Client'}
+                            </button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

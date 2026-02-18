@@ -132,7 +132,9 @@ const Dashboard = () => {
   const statsToDisplay = isClient ? clientStats : lawyerStats;
 
   const lawyerActions = [
-    { label: "Add Client", icon: UserPlus, color: "bg-blue-500/10 text-blue-400", action: () => navigate('/dashboard/clients') }, // Redirect to clients
+    ...(['lawyer', 'admin'].includes(user?.role)
+      ? [{ label: "Add Client", icon: UserPlus, color: "bg-blue-500/10 text-blue-400", action: () => navigate('/dashboard/clients') }]
+      : []),
     { label: "Upload File", icon: Upload, color: "bg-purple-500/10 text-purple-400", action: () => navigate('/dashboard/documents') },
     { label: "Court Date", icon: Calendar, color: "bg-amber-500/10 text-amber-400", action: () => navigate('/dashboard/schedule/new?type=hearing') },
     { label: "AI Analysis", icon: Sparkles, color: "bg-emerald-500/10 text-emerald-400", action: () => navigate('/dashboard/ai-assistant') },

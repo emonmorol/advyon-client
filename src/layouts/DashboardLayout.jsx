@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Navbar } from '@/components/Navbar'
 import { Sidebar } from '@/components/Sidebar'
 import { AIAssistant, useAIAssistant } from '@/components'
@@ -24,6 +24,8 @@ const DashboardLayout = () => {
   const [isRetrying, setIsRetrying] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const isWorkspaceRoute = location.pathname.startsWith('/dashboard/workspace');
 
   // WBS-1.3: Resilient sync with retry logic
   const performSync = React.useCallback(async () => {
@@ -134,7 +136,9 @@ const DashboardLayout = () => {
           {/* Background Effects */}
           <div className="absolute inset-0 bg-primary -z-10 fixed"></div>
 
-          <div className="bg-background rounded-2xl shadow-2xl flex-1 overflow-y-auto p-6 text-gray-800">
+          <div className={`bg-background rounded-2xl shadow-2xl flex-1 text-gray-800 ${
+            isWorkspaceRoute ? 'overflow-hidden p-0' : 'overflow-y-auto p-6'
+          }`}>
             <Outlet />
           </div>
         </main>
