@@ -5,7 +5,7 @@ import api from '@/lib/api/api';
  * Phase 1.1: User Preferences Store
  * Manages user preferences for theme, notifications, and dashboard configuration
  */
-export const usePreferencesStore = create((set, get) => ({
+export const usePreferencesStore = create((set) => ({
   preferences: null,
   isLoading: false,
   error: null,

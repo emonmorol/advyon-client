@@ -5,7 +5,7 @@ import api from '@/lib/api/api';
  * Phase 1.2: Message Store
  * Manages client messages/requests for the dashboard
  */
-export const useMessageStore = create((set, get) => ({
+export const useMessageStore = create((set) => ({
   messages: [],
   pendingCount: 0,
   isLoading: false,

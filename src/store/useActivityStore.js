@@ -5,7 +5,7 @@ import api from '@/lib/api/api';
  * Phase 1.3: Activity Store
  * Manages activity feed for dashboard
  */
-export const useActivityStore = create((set, get) => ({
+export const useActivityStore = create((set) => ({
   activities: [],
   stats: null,
   isLoading: false,
