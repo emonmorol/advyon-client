@@ -1,27 +1,68 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Briefcase, Search, Clock } from 'lucide-react';
 import CaseCard from './CaseCard';
-import { RECENT_ACTIVITY } from '../mockData';
 import { useCasesStore } from '@/store/cases';
+import { useActivityStore } from '@/store/useActivityStore';
+import { useAuthStore } from '@/store/useAuthStore';
+
+const formatRelativeTime = (date) => {
+    if (!date) return 'Just now';
+
+    const now = new Date();
+    const activityDate = new Date(date);
+    const diffMs = now - activityDate;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return activityDate.toLocaleDateString();
+};
 
 const DashboardView = ({ onSelectCase, searchTerm }) => {
     const navigate = useNavigate();
+    const { user } = useAuthStore();
 
     // Use Store
-    const { cases, fetchCases, isLoading } = useCasesStore();
+    const { cases, fetchCases } = useCasesStore();
+    const {
+        activities,
+        fetchRecentActivities,
+        isLoading: activitiesLoading,
+    } = useActivityStore();
 
 
     useEffect(() => {
         fetchCases();
     }, [fetchCases]);
-    console.log(cases)
+
+    useEffect(() => {
+        fetchRecentActivities(6);
+
+        const refreshTimer = setInterval(() => {
+            fetchRecentActivities(6);
+        }, 30000);
+
+        return () => clearInterval(refreshTimer);
+    }, [fetchRecentActivities]);
+
+    const activeCases = useMemo(
+        () => (cases || []).filter((c) => (c.status || '').toLowerCase() !== 'archived'),
+        [cases],
+    );
 
     // Filter cases based on search term (client-side filtering for now)
-    const filteredCases = (cases || []).filter(c =>
+    const filteredCases = activeCases.filter(c =>
         c.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.ref?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.type?.toLowerCase().includes(searchTerm.toLowerCase())
+        c.caseNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.caseType?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -30,7 +71,7 @@ const DashboardView = ({ onSelectCase, searchTerm }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-background-foreground mb-1">Welcome back, <span className='text-accent'>John</span></h1>
+                        <h1 className="text-2xl font-bold text-background-foreground mb-1">Welcome back, <span className='text-accent'>{user?.displayName || user?.fullName || 'Counsel'}</span></h1>
                         <p className="text-muted-foreground text-sm">Here is what's happening across your active cases today.</p>
                     </div>
                     <button
@@ -50,7 +91,12 @@ const DashboardView = ({ onSelectCase, searchTerm }) => {
                                 <Briefcase size={16} />
                                 {searchTerm ? `Results for "${searchTerm}"` : "Active Cases"}
                             </h2>
-                            <button className="text-xs text-accent hover:text-primary-foreground transition-colors">View Archived</button>
+                            <button
+                                className="text-xs text-amber-500 hover:text-amber-700 hover:font-bold transition-all"
+                                onClick={() => navigate('/dashboard/cases/archived')}
+                            >
+                                View Archived
+                            </button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -60,8 +106,8 @@ const DashboardView = ({ onSelectCase, searchTerm }) => {
 
                             {filteredCases.length === 0 && (
                                 <div className="col-span-2 py-10 flex flex-col items-center justify-center text-center bg-background border border-teal-accent/30 border-dashed rounded-xl">
-                                    <Search size={40} className="text-teal-accent/50 mb-3" />
-                                    <p className="text-primary-foreground font-medium">No cases found</p>
+                                    <Search size={40} className="text-amber-500/70 mb-3" />
+                                    <p className="text-amber-500 font-semibold">No cases found</p>
                                     <p className="text-sm text-muted-foreground mt-1">Try adjusting your search for "{searchTerm}"</p>
                                 </div>
                             )}
@@ -74,28 +120,24 @@ const DashboardView = ({ onSelectCase, searchTerm }) => {
                             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <Clock size={12} className="text-teal-accent" /> Recent Activity
                             </h2>
-                            <div className="space-y-3">
-                                {RECENT_ACTIVITY.map((activity) => (
-                                    <div key={activity.id} className="relative pl-3 border-l-2 border-accent/30">
-                                        <div className="absolute -left-1 top-1 w-2 h-2 bg-background border border-accent rounded-full"></div>
-                                        <p className="text-sm text-foreground font-medium">{activity.action}</p>
-                                        <p className="text-xs text-muted-foreground">{activity.case}</p>
-                                        <p className="text-[10px] text-muted-foreground/70">{activity.user} • {activity.time}</p>
-                                    </div>
-                                ))}
-                            </div>
-                            <button className="w-full mt-3 py-1.5 text-xs text-center text-muted-foreground hover:text-accent-foreground border border-accent/20 rounded hover:bg-accent transition-colors">
-                                View All Notifications
-                            </button>
-                        </div>
-
-                        <div className="bg-accent/20 border border-accent/20 rounded-xl p-4 shadow-sm">
-                            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Daily Summary</h2>
-                            <div className="text-xl font-bold text-foreground mb-1">3 Deadlines</div>
-                            <p className="text-xs text-muted-foreground mb-2">You have 3 critical deadlines approaching in the next 48 hours.</p>
-                            <div className="h-1.5 w-full bg-primary rounded-full overflow-hidden">
-                                <div className="h-full bg-accent w-3/4"></div>
-                            </div>
+                            {activitiesLoading ? (
+                                <div className="text-xs text-muted-foreground py-4">Loading recent activity...</div>
+                            ) : activities.length > 0 ? (
+                                <div className="space-y-3">
+                                    {activities.map((activity) => (
+                                        <div key={activity._id} className="relative pl-3 border-l-2 border-accent/30">
+                                            <div className="absolute -left-1 top-1 w-2 h-2 bg-background border border-accent rounded-full"></div>
+                                            <p className="text-sm text-foreground font-medium">{activity.message || 'Activity logged'}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {activity.caseId?.caseNumber || activity.caseId?.title || 'General activity'}
+                                            </p>
+                                            <p className="text-[10px] text-muted-foreground/70">{formatRelativeTime(activity.createdAt)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-xs text-muted-foreground py-3">No recent activity found.</div>
+                            )}
                         </div>
                     </div>
 

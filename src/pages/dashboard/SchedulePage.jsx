@@ -225,18 +225,20 @@ const SchedulePage = () => {
           </Button>
         </div>
       ) : filteredEvents.length === 0 ? (
-        <motion.div variants={item} className="text-center py-20">
-          <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">No events found</h3>
-          <p className="text-muted-foreground mb-6">
-            {activeFilter === 'all' 
-              ? "You haven't scheduled any events yet." 
-              : `No ${activeFilter} events to display.`}
-          </p>
-          <Button onClick={() => navigate('/dashboard/schedule/new')} className="bg-accent text-accent-foreground">
-            <Plus className="mr-2 h-4 w-4" />
-            Schedule Your First Event
-          </Button>
+        <motion.div variants={item} className="flex items-center justify-center py-20">
+          <div className="w-full max-w-xl rounded-xl border border-border/60 bg-card/60 p-8 text-center shadow-sm">
+            <Calendar className="h-14 w-14 text-accent mx-auto mb-4 opacity-80" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">No schedule found</h3>
+            <p className="text-muted-foreground mb-6">
+              {activeFilter === 'all'
+                ? 'No events are scheduled yet. Create one to get started.'
+                : `No ${activeFilter} schedule found for the selected filters.`}
+            </p>
+            <Button onClick={() => navigate('/dashboard/schedule/new')} className="bg-accent text-accent-foreground">
+              <Plus className="mr-2 h-4 w-4" />
+              Schedule New Event
+            </Button>
+          </div>
         </motion.div>
       ) : (
         <motion.div
