@@ -1,489 +1,436 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Download, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { 
+    Send, 
+    Paperclip, 
+    Bot, 
+    User, 
+    Search, 
+    FileText, 
+    Hash, 
+    Briefcase, 
+    X,
+    Sparkles, 
+    History,
+    ChevronRight,
+    Loader2,
+    Trash2,
+    Plus
+} from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useAIStore } from '@/store/useAIStore';
-import { aiToolInputSchema } from '@/features/community/schemas/communitySchemas';
+import { useCasesStore } from '@/store/cases';
+import { useCommunityStore } from '@/store/useCommunityStore';
+import { useDocumentsStore } from '@/store/documents';
 
-const TOOL_CONFIG = [
-  {
-    key: 'contract-analyzer',
-    label: 'Contract Analyzer',
-    description: 'Review obligations, ambiguities, and legal risk areas.',
-    placeholder:
-      'Paste contract clauses or key points you want to analyze for legal risks.',
-  },
-  {
-    key: 'document-generator',
-    label: 'Document Generator',
-    description: 'Draft legal documents from facts and requirements.',
-    placeholder: 'Describe the document type, parties, and required sections.',
-  },
-  {
-    key: 'case-law-researcher',
-    label: 'Case Law Researcher',
-    description: 'Get case-law research guidance and citation directions.',
-    placeholder:
-      'Describe jurisdiction, legal issue, and what precedents you need.',
-  },
-  {
-    key: 'legal-writing-assistant',
-    label: 'Legal Writing Assistant',
-    description: 'Improve structure, clarity, and persuasive legal writing.',
-    placeholder:
-      'Paste your legal paragraph or section and specify tone/quality goals.',
-  },
-  {
-    key: 'deposition-summarizer',
-    label: 'Deposition Summarizer',
-    description: 'Summarize testimony, key admissions, and contradictions.',
-    placeholder: 'Paste deposition text and ask for chronology and key findings.',
-  },
-  {
-    key: 'brief-analyzer',
-    label: 'Brief Analyzer',
-    description: 'Assess legal briefs for argument and authority gaps.',
-    placeholder:
-      'Paste your brief content and request a strength-gap analysis.',
-  },
-];
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
-const TOOL_FLAGS = {
-  'contract-analyzer': import.meta.env.VITE_AI_TOOL_CONTRACT_ANALYZER !== 'false',
-  'document-generator': import.meta.env.VITE_AI_TOOL_DOCUMENT_GENERATOR !== 'false',
-  'case-law-researcher': import.meta.env.VITE_AI_TOOL_CASE_RESEARCHER !== 'false',
-  'legal-writing-assistant':
-    import.meta.env.VITE_AI_TOOL_WRITING_ASSISTANT !== 'false',
-  'deposition-summarizer':
-    import.meta.env.VITE_AI_TOOL_DEPOSITION_SUMMARIZER !== 'false',
-  'brief-analyzer': import.meta.env.VITE_AI_TOOL_BRIEF_ANALYZER !== 'false',
+// --- Components ---
+
+const ChatMessage = ({ message }) => {
+    const isAI = message.type === 'ai';
+    return (
+        <div className={cn(
+            "flex w-full gap-4 p-4",
+            isAI ? "bg-muted/30" : "bg-background"
+        )}>
+            <div className={cn(
+                "flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full border",
+                isAI ? "bg-primary/10 border-primary/20 text-primary" : "bg-muted border-border"
+            )}>
+                {isAI ? <Sparkles className="h-4 w-4" /> : <User className="h-4 w-4" />}
+            </div>
+            <div className="flex-1 space-y-2 overflow-hidden">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium leading-none">
+                        {isAI ? 'AI Assistant' : 'You'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                        {new Date(message.timestamp).toLocaleTimeString()}
+                    </span>
+                </div>
+                <div className="prose prose-sm dark:prose-invert max-w-none text-sm break-words leading-relaxed text-muted-foreground">
+                   {isAI ? (
+                       <ReactMarkdown>{message.text}</ReactMarkdown>
+                   ) : (
+                       <p className="whitespace-pre-wrap">{message.text}</p>
+                   )}
+                </div>
+                 {message.context && message.context.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {message.context.map((ctx, i) => (
+                            <Badge key={i} variant="outline" className="text-xs font-normal bg-background/50">
+                                {ctx.type === 'case' && <Briefcase className="mr-1 h-3 w-3" />}
+                                {ctx.type === 'thread' && <Hash className="mr-1 h-3 w-3" />}
+                                {ctx.type === 'document' && <FileText className="mr-1 h-3 w-3" />}
+                                {ctx.title || 'Context Item'}
+                            </Badge>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
 
-const formatDateTime = (value) => {
-  if (!value) return '-';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return '-';
-  return parsed.toLocaleString();
+const ContextSelector = ({ onSelect }) => {
+    const { cases, fetchCases } = useCasesStore();
+    const { threads, fetchThreads } = useCommunityStore();
+    // For documents, we'd typically need to select a case first. 
+    // Simplified for now to just show cases and threads, documents can be nested in future.
+    
+    // Local processing to ensure list is populated
+    useEffect(() => {
+        fetchCases();
+        fetchThreads();
+    }, []);
+
+    const [search, setSearch] = useState('');
+
+    const filteredCases = cases?.filter(c => 
+        c.title?.toLowerCase().includes(search.toLowerCase()) || 
+        c.caseNumber?.toLowerCase().includes(search.toLowerCase())
+    ) || [];
+
+    const filteredThreads = threads?.filter(t => 
+        t.title?.toLowerCase().includes(search.toLowerCase()) ||
+        t.content?.toLowerCase().includes(search.toLowerCase())
+    ) || [];
+
+    return (
+        <div className="flex flex-col h-full"> 
+            <div className="px-4 py-2 border-b">
+                 <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search context..." 
+                        className="pl-8" 
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+            </div>
+            <Tabs defaultValue="cases" className="flex-1 overflow-hidden flex flex-col">
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+                    <TabsTrigger value="cases" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground flex-1">
+                        Cases
+                    </TabsTrigger>
+                     <TabsTrigger value="community" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground flex-1">
+                        Community
+                    </TabsTrigger>
+                </TabsList>
+                <TabsContent value="cases" className="flex-1 overflow-hidden p-0 m-0">
+                     <ScrollArea className="h-full">
+                        <div className="p-4 space-y-2">
+                            {filteredCases.map(c => (
+                                <button
+                                    key={c.id || c._id}
+                                    onClick={() => onSelect({ type: 'case', id: c.id || c._id, title: c.title, data: c })}
+                                    className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors flex items-start gap-3 group"
+                                >
+                                    <Briefcase className="h-5 w-5 text-primary mt-0.5" />
+                                    <div>
+                                        <p className="font-medium text-sm line-clamp-1 group-hover:text-primary transition-colors">{c.title}</p>
+                                        <p className="text-xs text-muted-foreground">{c.caseNumber}</p>
+                                    </div>
+                                </button>
+                            ))}
+                            {filteredCases.length === 0 && (
+                                <p className="text-center text-sm text-muted-foreground py-8">No cases found.</p>
+                            )}
+                        </div>
+                     </ScrollArea>
+                </TabsContent>
+                 <TabsContent value="community" className="flex-1 overflow-hidden p-0 m-0">
+                    <ScrollArea className="h-full">
+                        <div className="p-4 space-y-2">
+                             {filteredThreads.map(t => (
+                                <button
+                                    key={t.id || t._id}
+                                    onClick={() => onSelect({ type: 'thread', id: t.id || t._id, title: t.title, data: t })}
+                                    className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors flex items-start gap-3 group"
+                                >
+                                    <Hash className="h-5 w-5 text-primary mt-0.5" />
+                                    <div>
+                                        <p className="font-medium text-sm line-clamp-1 group-hover:text-primary transition-colors">{t.title}</p>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                            <span>{t.author?.name || 'User'}</span>
+                                            <span>•</span>
+                                            <span>{t.replies?.length || 0} replies</span>
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                             {filteredThreads.length === 0 && (
+                                <p className="text-center text-sm text-muted-foreground py-8">No community threads found.</p>
+                            )}
+                        </div>
+                    </ScrollArea>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
 };
 
-const toDayLabel = (value) => {
-  if (!value) return 'Unknown Date';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return 'Unknown Date';
-  return parsed.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
-const getStatusChipClassName = (status) => {
-  if (status === 'success') {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-700';
-  }
-  if (status === 'blocked') {
-    return 'border-amber-200 bg-amber-50 text-amber-700';
-  }
-  if (status === 'failed') {
-    return 'border-red-200 bg-red-50 text-red-700';
-  }
-  return 'border-input bg-background text-muted-foreground';
-};
+// --- Main Page ---
 
 const AIToolsPage = () => {
-  const enabledTools = useMemo(
-    () => TOOL_CONFIG.filter((tool) => TOOL_FLAGS[tool.key]),
-    [],
-  );
+    const { runTool } = useAIStore();
+    
+    // Local State
+    const [messages, setMessages] = useState(() => {
+        const saved = localStorage.getItem('advyon-ai-chat-history');
+        return saved ? JSON.parse(saved) : [{
+            id: 'welcome',
+            type: 'ai',
+            text: "# Hello! \nI'm your **Advyon AI Assistant**. \n\nI can help you analyze cases, draft documents, or research community discussions. \n\n**To get started:**\n1. Type a question below.\n2. Use the **Clip Icon** to attach specific cases or threads as context.",
+            timestamp: new Date()
+        }];
+    });
+    
+    const [input, setInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [activeContext, setActiveContext] = useState([]); // Array of selected context items
+    const scrollRef = useRef(null);
 
-  const [selectedTool, setSelectedTool] = useState(
-    enabledTools[0]?.key || 'contract-analyzer',
-  );
-  const [historyToolFilter, setHistoryToolFilter] = useState('all');
-  const [historyStatusFilter, setHistoryStatusFilter] = useState('all');
-  const [historySearch, setHistorySearch] = useState('');
-  const [expandedHistoryId, setExpandedHistoryId] = useState(null);
-  const [input, setInput] = useState('');
-  const [inputError, setInputError] = useState('');
+    // Persist to LocalStorage
+    useEffect(() => {
+        localStorage.setItem('advyon-ai-chat-history', JSON.stringify(messages));
+    }, [messages]);
 
-  const {
-    runTool,
-    fetchToolHistory,
-    exportToolHistory,
-    toolHistory,
-    toolHistoryMeta,
-    toolExecutionResult,
-    toolUsage,
-    isRunningTool,
-    isLoadingToolHistory,
-    error,
-  } = useAIStore();
+    // Auto-scroll
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [messages, isLoading]);
 
-  const activeToolConfig =
-    enabledTools.find((tool) => tool.key === selectedTool) || enabledTools[0];
+    const handleSendMessage = async (e) => {
+        e?.preventDefault();
+        if (!input.trim() && activeContext.length === 0) return;
 
-  const filteredHistory = useMemo(() => {
-    const searchTerm = historySearch.trim().toLowerCase();
-    if (!searchTerm) return toolHistory;
+        const newUserMessage = {
+            id: Date.now().toString(),
+            type: 'user',
+            text: input,
+            context: activeContext,
+            timestamp: new Date()
+        };
 
-    return toolHistory.filter((item) =>
-      [item.toolKey, item.input, item.output, item.status]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(searchTerm),
-    );
-  }, [historySearch, toolHistory]);
+        setMessages(prev => [...prev, newUserMessage]);
+        setInput('');
+        setIsLoading(true);
 
-  const groupedHistory = useMemo(() => {
-    return filteredHistory.reduce((groups, item) => {
-      const dayLabel = toDayLabel(item.createdAt);
-      if (!groups[dayLabel]) groups[dayLabel] = [];
-      groups[dayLabel].push(item);
-      return groups;
-    }, {});
-  }, [filteredHistory]);
+        // Construct Prompt
+        let contextText = "";
+        
+        if (activeContext.length > 0) {
+            contextText += "\n\n[CONTEXT_DATA_START]\n";
+            activeContext.forEach(ctx => {
+                contextText += `\n[TYPE: ${ctx.type.toUpperCase()} | ID: ${ctx.id}]\n`;
+                // Sanitize/stringify data safely
+                try {
+                    contextText += JSON.stringify(ctx.data, null, 2);
+                } catch (err) {
+                    contextText += "[Error stringifying data]";
+                }
+                contextText += "\n-----------------------------------\n";
+            });
+            contextText += "[CONTEXT_DATA_END]\n\n";
+        }
+        
+        const fullPrompt = `system: You are a legal AI assistant. Use the provided context to answer the user request.
+        ${contextText}
+        User Request: ${input}`;
 
-  const historyStatusStats = useMemo(() => {
-    return toolHistory.reduce(
-      (acc, item) => {
-        acc.total += 1;
-        if (item.status === 'success') acc.success += 1;
-        if (item.status === 'blocked') acc.blocked += 1;
-        if (item.status === 'failed') acc.failed += 1;
-        return acc;
-      },
-      { total: 0, success: 0, blocked: 0, failed: 0 },
-    );
-  }, [toolHistory]);
-
-  const loadHistory = async (page = 1) => {
-    const params = {
-      page,
-      limit: 20,
-      ...(historyToolFilter !== 'all' ? { toolKey: historyToolFilter } : {}),
-      ...(historyStatusFilter !== 'all' ? { status: historyStatusFilter } : {}),
+        try {
+            // Using 'general-assistant' or any generic tool key available
+            const response = await runTool('legal-writing-assistant', fullPrompt); 
+            
+            const newAIMessage = {
+                id: (Date.now() + 1).toString(),
+                type: 'ai',
+                text: response?.result || "I've processed your request.",
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, newAIMessage]);
+            // Clear context after sending (optional, maybe user wants to keep it? - keeping it logic usually implies explicit removal)
+            // setActiveContext([]); 
+        } catch (error) {
+             const errorMessage = {
+                id: (Date.now() + 1).toString(),
+                type: 'ai',
+                text: "Sorry, I encountered an error. Please try again.",
+                timestamp: new Date()
+            };
+            toast.error("Failed to get response form AI");
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsLoading(false);
+        }
     };
-    await fetchToolHistory(params);
-  };
 
-  useEffect(() => {
-    loadHistory(1).catch(() => {});
-  }, [historyToolFilter, historyStatusFilter]);
-
-  const handleRunTool = async (event) => {
-    event.preventDefault();
-    const parsed = aiToolInputSchema.safeParse(input);
-    if (!parsed.success) {
-      setInputError(parsed.error.issues?.[0]?.message || 'Invalid tool input');
-      return;
+    const handleClearHistory = () => {
+        if(confirm("Are you sure you want to clear your chat history?")) {
+            setMessages([]);
+            localStorage.removeItem('advyon-ai-chat-history');
+             toast.success("History cleared");
+        }
     }
 
-    setInputError('');
-    await runTool(selectedTool, input.trim());
-    await loadHistory(1);
-  };
+    const removeContext = (index) => {
+        setActiveContext(prev => prev.filter((_, i) => i !== index));
+    };
 
-  const handleExport = async (format) => {
-    const exportTool = historyToolFilter !== 'all' ? historyToolFilter : undefined;
-    const { blob } = await exportToolHistory(format, exportTool);
-
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `ai-tools-history.${format}`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  };
-
-  if (!enabledTools.length) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h1 className="text-2xl font-bold">AI Tools</h1>
-          <p className="mt-2 text-muted-foreground">
-            AI tools are currently disabled by feature flags.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
-      <header className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">AI Tools Workspace</h1>
-        </div>
-        <p className="mt-2 text-muted-foreground">
-          Run legal AI tools with policy guardrails, tracked usage, and exportable
-          history.
-        </p>
-        <div className="mt-4 text-sm text-muted-foreground">
-          Daily usage: {toolUsage.todayCount}/{toolUsage.dailyLimit || '-'}
-        </div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-4">
-          <div className="rounded-lg border border-border bg-background px-3 py-2">
-            <p className="text-xs text-muted-foreground">Total Runs</p>
-            <p className="text-base font-semibold">{historyStatusStats.total}</p>
-          </div>
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-            <p className="text-xs text-emerald-700">Success</p>
-            <p className="text-base font-semibold text-emerald-700">{historyStatusStats.success}</p>
-          </div>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-            <p className="text-xs text-amber-700">Blocked</p>
-            <p className="text-base font-semibold text-amber-700">{historyStatusStats.blocked}</p>
-          </div>
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-            <p className="text-xs text-red-700">Failed</p>
-            <p className="text-base font-semibold text-red-700">{historyStatusStats.failed}</p>
-          </div>
-        </div>
-      </header>
-
-      <div className="grid gap-6 lg:grid-cols-12">
-        <section className="lg:col-span-7 rounded-2xl border border-border bg-card p-5">
-          <label className="text-sm font-semibold text-foreground">Select Tool</label>
-          <select
-            className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-            value={selectedTool}
-            onChange={(event) => setSelectedTool(event.target.value)}
-          >
-            {enabledTools.map((tool) => (
-              <option key={tool.key} value={tool.key}>
-                {tool.label}
-              </option>
-            ))}
-          </select>
-
-          <p className="mt-3 text-sm text-muted-foreground">
-            {activeToolConfig?.description}
-          </p>
-
-          <form onSubmit={handleRunTool} className="mt-4 space-y-3">
-            <textarea
-              className="min-h-[220px] w-full rounded-lg border border-input bg-background px-3 py-3 text-sm outline-none focus:ring-1 focus:ring-primary"
-              placeholder={activeToolConfig?.placeholder}
-              value={input}
-              onChange={(event) => {
-                setInputError('');
-                setInput(event.target.value);
-              }}
-            />
-            {inputError && <p className="text-xs text-destructive">{inputError}</p>}
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                Legal and platform-only requests are accepted.
-              </span>
-              <button
-                type="submit"
-                disabled={isRunningTool || !input.trim()}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isRunningTool && <Loader2 className="h-4 w-4 animate-spin" />}
-                Run Tool
-              </button>
-            </div>
-          </form>
-
-          {(toolExecutionResult?.result || error) && (
-            <div className="mt-5 rounded-lg border border-border bg-background p-4">
-              <h2 className="text-sm font-semibold">Latest Output</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
-                {error || toolExecutionResult?.result}
-              </p>
-            </div>
-          )}
-        </section>
-
-        <section className="lg:col-span-5 rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Tool History</h2>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleExport('json')}
-                className="inline-flex items-center gap-1 rounded-md border border-input px-2.5 py-1.5 text-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                JSON
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport('csv')}
-                className="inline-flex items-center gap-1 rounded-md border border-input px-2.5 py-1.5 text-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                CSV
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-3">
-            <div className="space-y-2">
-              <select
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                value={historyToolFilter}
-                onChange={(event) => setHistoryToolFilter(event.target.value)}
-              >
-                <option value="all">All Tools</option>
-                {enabledTools.map((tool) => (
-                  <option key={tool.key} value={tool.key}>
-                    {tool.label}
-                  </option>
-                ))}
-              </select>
-
-              <div className="flex flex-wrap gap-2">
-                {['all', 'success', 'blocked', 'failed'].map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => setHistoryStatusFilter(status)}
-                    className={`rounded-full border px-2.5 py-1 text-xs capitalize ${
-                      historyStatusFilter === status
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-input text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={historySearch}
-                  onChange={(event) => setHistorySearch(event.target.value)}
-                  placeholder="Search tool history..."
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => loadHistory(toolHistoryMeta.page || 1)}
-                  className="inline-flex items-center gap-1 rounded-md border border-input px-2.5 py-2 text-xs"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Refresh
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 max-h-[520px] space-y-3 overflow-y-auto pr-1">
-            {isLoadingToolHistory ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading tool history...
-              </div>
-            ) : toolHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No AI tool runs yet for the selected filter.
-              </p>
-            ) : (
-              Object.entries(groupedHistory).map(([dayLabel, items]) => (
-                <div key={dayLabel} className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {dayLabel}
-                  </p>
-                  {items.map((item) => {
-                    const isExpanded = expandedHistoryId === item._id;
-                    return (
-                      <article
-                        key={item._id}
-                        className="rounded-lg border border-border bg-background p-3 text-sm"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-medium">{item.toolKey}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatDateTime(item.createdAt)}
-                            </p>
-                            {typeof item.latencyMs === 'number' && (
-                              <p className="text-xs text-muted-foreground">
-                                Latency: {item.latencyMs} ms
-                              </p>
-                            )}
-                          </div>
-                          <span
-                            className={`rounded-full border px-2 py-0.5 text-xs ${getStatusChipClassName(
-                              item.status,
-                            )}`}
-                          >
-                            {item.status}
-                          </span>
-                        </div>
-                        <p className={`mt-2 text-xs text-muted-foreground ${isExpanded ? '' : 'line-clamp-2'}`}>
-                          Input: {item.input}
-                        </p>
-                        <p className={`mt-1 text-xs ${isExpanded ? '' : 'line-clamp-3'}`}>
-                          Output: {item.output}
-                        </p>
-                        <button
-                          type="button"
-                          className="mt-2 text-xs font-medium text-primary"
-                          onClick={() =>
-                            setExpandedHistoryId(isExpanded ? null : item._id)
-                          }
-                        >
-                          {isExpanded ? 'Show less' : 'Show full details'}
-                        </button>
-                      </article>
-                    );
-                  })}
+        <div className="flex h-[calc(100vh-4rem)] w-full flex-col bg-background relative overflow-hidden">
+            {/* Header */}
+            <header className="flex h-16 shrink-0 items-center justify-between border-b px-6 bg-background/50 backdrop-blur z-10">
+                <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <h1 className="text-lg font-semibold tracking-tight">Advyon AI Assistant</h1>
+                    <Badge variant="outline" className="ml-2 font-normal text-xs text-muted-foreground border-primary/20 bg-primary/5">
+                        Beta
+                    </Badge>
                 </div>
-              ))
+                 <Button variant="ghost" size="icon" onClick={handleClearHistory} title="Clear History">
+                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                </Button>
+            </header>
+
+            {/* Main Chat Area */}
+            <div className="flex-1 flex overflow-hidden relative">
+                <ScrollArea className="flex-1 px-4 py-8 md:px-8">
+                    <div className="mx-auto max-w-4xl space-y-8">
+                         {messages.length === 0 && (
+                            <div className="flex flex-col items-center justify-center min-h-[40vh] text-center space-y-4">
+                                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <Bot className="h-8 w-8 text-primary" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold">How can I help you today?</h3>
+                                    <p className="text-muted-foreground max-w-md mx-auto mt-2">
+                                        I can analyze legal documents, summarize cases, draft clauses, and more. 
+                                        Attach a case or thread to get started.
+                                    </p>
+                                </div>
+                            </div>
+                         )}
+                        {messages.map((msg) => (
+                            <ChatMessage key={msg.id} message={msg} />
+                        ))}
+                        {isLoading && (
+                            <div className="flex w-full gap-4 p-4">
+                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-primary/10 border-primary/20 text-primary">
+                                    <Sparkles className="h-4 w-4" />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium leading-none">AI Assistant</span>
+                                    </div>
+                                    <div className="text-muted-foreground text-sm flex items-center gap-2">
+                                         <Loader2 className="h-3 w-3 animate-spin"/> Thinking...
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={scrollRef} />
+                    </div>
+                </ScrollArea>
+            </div>
+
+            {/* Active Context Bar */}
+             {activeContext.length > 0 && (
+                <div className="border-t bg-muted/20 px-4 py-2 flex gap-2 overflow-x-auto min-h-[3rem] items-center">
+                    <span className="text-xs font-medium text-muted-foreground mr-2 shrink-0">Attached Context:</span>
+                    {activeContext.map((ctx, i) => (
+                        <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1 shrink-0 bg-background border">
+                            {ctx.type === 'case' ? <Briefcase className="h-3 w-3 text-blue-500" /> : <Hash className="h-3 w-3 text-green-500" />}
+                            <span className="max-w-[150px] truncate">{ctx.title}</span>
+                             <button onClick={() => removeContext(i)} className="ml-1 hover:bg-muted rounded-full p-0.5">
+                                <X className="h-3 w-3" />
+                            </button>
+                        </Badge>
+                    ))}
+                </div>
             )}
-          </div>
 
-          {toolExecutionResult?.historyId && (
-            <div className="mt-3 rounded-lg border border-border bg-background p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Latest Run
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                History ID: {toolExecutionResult.historyId}
-              </p>
-              {typeof toolExecutionResult?.usage?.todayCount === 'number' && (
-                <p className="text-xs text-muted-foreground">
-                  Usage: {toolExecutionResult.usage.todayCount}/{toolExecutionResult.usage.dailyLimit}
-                </p>
-              )}
-            </div>
-          )}
+            {/* Input Area */}
+            <div className="p-4 border-t bg-background">
+                <div className="mx-auto max-w-4xl relative">
+                     <form onSubmit={handleSendMessage} className="relative flex items-end gap-2 rounded-xl border bg-background p-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button size="icon" variant="ghost" className="h-10 w-10 shrink-0 rounded-lg text-muted-foreground hover:text-foreground" type="button">
+                                    <Paperclip className="h-5 w-5" />
+                                    <span className="sr-only">Attach context</span>
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="w-[400px] sm:w-[540px] p-0">
+                                <SheetHeader className="px-6 py-4 border-b">
+                                    <SheetTitle>Add Context</SheetTitle>
+                                    <SheetDescription>
+                                        Select cases or community threads to provide context for the AI.
+                                    </SheetDescription>
+                                </SheetHeader>
+                                <ContextSelector onSelect={(item) => {
+                                    setActiveContext(prev => [...prev, item]);
+                                    toast.success(`Attached: ${item.title}`);
+                                }} />
+                            </SheetContent>
+                        </Sheet>
 
-          <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              Page {toolHistoryMeta.page} of {Math.max(toolHistoryMeta.totalPage || 1, 1)}
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="rounded border border-input px-2 py-1 disabled:opacity-50"
-                disabled={toolHistoryMeta.page <= 1}
-                onClick={() => loadHistory(toolHistoryMeta.page - 1)}
-              >
-                Prev
-              </button>
-              <button
-                type="button"
-                className="rounded border border-input px-2 py-1 disabled:opacity-50"
-                disabled={
-                  toolHistoryMeta.page >=
-                  Math.max(toolHistoryMeta.totalPage || 1, 1)
-                }
-                onClick={() => loadHistory(toolHistoryMeta.page + 1)}
-              >
-                Next
-              </button>
+                        <div className="flex-1 min-w-0">
+                            <Input 
+                                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 h-auto max-h-32 min-h-[2.5rem]" 
+                                placeholder="Type your message..." 
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        
+                        <Button 
+                            type="submit" 
+                            size="icon" 
+                            disabled={isLoading || (!input.trim() && activeContext.length === 0)}
+                            className={cn(
+                                "h-10 w-10 shrink-0 rounded-lg transition-all",
+                                input.trim() || activeContext.length > 0 ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground"
+                            )}
+                        >
+                            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                            <span className="sr-only">Send</span>
+                        </Button>
+                    </form>
+                    <div className="mt-2 text-center text-xs text-muted-foreground">
+                        AI can make mistakes. Please double check important information.
+                    </div>
+                </div>
             </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default AIToolsPage;
