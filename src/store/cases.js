@@ -145,6 +145,79 @@ export const useCasesStore = create(persist((set, get) => ({
             set({ isLoading: false, error: err.message || "Failed to fetch documents" });
             console.error(err);
         }
+    },
+
+    // ---------- WBS-4.2 Archive Actions ----------
+    archivedCases: [],
+    
+    // Archive a case
+    archiveCase: async (id) => {
+        const prevCases = get().cases;
+        
+        // Optimistic update - mark as archived locally
+        set((state) => ({
+            cases: state.cases.map(c =>
+                (c.id === id || c._id === id) ? { ...c, status: 'archived' } : c
+            )
+        }));
+
+        try {
+            await api.patch(`${BASE}/${id}/archive`);
+            // Remove from active cases list
+            set((state) => ({
+                cases: state.cases.filter(c => c.id !== id && c._id !== id),
+                archivedCases: [...state.archivedCases, prevCases.find(c => c.id === id || c._id === id)],
+                lastFetched: 0
+            }));
+        } catch (err) {
+            // Rollback on error
+            set({ cases: prevCases, error: "Failed to archive case" });
+            throw err;
+        }
+    },
+
+    // Restore an archived case
+    restoreCase: async (id) => {
+        const { archivedCases } = get();
+        const archivedCase = archivedCases.find(c => c.id === id || c._id === id);
+        
+        if (!archivedCase) {
+            throw new Error("Case not found in archive");
+        }
+
+        // Optimistic update
+        set((state) => ({
+            archivedCases: state.archivedCases.filter(c => c.id !== id && c._id !== id),
+            cases: [...state.cases, { ...archivedCase, status: 'active' }]
+        }));
+
+        try {
+            await api.patch(`${BASE}/${id}/restore`);
+            set({ lastFetched: 0 });
+        } catch (err) {
+            // Rollback
+            set({ 
+                archivedCases, 
+                error: "Failed to restore case" 
+            });
+            throw err;
+        }
+    },
+
+    // Fetch archived cases
+    fetchArchivedCases: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const res = await api.get(`${BASE}/archived`);
+            const data = res.data;
+            const archivedCases = Array.isArray(data) ? data : (data?.data || []);
+            
+            set({ archivedCases, isLoading: false });
+            return archivedCases;
+        } catch (err) {
+            set({ isLoading: false, error: err.message || "Failed to fetch archived cases" });
+            console.error(err);
+        }
     }
 }), {
     name: 'advyon-cases-storage',

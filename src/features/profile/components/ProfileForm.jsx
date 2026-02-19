@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Save, X, Edit2, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { profileUpdateSchema, validateForm } from '@/lib/validation/authSchemas';
 
 const ProfileForm = ({ user, onSave, isLoading }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     fullName: '',
     displayName: '',
@@ -33,10 +35,31 @@ const ProfileForm = ({ user, onSave, isLoading }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error for this field when user types
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const validate = () => {
+    const result = validateForm(profileUpdateSchema, formData);
+    if (!result.success) {
+      setErrors(result.errors);
+      return false;
+    }
+    setErrors({});
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Client-side validation with Zod
+    if (!validate()) {
+      toast.error('Please fix the validation errors');
+      return;
+    }
+    
     setIsSaving(true);
     try {
       await onSave(formData);
@@ -62,238 +85,239 @@ const ProfileForm = ({ user, onSave, isLoading }) => {
         preferredLanguage: user.preferredLanguage || 'en',
       });
     }
+    setErrors({});
     setIsEditing(false);
   };
 
-  const timezones = [
-    { value: 'Asia/Dhaka', label: 'Asia/Dhaka (GMT+6)' },
-    { value: 'Asia/Kolkata', label: 'Asia/Kolkata (GMT+5:30)' },
-    { value: 'America/New_York', label: 'America/New_York (EST)' },
-    { value: 'America/Los_Angeles', label: 'America/Los_Angeles (PST)' },
-    { value: 'Europe/London', label: 'Europe/London (GMT)' },
-    { value: 'UTC', label: 'UTC' },
-  ];
-
-  const languages = [
-    { value: 'en', label: 'English' },
-    { value: 'bn', label: 'Bengali' },
-    { value: 'hi', label: 'Hindi' },
-  ];
-
-  // Format role for display
-  const formatRole = (role) => {
-    if (!role) return 'User';
-    return role.charAt(0).toUpperCase() + role.slice(1);
-  };
+  const inputClass = (fieldName) => `
+    w-full px-4 py-3 rounded-lg border bg-background text-foreground
+    transition-all duration-200
+    ${errors[fieldName] 
+      ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+      : 'border-input focus:border-accent focus:ring-accent/20'}
+    focus:outline-none focus:ring-2
+    disabled:opacity-50 disabled:cursor-not-allowed
+  `;
 
   return (
-    <div className="bg-card rounded-xl p-6 shadow-sm border border-border/50">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-foreground">General Information</h3>
-        {!isEditing && (
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-          >
-            <Edit2 className="w-4 h-4" />
-            Edit Profile
-          </button>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Full Name */}
+      <div className="space-y-2">
+        <label htmlFor="fullName" className="text-sm font-medium text-foreground">
+          Full Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="fullName"
+          name="fullName"
+          value={formData.fullName}
+          onChange={handleChange}
+          disabled={!isEditing}
+          className={inputClass('fullName')}
+          placeholder="Enter your full name"
+        />
+        {errors.fullName && (
+          <p className="text-sm text-red-500 flex items-center gap-1">
+            <Info className="h-3 w-3" />
+            {errors.fullName}
+          </p>
         )}
       </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Read-Only Info Banner */}
-        <div className="bg-muted/30 rounded-lg p-4 border border-border/50 flex items-start gap-3">
-          <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="text-muted-foreground">
-              <span className="font-medium text-foreground">Role:</span> {formatRole(user?.role)} • 
-              <span className="font-medium text-foreground ml-2">Email:</span> {user?.email || 'Not set'}
+
+      {/* Display Name */}
+      <div className="space-y-2">
+        <label htmlFor="displayName" className="text-sm font-medium text-foreground">
+          Display Name
+        </label>
+        <input
+          type="text"
+          id="displayName"
+          name="displayName"
+          value={formData.displayName}
+          onChange={handleChange}
+          disabled={!isEditing}
+          className={inputClass('displayName')}
+          placeholder="How should we address you?"
+        />
+        {errors.displayName && (
+          <p className="text-sm text-red-500 flex items-center gap-1">
+            <Info className="h-3 w-3" />
+            {errors.displayName}
+          </p>
+        )}
+      </div>
+
+      {/* Phone & Address Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Phone */}
+        <div className="space-y-2">
+          <label htmlFor="phone" className="text-sm font-medium text-foreground">
+            Phone Number
+          </label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            disabled={!isEditing}
+            className={inputClass('phone')}
+            placeholder="+1 (555) 000-0000"
+          />
+          {errors.phone && (
+            <p className="text-sm text-red-500 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              {errors.phone}
             </p>
-            <p className="text-xs text-muted-foreground/70 mt-1">
-              Email and role cannot be changed. Contact support if you need to modify these.
-            </p>
-          </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Full Name */}
-          <div className="space-y-2">
-            <label htmlFor="fullName" className="text-sm font-medium text-muted-foreground">
-              Full Name <span className="text-destructive">*</span>
-            </label>
-            {isEditing ? (
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                placeholder="e.g. John Doe"
-              />
-            ) : (
-              <p className="px-4 py-2 rounded-lg bg-muted/30 border border-border text-foreground">
-                {formData.fullName || 'Not set'}
-              </p>
-            )}
-          </div>
+        {/* Address */}
+        <div className="space-y-2">
+          <label htmlFor="address" className="text-sm font-medium text-foreground">
+            Address
+          </label>
+          <input
+            type="text"
+            id="address"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            disabled={!isEditing}
+            className={inputClass('address')}
+            placeholder="Your office address"
+          />
+          {errors.address && (
+            <p className="text-sm text-red-500 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              {errors.address}
+            </p>
+          )}
+        </div>
+      </div>
 
-          {/* Display Name */}
-          <div className="space-y-2">
-            <label htmlFor="displayName" className="text-sm font-medium text-muted-foreground">Display Name</label>
-            {isEditing ? (
-              <input
-                type="text"
-                id="displayName"
-                name="displayName"
-                value={formData.displayName}
-                onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                placeholder="How you want to be called"
-              />
-            ) : (
-              <p className="px-4 py-2 rounded-lg bg-muted/30 border border-border text-foreground">
-                {formData.displayName || 'Not set'}
-              </p>
-            )}
-          </div>
-
-          {/* Phone */}
-          <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium text-muted-foreground">Phone Number</label>
-            {isEditing ? (
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                placeholder="+1 (555) 000-0000"
-              />
-            ) : (
-              <p className="px-4 py-2 rounded-lg bg-muted/30 border border-border text-foreground">
-                {formData.phone || 'Not set'}
-              </p>
-            )}
-          </div>
-
-          {/* Timezone */}
-          <div className="space-y-2">
-            <label htmlFor="timezone" className="text-sm font-medium text-muted-foreground">Timezone</label>
-            {isEditing ? (
-              <select
-                id="timezone"
-                name="timezone"
-                value={formData.timezone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              >
-                <option value="">Select timezone</option>
-                {timezones.map(tz => (
-                  <option key={tz.value} value={tz.value}>{tz.label}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="px-4 py-2 rounded-lg bg-muted/30 border border-border text-foreground">
-                {timezones.find(tz => tz.value === formData.timezone)?.label || 'Not set'}
-              </p>
-            )}
-          </div>
-
-          {/* Preferred Language */}
-          <div className="space-y-2">
-            <label htmlFor="preferredLanguage" className="text-sm font-medium text-muted-foreground">Preferred Language</label>
-            {isEditing ? (
-              <select
-                id="preferredLanguage"
-                name="preferredLanguage"
-                value={formData.preferredLanguage}
-                onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              >
-                {languages.map(lang => (
-                  <option key={lang.value} value={lang.value}>{lang.label}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="px-4 py-2 rounded-lg bg-muted/30 border border-border text-foreground">
-                {languages.find(lang => lang.value === formData.preferredLanguage)?.label || 'English'}
-              </p>
-            )}
-          </div>
-
-          {/* Address */}
-          <div className="space-y-2 md:col-span-2">
-            <label htmlFor="address" className="text-sm font-medium text-muted-foreground">Address</label>
-            {isEditing ? (
-              <textarea
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                rows={2}
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
-                placeholder="123 Legal Avenue, Suite 100"
-              />
-            ) : (
-              <p className="px-4 py-2 rounded-lg bg-muted/30 border border-border text-foreground min-h-[60px]">
-                {formData.address || 'Not set'}
-              </p>
-            )}
-          </div>
-
-          {/* Bio */}
-          <div className="space-y-2 md:col-span-2">
-            <label htmlFor="bio" className="text-sm font-medium text-muted-foreground">Bio</label>
-            {isEditing ? (
-              <textarea
-                id="bio"
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
-                placeholder="A brief description about yourself..."
-              />
-            ) : (
-              <p className="px-4 py-2 rounded-lg bg-muted/30 border border-border text-foreground min-h-[80px]">
-                {formData.bio || 'No bio provided'}
-              </p>
-            )}
-          </div>
+      {/* Language & Timezone Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Preferred Language */}
+        <div className="space-y-2">
+          <label htmlFor="preferredLanguage" className="text-sm font-medium text-foreground">
+            Preferred Language
+          </label>
+          <select
+            id="preferredLanguage"
+            name="preferredLanguage"
+            value={formData.preferredLanguage}
+            onChange={handleChange}
+            disabled={!isEditing}
+            className={inputClass('preferredLanguage')}
+          >
+            <option value="en">English</option>
+            <option value="bn">Bengali</option>
+          </select>
+          {errors.preferredLanguage && (
+            <p className="text-sm text-red-500 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              {errors.preferredLanguage}
+            </p>
+          )}
         </div>
 
-        {/* Action Buttons - Only show when editing */}
-        {isEditing && (
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+        {/* Timezone */}
+        <div className="space-y-2">
+          <label htmlFor="timezone" className="text-sm font-medium text-foreground">
+            Timezone
+          </label>
+          <select
+            id="timezone"
+            name="timezone"
+            value={formData.timezone}
+            onChange={handleChange}
+            disabled={!isEditing}
+            className={inputClass('timezone')}
+          >
+            <option value="">Select timezone</option>
+            <option value="America/New_York">Eastern Time (ET)</option>
+            <option value="America/Chicago">Central Time (CT)</option>
+            <option value="America/Denver">Mountain Time (MT)</option>
+            <option value="America/Los_Angeles">Pacific Time (PT)</option>
+            <option value="UTC">UTC</option>
+            <option value="Asia/Dhaka">Bangladesh (BST)</option>
+          </select>
+          {errors.timezone && (
+            <p className="text-sm text-red-500 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              {errors.timezone}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Bio */}
+      <div className="space-y-2">
+        <label htmlFor="bio" className="text-sm font-medium text-foreground">
+          Bio
+        </label>
+        <textarea
+          id="bio"
+          name="bio"
+          value={formData.bio}
+          onChange={handleChange}
+          disabled={!isEditing}
+          rows={4}
+          className={inputClass('bio')}
+          placeholder="Tell us about yourself..."
+        />
+        {errors.bio && (
+          <p className="text-sm text-red-500 flex items-center gap-1">
+            <Info className="h-3 w-3" />
+            {errors.bio}
+          </p>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        {isEditing ? (
+          <>
             <button
               type="button"
               onClick={handleCancel}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg font-medium hover:bg-muted transition-colors"
+              className="px-6 py-2.5 rounded-lg border border-input bg-background text-foreground font-medium transition-all hover:bg-muted/50 flex items-center gap-2"
+              disabled={isSaving}
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
               Cancel
             </button>
             <button
               type="submit"
+              className="px-6 py-2.5 rounded-lg bg-accent text-accent-foreground font-medium transition-all hover:bg-accent/90 flex items-center gap-2 disabled:opacity-50"
               disabled={isSaving}
-              className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-sm active:scale-95 disabled:opacity-50"
             >
               {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
               ) : (
-                <Save className="w-4 h-4" />
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Changes
+                </>
               )}
-              Save Changes
             </button>
-          </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="px-6 py-2.5 rounded-lg bg-accent text-accent-foreground font-medium transition-all hover:bg-accent/90 flex items-center gap-2"
+          >
+            <Edit2 className="h-4 w-4" />
+            Edit Profile
+          </button>
         )}
-      </form>
-    </div>
+      </div>
+    </form>
   );
 };
 
