@@ -137,7 +137,7 @@ const DashboardLayout = () => {
           <div className="absolute inset-0 bg-primary -z-10 fixed"></div>
 
           <div className={`bg-background rounded-2xl shadow-2xl flex-1 text-gray-800 ${
-            isWorkspaceRoute ? 'overflow-hidden p-0' : 'overflow-y-auto p-6'
+            isWorkspaceRoute ? 'overflow-hidden p-0' : 'overflow-y-auto'
           }`}>
             <Outlet />
           </div>

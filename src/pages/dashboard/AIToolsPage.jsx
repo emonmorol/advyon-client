@@ -10,11 +10,10 @@ import {
     Briefcase, 
     X,
     Sparkles, 
-    History,
-    ChevronRight,
-    Loader2,
     Trash2,
-    Plus
+    Check,
+    ChevronDown,
+    FileType
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAIStore } from '@/store/useAIStore';
@@ -25,9 +24,7 @@ import { useDocumentsStore } from '@/store/documents';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import {
     Sheet,
     SheetContent,
@@ -42,6 +39,12 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -93,19 +96,27 @@ const ChatMessage = ({ message }) => {
     );
 };
 
-const ContextSelector = ({ onSelect }) => {
+const ContextSelector = ({ onSelect, activeContext }) => {
     const { cases, fetchCases } = useCasesStore();
     const { threads, fetchThreads } = useCommunityStore();
-    // For documents, we'd typically need to select a case first. 
-    // Simplified for now to just show cases and threads, documents can be nested in future.
-    
-    // Local processing to ensure list is populated
+    const { cache: docCache, fetchDocuments } = useDocumentsStore();
+
     useEffect(() => {
         fetchCases();
         fetchThreads();
     }, []);
 
     const [search, setSearch] = useState('');
+
+    const isSelected = (id) => activeContext.some(item => item.id === id);
+
+    const getDocsForCase = (caseId) => docCache[`${caseId}::__root__`]?.items || [];
+
+    const handleCaseExpand = (caseId) => {
+        if (caseId) {
+            fetchDocuments({ caseId });
+        }
+    };
 
     const filteredCases = cases?.filter(c => 
         c.title?.toLowerCase().includes(search.toLowerCase()) || 
@@ -135,55 +146,122 @@ const ContextSelector = ({ onSelect }) => {
                     <TabsTrigger value="cases" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground flex-1">
                         Cases
                     </TabsTrigger>
+                     <TabsTrigger value="documents" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground flex-1">
+                        Documents
+                    </TabsTrigger>
                      <TabsTrigger value="community" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground flex-1">
                         Community
                     </TabsTrigger>
                 </TabsList>
+
+                {/* CASES TAB */}
                 <TabsContent value="cases" className="flex-1 overflow-hidden p-0 m-0">
                      <ScrollArea className="h-full">
                         <div className="p-4 space-y-2">
-                            {filteredCases.map(c => (
-                                <button
-                                    key={c.id || c._id}
-                                    onClick={() => onSelect({ type: 'case', id: c.id || c._id, title: c.title, data: c })}
-                                    className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors flex items-start gap-3 group"
-                                >
-                                    <Briefcase className="h-5 w-5 text-primary mt-0.5" />
-                                    <div>
-                                        <p className="font-medium text-sm line-clamp-1 group-hover:text-primary transition-colors">{c.title}</p>
-                                        <p className="text-xs text-muted-foreground">{c.caseNumber}</p>
-                                    </div>
-                                </button>
-                            ))}
-                            {filteredCases.length === 0 && (
-                                <p className="text-center text-sm text-muted-foreground py-8">No cases found.</p>
-                            )}
+                            {filteredCases.map(c => {
+                                const selected = isSelected(c.id || c._id);
+                                return (
+                                    <button
+                                        key={c.id || c._id}
+                                        onClick={() => onSelect({ type: 'case', id: c.id || c._id, title: c.title, data: c })}
+                                        className={cn(
+                                            "w-full text-left p-3 rounded-lg border transition-all flex items-start gap-3 group relative",
+                                            selected ? "bg-primary/5 border-primary/50" : "hover:bg-muted/50"
+                                        )}
+                                    >
+                                        <Briefcase className={cn("h-5 w-5 mt-0.5", selected ? "text-primary" : "text-muted-foreground")} />
+                                        <div>
+                                            <p className={cn("font-medium text-sm line-clamp-1", selected ? "text-primary" : "group-hover:text-primary")}>{c.title}</p>
+                                            <p className="text-xs text-muted-foreground">{c.caseNumber}</p>
+                                        </div>
+                                        {selected && <Check className="absolute right-3 top-3 h-4 w-4 text-primary" />}
+                                    </button>
+                                );
+                            })}
                         </div>
                      </ScrollArea>
                 </TabsContent>
+
+                {/* DOCUMENTS TAB */}
+                <TabsContent value="documents" className="flex-1 overflow-hidden p-0 m-0">
+                    <ScrollArea className="h-full">
+                         <div className="p-4">
+                            <Accordion type="single" collapsible className="w-full" onValueChange={handleCaseExpand}>
+                                {filteredCases.map(c => (
+                                    <AccordionItem key={c.id || c._id} value={c.id || c._id} className="border-b-0 mb-2 border rounded-lg overflow-hidden">
+                                        <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 hover:no-underline">
+                                            <div className="flex items-center gap-2 text-left">
+                                                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                                                <div className="flex flex-col">
+                                                     <span className="text-sm font-medium">{c.title}</span>
+                                                     <span className="text-[10px] text-muted-foreground">{c.caseNumber}</span>
+                                                </div>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="p-0 bg-muted/20">
+                                            <div className="flex flex-col p-2 gap-1">
+                                                {getDocsForCase(c.id || c._id).length === 0 ? (
+                                                    <p className="text-xs text-muted-foreground p-2 text-center">No documents found.</p>
+                                                ) : (
+                                                    getDocsForCase(c.id || c._id).map(doc => {
+                                                         const selected = isSelected(doc.id || doc._id);
+                                                         return (
+                                                            <button
+                                                                key={doc.id || doc._id}
+                                                                onClick={() => onSelect({ type: 'document', id: doc.id || doc._id, title: doc.name || doc.fileName, data: doc })}
+                                                                className={cn(
+                                                                    "w-full text-left px-3 py-2 rounded-md flex items-center gap-2 transition-colors",
+                                                                    selected ? "bg-primary/10 text-primary" : "hover:bg-background text-muted-foreground hover:text-foreground"
+                                                                )}
+                                                            >
+                                                                <div className="shrink-0">
+                                                                    {selected ? <Check className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                                                                </div>
+                                                                <span className="text-xs truncate">{doc.name || doc.fileName}</span>
+                                                            </button>
+                                                        );
+                                                    })
+                                                )}
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                             {filteredCases.length === 0 && (
+                                <p className="text-center text-sm text-muted-foreground py-8">No cases found to list documents.</p>
+                            )}
+                         </div>
+                    </ScrollArea>
+                </TabsContent>
+
+                {/* COMMUNITY TAB */}
                  <TabsContent value="community" className="flex-1 overflow-hidden p-0 m-0">
                     <ScrollArea className="h-full">
                         <div className="p-4 space-y-2">
-                             {filteredThreads.map(t => (
-                                <button
-                                    key={t.id || t._id}
-                                    onClick={() => onSelect({ type: 'thread', id: t.id || t._id, title: t.title, data: t })}
-                                    className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors flex items-start gap-3 group"
-                                >
-                                    <Hash className="h-5 w-5 text-primary mt-0.5" />
-                                    <div>
-                                        <p className="font-medium text-sm line-clamp-1 group-hover:text-primary transition-colors">{t.title}</p>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                            <span>{t.author?.name || 'User'}</span>
-                                            <span>•</span>
-                                            <span>{t.replies?.length || 0} replies</span>
+                             {filteredThreads.map(t => {
+                                const selected = isSelected(t.id || t._id);
+                                return (
+                                    <button
+                                        key={t.id || t._id}
+                                        onClick={() => onSelect({ type: 'thread', id: t.id || t._id, title: t.title, data: t })}
+                                        className={cn(
+                                            "w-full text-left p-3 rounded-lg border transition-all flex items-start gap-3 group relative",
+                                            selected ? "bg-primary/5 border-primary/50" : "hover:bg-muted/50"
+                                        )}
+                                    >
+                                        <Hash className={cn("h-5 w-5 mt-0.5", selected ? "text-primary" : "text-muted-foreground")} />
+                                        <div>
+                                            <p className={cn("font-medium text-sm line-clamp-1", selected ? "text-primary" : "group-hover:text-primary")}>{t.title}</p>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                                <span>{t.author?.name || 'User'}</span>
+                                                <span>•</span>
+                                                <span>{t.replies?.length || 0} replies</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </button>
-                            ))}
-                             {filteredThreads.length === 0 && (
-                                <p className="text-center text-sm text-muted-foreground py-8">No community threads found.</p>
-                            )}
+                                         {selected && <Check className="absolute right-3 top-3 h-4 w-4 text-primary" />}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </ScrollArea>
                 </TabsContent>
@@ -247,9 +325,12 @@ const AIToolsPage = () => {
         if (activeContext.length > 0) {
             contextText += "\n\n[CONTEXT_DATA_START]\n";
             activeContext.forEach(ctx => {
-                contextText += `\n[TYPE: ${ctx.type.toUpperCase()} | ID: ${ctx.id}]\n`;
+                contextText += `\n[TYPE: ${ctx.type.toUpperCase()} | ID: ${ctx.id} | TITLE: ${ctx.title}]\n`;
                 // Sanitize/stringify data safely
                 try {
+                     // For documents, we might not have the Full content yet if it wasn't fetched. 
+                     // But typically 'data' here is the metadata. 
+                     // If we needed content, we'd fetch it here. assuming metadata is what's needed for now unless specified.
                     contextText += JSON.stringify(ctx.data, null, 2);
                 } catch (err) {
                     contextText += "[Error stringifying data]";
@@ -274,7 +355,7 @@ const AIToolsPage = () => {
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, newAIMessage]);
-            // Clear context after sending (optional, maybe user wants to keep it? - keeping it logic usually implies explicit removal)
+            // Clear context after sending? User preference. Let's keep it for now as they might ask follow ups.
             // setActiveContext([]); 
         } catch (error) {
              const errorMessage = {
@@ -298,6 +379,17 @@ const AIToolsPage = () => {
         }
     }
 
+    const toggleContext = (item) => {
+        setActiveContext(prev => {
+            const exists = prev.find(i => i.id === item.id);
+            if (exists) {
+                return prev.filter(i => i.id !== item.id);
+            } else {
+                return [...prev, item];
+            }
+        });
+    };
+
     const removeContext = (index) => {
         setActiveContext(prev => prev.filter((_, i) => i !== index));
     };
@@ -305,7 +397,7 @@ const AIToolsPage = () => {
     return (
         <div className="flex h-[calc(100vh-4rem)] w-full flex-col bg-background relative overflow-hidden">
             {/* Header */}
-            <header className="flex h-16 shrink-0 items-center justify-between border-b px-6 bg-background/50 backdrop-blur z-10">
+            <header className="flex h-16 shrink-0 items-center justify-between border-b px-6 bg-background/50 backdrop-blur z-10 w-full">
                 <div className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-primary" />
                     <h1 className="text-lg font-semibold tracking-tight">Advyon AI Assistant</h1>
@@ -319,9 +411,9 @@ const AIToolsPage = () => {
             </header>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex overflow-hidden relative">
-                <ScrollArea className="flex-1 px-4 py-8 md:px-8">
-                    <div className="mx-auto max-w-4xl space-y-8">
+            <div className="flex-1 flex flex-col overflow-hidden relative w-full min-h-0">
+                <ScrollArea className="flex-1 h-full w-full">
+                    <div className="flex flex-col px-4 py-8 md:px-8 mx-auto max-w-4xl space-y-8 pb-4">
                          {messages.length === 0 && (
                             <div className="flex flex-col items-center justify-center min-h-[40vh] text-center space-y-4">
                                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -359,73 +451,80 @@ const AIToolsPage = () => {
                 </ScrollArea>
             </div>
 
-            {/* Active Context Bar */}
-             {activeContext.length > 0 && (
-                <div className="border-t bg-muted/20 px-4 py-2 flex gap-2 overflow-x-auto min-h-[3rem] items-center">
-                    <span className="text-xs font-medium text-muted-foreground mr-2 shrink-0">Attached Context:</span>
-                    {activeContext.map((ctx, i) => (
-                        <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1 shrink-0 bg-background border">
-                            {ctx.type === 'case' ? <Briefcase className="h-3 w-3 text-blue-500" /> : <Hash className="h-3 w-3 text-green-500" />}
-                            <span className="max-w-[150px] truncate">{ctx.title}</span>
-                             <button onClick={() => removeContext(i)} className="ml-1 hover:bg-muted rounded-full p-0.5">
-                                <X className="h-3 w-3" />
-                            </button>
-                        </Badge>
-                    ))}
-                </div>
-            )}
+            {/* Footer Area with Context & Input */}
+            <div className="shrink-0 border-t bg-background w-full">
+                {/* Input Form */}
+                <div className="p-4 pt-2">
+                    <div className="mx-auto max-w-4xl relative">
+                        {/* Active Context Bar */}
+                        {activeContext.length > 0 && (
+                            <div className="flex flex-wrap justify-center gap-2 mb-2 px-4 py-1">
+                                {activeContext.map((ctx, i) => (
+                                    <Badge key={i} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1 bg-muted/50 border hover:bg-muted animate-in fade-in slide-in-from-bottom-2">
+                                        {ctx.type === 'case' && <Briefcase className="h-3 w-3 text-blue-500" />}
+                                        {ctx.type === 'thread' && <Hash className="h-3 w-3 text-green-500" />}
+                                        {ctx.type === 'document' && <FileText className="h-3 w-3 text-orange-500" />}
+                                        <span className="max-w-[200px] truncate font-normal">{ctx.title}</span>
+                                        <button onClick={() => removeContext(i)} className="ml-1 hover:bg-background rounded-full p-0.5 transition-colors">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                        <form onSubmit={handleSendMessage} className="relative flex items-end gap-2 rounded-xl border bg-background p-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 shadow-sm">
+                            
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button size="icon" variant="ghost" className="h-10 w-10 shrink-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted" type="button">
+                                        <Paperclip className="h-5 w-5" />
+                                        <span className="sr-only">Attach context</span>
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="left" className="w-[400px] sm:w-[540px] p-0 flex flex-col">
+                                    <SheetHeader className="px-6 py-4 border-b shrink-0">
+                                        <SheetTitle>Add Context</SheetTitle>
+                                        <SheetDescription>
+                                            Attach cases, documents, or threads to your query.
+                                        </SheetDescription>
+                                    </SheetHeader>
+                                    <ContextSelector 
+                                        activeContext={activeContext}
+                                        onSelect={(item) => {
+                                            toggleContext(item);
+                                            // Optional feedback
+                                            // toast.success(isSelected(item.id) ? "Removed" : "Added");
+                                        }} 
+                                    />
+                                </SheetContent>
+                            </Sheet>
 
-            {/* Input Area */}
-            <div className="p-4 border-t bg-background">
-                <div className="mx-auto max-w-4xl relative">
-                     <form onSubmit={handleSendMessage} className="relative flex items-end gap-2 rounded-xl border bg-background p-2 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                        
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-10 w-10 shrink-0 rounded-lg text-muted-foreground hover:text-foreground" type="button">
-                                    <Paperclip className="h-5 w-5" />
-                                    <span className="sr-only">Attach context</span>
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="left" className="w-[400px] sm:w-[540px] p-0">
-                                <SheetHeader className="px-6 py-4 border-b">
-                                    <SheetTitle>Add Context</SheetTitle>
-                                    <SheetDescription>
-                                        Select cases or community threads to provide context for the AI.
-                                    </SheetDescription>
-                                </SheetHeader>
-                                <ContextSelector onSelect={(item) => {
-                                    setActiveContext(prev => [...prev, item]);
-                                    toast.success(`Attached: ${item.title}`);
-                                }} />
-                            </SheetContent>
-                        </Sheet>
-
-                        <div className="flex-1 min-w-0">
-                            <Input 
-                                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 h-auto max-h-32 min-h-[2.5rem]" 
-                                placeholder="Type your message..." 
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                autoFocus
-                            />
+                            <div className="flex-1 min-w-0">
+                                <Input 
+                                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 h-auto max-h-32 min-h-[2.5rem] resize-none" 
+                                    placeholder="Type your message..." 
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+                            
+                            <Button 
+                                type="submit" 
+                                size="icon" 
+                                disabled={isLoading || (!input.trim() && activeContext.length === 0)}
+                                className={cn(
+                                    "h-10 w-10 shrink-0 rounded-lg transition-all",
+                                    input.trim() || activeContext.length > 0 ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground"
+                                )}
+                            >
+                                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                                <span className="sr-only">Send</span>
+                            </Button>
+                        </form>
+                        <div className="mt-2 text-center text-xs text-muted-foreground">
+                            AI can make mistakes. Please double check important information.
                         </div>
-                        
-                        <Button 
-                            type="submit" 
-                            size="icon" 
-                            disabled={isLoading || (!input.trim() && activeContext.length === 0)}
-                            className={cn(
-                                "h-10 w-10 shrink-0 rounded-lg transition-all",
-                                input.trim() || activeContext.length > 0 ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground"
-                            )}
-                        >
-                            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                            <span className="sr-only">Send</span>
-                        </Button>
-                    </form>
-                    <div className="mt-2 text-center text-xs text-muted-foreground">
-                        AI can make mistakes. Please double check important information.
                     </div>
                 </div>
             </div>

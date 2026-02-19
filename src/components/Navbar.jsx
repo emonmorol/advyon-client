@@ -233,11 +233,13 @@ export function Navbar() {
           </Sheet>
 
           {/* AI Assistant Toggle */}
-          <AIAssistantToggle
-            onClick={toggleAI}
-            isActive={isOpen}
-            position="navbar"
-          />
+          {location.pathname !== '/dashboard/ai-assistant' && (
+            <AIAssistantToggle
+              onClick={toggleAI}
+              isActive={isOpen}
+              position="navbar"
+            />
+          )}
 
           {/* Language Selector */}
           <DropdownMenu>
