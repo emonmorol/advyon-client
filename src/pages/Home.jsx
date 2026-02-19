@@ -101,150 +101,150 @@ export default function Home() {
             </div>
         </section>
 
-        {/* PROBLEM VS SOLUTION SECTION */}
-        <section className="py-24 relative bg-[#001a18]">
-            <div className="container mx-auto px-6 lg:px-8">
+        {/* PROBLEM / SOLUTION SECTION */}
+        <section className="py-24 relative">
+             <div className="container mx-auto px-6 lg:px-8">
                 <div className="text-center mb-16">
                     <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Why Modern Firms Switch</h2>
                     <p className="mt-4 text-lg text-emerald-100/60">Stop wrestling with outdated systems.</p>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Problem */}
                     <motion.div 
-                        initial={{ opacity: 0, x: -50 }}
-                        whileInView={{ opacity: 1, x: 0 }}
+                        initial="hidden"
+                        whileInView="visible"
                         viewport={{ once: true }}
-                        className="bg-red-950/20 border border-red-900/30 rounded-3xl p-8 backdrop-blur-sm"
+                        variants={fadeIn}
+                        className="rounded-3xl bg-[#1a0505]/60 backdrop-blur-xl border border-red-500/10 p-10 hover:border-red-500/30 transition-all duration-300"
                     >
-                        <div className="flex items-center gap-3 mb-6 text-red-400">
-                            <XCircle className="h-6 w-6" />
-                            <h3 className="text-xl font-bold">The Old Way</h3>
+                        <div className="h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center mb-6">
+                            <XCircle className="h-6 w-6 text-red-500" />
                         </div>
-                        <ul className="space-y-4">
-                            {[
-                                "Scattered emails and endless threads",
-                                "Insecure file sharing via attachments",
-                                "Manual billing and lost billable hours",
-                                "Zero insights into firm performance"
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-start gap-3 text-red-200/70">
-                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-red-500/50 flex-shrink-0" />
-                                    {item}
-                                </li>
-                            ))}
+                        <h3 className="text-2xl font-bold text-red-100 mb-4">The Manual Trap</h3>
+                        <ul className="space-y-4 text-red-100/70">
+                            <li className="flex items-start gap-3">
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-red-500/50" />
+                                <span>Scattered documents across email & local drives.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-red-500/50" />
+                                <span>Unbillable hours spent on administrative chaos.</span>
+                            </li>
+                             <li className="flex items-start gap-3">
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-red-500/50" />
+                                <span>Data security vulnerabilities & compliance risks.</span>
+                            </li>
                         </ul>
                     </motion.div>
-                    
+
                     {/* Solution */}
-                    <motion.div 
-                        initial={{ opacity: 0, x: 50 }}
-                        whileInView={{ opacity: 1, x: 0 }}
+                     <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
                         viewport={{ once: true }}
-                        className="bg-teal-950/40 border border-teal-500/30 rounded-3xl p-8 backdrop-blur-md shadow-lg shadow-teal-900/20 relative overflow-hidden"
+                        variants={fadeIn}
+                        className="rounded-3xl bg-[#002220]/60 backdrop-blur-xl border border-teal-500/20 p-10 hover:border-teal-500/40 transition-all duration-300 relative overflow-hidden group"
                     >
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <Sparkles className="h-24 w-24" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="h-12 w-12 rounded-full bg-teal-500/10 flex items-center justify-center mb-6 relative">
+                            <CheckCircle2 className="h-6 w-6 text-teal-400" />
                         </div>
-                        <div className="flex items-center gap-3 mb-6 text-teal-400">
-                            <CheckCircle2 className="h-6 w-6" />
-                            <h3 className="text-xl font-bold">The Advyon Way</h3>
-                        </div>
-                        <ul className="space-y-4">
-                            {[
-                                "Unified dashboard for cases & clients",
-                                "Bank-grade encrypted portal",
-                                "Automated time tracking & invoicing",
-                                "AI-driven analytics and drafting"
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-start gap-3 text-teal-100">
-                                    <CheckCircle2 className="h-5 w-5 text-teal-500 flex-shrink-0" />
-                                    {item}
-                                </li>
-                            ))}
+                        <h3 className="text-2xl font-bold text-teal-50 mb-4 relative">The Advyon Edge</h3>
+                         <ul className="space-y-4 text-teal-100/80 relative">
+                            <li className="flex items-start gap-3">
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal-400" />
+                                <span>Unified Intelligent Platform for all workflows.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal-400" />
+                                <span>AI-driven automation reclaiming 20+ hours/week.</span>
+                            </li>
+                             <li className="flex items-start gap-3">
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal-400" />
+                                <span>Bank-grade encryption & automated compliance.</span>
+                            </li>
                         </ul>
                     </motion.div>
                 </div>
-            </div>
+             </div>
         </section>
 
-        {/* HOW IT WORKS SECTION */}
-        <section className="py-24 relative overflow-hidden">
-             {/* Background Elements */}
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-[#002220] to-[#001514] opacity-80" />
-            
-            <div className="container relative mx-auto px-6 lg:px-8">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl font-bold tracking-tight text-white mb-4">Your Path to Efficiency</h2>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                    {[
-                        {
-                            icon: Globe,
-                            title: "1. Connect",
-                            desc: "Integrate your email, calendar, and existing case files in minutes."
-                        },
-                        {
-                            icon: Zap,
-                            title: "2. Automate",
-                            desc: "Let AI handle document summaries, drafting, and scheduling."
-                        },
-                        {
-                            icon: BarChart,
-                            title: "3. Thrive",
-                            desc: "Watch your billable hours and client satisfaction soar."
-                        }
-                    ].map((step, i) => (
-                        <div key={i} className="relative group p-6">
-                            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 border border-white/10 group-hover:border-teal-500/50 group-hover:bg-teal-500/10 transition-all duration-300">
-                                <step.icon className="h-8 w-8 text-teal-300" />
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
-                            <p className="text-emerald-100/60">{step.desc}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-
-        {/* TESTIMONIALS SECTION */}
-        <section className="py-24 bg-[#001514]">
+        {/* FEATURES GRID */}
+        <section className="py-24 relative">
              <div className="container mx-auto px-6 lg:px-8">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl font-bold tracking-tight text-white">Loved by Lawyers</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 <div className="mb-16 text-center">
+                    <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4 text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-white">
+                        Built for the Future of Law
+                    </h2>
+                    <p className="text-emerald-100/60 max-w-2xl mx-auto">
+                        Every tool you need, reimagined with intelligence at the core.
+                    </p>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
-                        {
-                            quote: "Advyon cut my administrative time by 50%. The AI summaries are a game changer.",
-                            author: "Sarah J.",
-                            role: "Family Law Attorney"
-                        },
-                        {
-                            quote: "Finally, a legal platform that looks good and actually works. My clients love the portal.",
-                            author: "Michael R.",
-                            role: "Corporate Counsel"
-                        },
-                        {
-                            quote: "The billing features alone paid for the subscription in the first month.",
-                            author: "Elena V.",
-                            role: "Solo Practitioner"
-                        }
-                    ].map((t, i) => (
-                        <Card key={i} className="bg-white/5 border-white/5 backdrop-blur-sm hover:bg-white/10 transition-colors">
-                            <CardContent className="pt-6">
-                                <div className="mb-4 text-teal-400">
-                                    {[1,2,3,4,5].map(s => <span key={s}>★</span>)}
+                        { icon: Shield, title: "Smart Security", desc: "Enterprise-grade encryption with AI threat detection." },
+                        { icon: Zap, title: "Instant Analysis", desc: "Upload contracts and get AI summaries in seconds." },
+                        { icon: Globe, title: "Global Access", desc: "Secure cloud infrastructure accessible from anywhere." },
+                        { icon: Calendar, title: "Auto-Scheduling", desc: "AI coordinates meetings with clients automatically." },
+                        { icon: MessageSquare, title: "Client Portal", desc: "Secure communication channel for seamless updates." },
+                        { icon: Scale, title: "Case Intelligence", desc: "Predictive analytics for better case outcomes." }
+                    ].map((feature, i) => (
+                        <Card key={i} className="bg-[#002220]/40 backdrop-blur-md border-white/5 hover:bg-[#002220]/60 hover:border-teal-500/30 transition-all duration-300 group overflow-hidden">
+                            <CardHeader>
+                                <div className="h-10 w-10 rounded-lg bg-teal-500/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
+                                    <feature.icon className="h-5 w-5 text-teal-400" />
                                 </div>
-                                <p className="text-emerald-100/80 mb-6 italic">"{t.quote}"</p>
-                                <div>
-                                    <p className="font-bold text-white">{t.author}</p>
-                                    <p className="text-xs text-emerald-100/50">{t.role}</p>
-                                </div>
+                                <CardTitle className="text-teal-50 group-hover:text-white transition-colors">{feature.title}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-emerald-100/60 text-sm leading-relaxed">
+                                    {feature.desc}
+                                </p>
                             </CardContent>
                         </Card>
                     ))}
+                 </div>
+             </div>
+        </section>
+
+        {/* TESTIMONIALS */}
+        <section className="py-24 relative">
+            <div className="container mx-auto px-6 lg:px-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h2 className="text-4xl font-bold mb-6">Trusted by Top Firms</h2>
+                        <p className="text-emerald-100/70 text-lg mb-8">
+                            "Advyon didn't just organize our files; it fundamentally changed how we practice law. The AI insights are scary good."
+                        </p>
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500" />
+                            <div>
+                                <h4 className="font-bold text-white">Sarah Jenkins</h4>
+                                <p className="text-sm text-emerald-100/50">Partner, Jenkins & Co.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Floating Glass Stats */}
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="bg-[#002220]/40 backdrop-blur-xl border border-white/10 p-6 rounded-2xl">
+                            <h3 className="text-3xl font-bold text-teal-400 mb-1">20h+</h3>
+                            <p className="text-sm text-emerald-100/60">Saved Weekly</p>
+                        </div>
+                        <div className="bg-[#002220]/40 backdrop-blur-xl border border-white/10 p-6 rounded-2xl mt-8">
+                            <h3 className="text-3xl font-bold text-amber-400 mb-1">99%</h3>
+                            <p className="text-sm text-emerald-100/60">Client Satisfaction</p>
+                        </div>
+                         <div className="bg-[#002220]/40 backdrop-blur-xl border border-white/10 p-6 rounded-2xl">
+                            <h3 className="text-3xl font-bold text-purple-400 mb-1">0</h3>
+                            <p className="text-sm text-emerald-100/60">Data Breaches</p>
+                        </div>
+                         <div className="bg-[#002220]/40 backdrop-blur-xl border border-white/10 p-6 rounded-2xl mt-8">
+                            <h3 className="text-3xl font-bold text-blue-400 mb-1">3x</h3>
+                            <p className="text-sm text-emerald-100/60">Faster Billings</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
