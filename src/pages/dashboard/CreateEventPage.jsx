@@ -1,24 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import { 
+  Calendar as CalendarIcon, 
+  Clock, 
+  MapPin, 
+  Gavel, 
+  FileText, 
+  Users, 
+  AlertCircle, 
+  ArrowLeft,
+  Loader2,
+  CheckCircle2
+} from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Clock, MapPin, X } from 'lucide-react';
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from '@/components/ui/popover';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { useCasesStore } from '@/store/cases';
-// Assuming useScheduleStore will be created or direct API call
-import api from '@/lib/api/api'; 
+import api from '@/lib/api/api';
+
+const eventTypeConfig = {
+  hearing: { icon: Gavel, label: 'Court Hearing', color: 'text-amber-500' },
+  meeting: { icon: Users, label: 'Client Meeting', color: 'text-blue-500' },
+  filing: { icon: FileText, label: 'Filing Deadline', color: 'text-purple-500' },
+  deadline: { icon: AlertCircle, label: 'Task Deadline', color: 'text-red-500' },
+  other: { icon: CalendarIcon, label: 'Other Event', color: 'text-gray-500' }
+};
 
 const CreateEventPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const typeParam = searchParams.get('type');
+    const dateParam = searchParams.get('date');
     
     // Store
     const { cases, fetchCases } = useCasesStore();
@@ -29,7 +68,7 @@ const CreateEventPage = () => {
         title: '',
         description: '',
         eventType: typeParam || 'hearing',
-        date: new Date(),
+        date: dateParam ? new Date(dateParam) : new Date(),
         startTime: '09:00',
         endTime: '10:00',
         location: '',
@@ -37,7 +76,7 @@ const CreateEventPage = () => {
         participants: []
     });
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (cases.length === 0) fetchCases();
     }, [cases.length, fetchCases]);
 
@@ -51,12 +90,17 @@ const CreateEventPage = () => {
         try {
             // Validate
             if (!formData.caseId) {
-                toast.error("Please select a case");
+                toast.error("Please select a related case");
+                setIsLoading(false);
+                return;
+            }
+            if (!formData.title.trim()) {
+                toast.error("Event title is required");
                 setIsLoading(false);
                 return;
             }
 
-            // Call API to create event on server
+            // Call API
             await api.post('/schedules', formData);
             
             toast.success("Event scheduled successfully");
@@ -69,157 +113,286 @@ const CreateEventPage = () => {
         }
     };
 
+    const SelectedIcon = eventTypeConfig[formData.eventType]?.icon || CalendarIcon;
+
     return (
-        <div className="max-w-2xl mx-auto p-6 md:p-8">
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold tracking-tight">Schedule New Event</h1>
-                <p className="text-muted-foreground">Add a hearing, meeting, or deadline to your calendar.</p>
-            </div>
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full max-w-full xl:max-w-7xl mx-auto py-6 px-4 md:px-6 lg:px-8"
+        >
+            <Button 
+                variant="ghost" 
+                className="mb-6 pl-0 hover:pl-2 transition-all" 
+                onClick={() => navigate('/dashboard/schedule')}
+            >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Schedule
+            </Button>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                    {/* Title */}
-                    <div className="space-y-2">
-                        <Label htmlFor="title">Event Title</Label>
-                        <Input 
-                            id="title" 
-                            placeholder="e.g., Initial Hearing" 
-                            value={formData.title}
-                            onChange={(e) => handleInputChange('title', e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    {/* Type & Case Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Event Type</Label>
-                            <Select 
-                                value={formData.eventType} 
-                                onValueChange={(val) => handleInputChange('eventType', val)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="hearing">Court Hearing</SelectItem>
-                                    <SelectItem value="meeting">Client Meeting</SelectItem>
-                                    <SelectItem value="filing">Filing Deadline</SelectItem>
-                                    <SelectItem value="deadline">Task Deadline</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Case Link</Label>
-                            <Select 
-                                value={formData.caseId} 
-                                onValueChange={(val) => handleInputChange('caseId', val)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a case" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {cases.map(c => (
-                                        <SelectItem key={c.id || c._id} value={c.id || c._id}>
-                                            {c.title} ({c.ref})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    {/* Date & Time Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2 md:col-span-1">
-                            <Label>Date</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !formData.date && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={formData.date}
-                                        onSelect={(d) => handleInputChange('date', d)}
-                                        initialFocus
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Form Section */}
+                <div className="lg:col-span-2">
+                    <Card className="border-border/40 bg-card/50 backdrop-blur-xl shadow-xl">
+                        <CardHeader className="border-b border-border/40 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className={cn("p-2 rounded-lg bg-primary/10", eventTypeConfig[formData.eventType]?.color)}>
+                                    <SelectedIcon className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-xl">Schedule New Event</CardTitle>
+                                    <CardDescription>Enter details for your new calendar entry</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        
+                        <form onSubmit={handleSubmit}>
+                            <CardContent className="space-y-6 pt-6">
+                                {/* Title Input */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="title" className="text-sm font-medium">Event Title</Label>
+                                    <Input 
+                                        id="title" 
+                                        placeholder="e.g., Initial Hearing vs. Smith" 
+                                        value={formData.title}
+                                        onChange={(e) => handleInputChange('title', e.target.value)}
+                                        className="h-11 text-lg bg-background/50"
+                                        autoFocus
+                                        required
                                     />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
+                                </div>
 
-                        <div className="space-y-2">
-                            <Label>Start Time</Label>
-                            <div className="relative">
-                                <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                    type="time" 
-                                    className="pl-9" 
-                                    value={formData.startTime}
-                                    onChange={(e) => handleInputChange('startTime', e.target.value)}
-                                />
-                            </div>
-                        </div>
+                                {/* Event Type & Case Selection */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="space-y-2">
+                                        <Label>Event Type</Label>
+                                        <Select 
+                                            value={formData.eventType} 
+                                            onValueChange={(val) => handleInputChange('eventType', val)}
+                                        >
+                                            <SelectTrigger className="h-10 bg-background/50">
+                                                <SelectValue placeholder="Select type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="hearing">
+                                                    <div className="flex items-center gap-2">
+                                                        <Gavel className="h-4 w-4 text-amber-500" /> Court Hearing
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="meeting">
+                                                    <div className="flex items-center gap-2">
+                                                        <Users className="h-4 w-4 text-blue-500" /> Client Meeting
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="filing">
+                                                    <div className="flex items-center gap-2">
+                                                        <FileText className="h-4 w-4 text-purple-500" /> Filing Deadline
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="deadline">
+                                                    <div className="flex items-center gap-2">
+                                                        <AlertCircle className="h-4 w-4 text-red-500" /> Task Deadline
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="other">
+                                                    <div className="flex items-center gap-2">
+                                                        <CalendarIcon className="h-4 w-4 text-gray-500" /> Other
+                                                    </div>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
-                        <div className="space-y-2">
-                            <Label>End Time</Label>
-                            <div className="relative">
-                                <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                    type="time" 
-                                    className="pl-9" 
-                                    value={formData.endTime}
-                                    onChange={(e) => handleInputChange('endTime', e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Link to Case <span className="text-red-500">*</span></Label>
+                                        <Select 
+                                            value={formData.caseId} 
+                                            onValueChange={(val) => handleInputChange('caseId', val)}
+                                        >
+                                            <SelectTrigger className={cn("h-10 bg-background/50", !formData.caseId && "border-amber-500/50")}>
+                                                <SelectValue placeholder="Select a case..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {cases.map(c => (
+                                                    <SelectItem key={c.id || c._id} value={c.id || c._id}>
+                                                        <span className="font-medium">{c.ref}</span> - {c.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
 
-                    {/* Location */}
-                    <div className="space-y-2">
-                        <Label>Location / Link</Label>
-                        <div className="relative">
-                            <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                className="pl-9" 
-                                placeholder="e.g., Room 304, High Court or https://zoom.us/..." 
-                                value={formData.location}
-                                onChange={(e) => handleInputChange('location', e.target.value)}
-                            />
-                        </div>
-                    </div>
+                                {/* Date & Time Section */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="space-y-2 md:col-span-1">
+                                        <Label>Date</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full justify-start text-left font-normal bg-background/50 h-10",
+                                                        !formData.date && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                                    {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={formData.date}
+                                                    onSelect={(d) => handleInputChange('date', d)}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
 
-                    {/* Description */}
-                    <div className="space-y-2">
-                        <Label>Additional Notes</Label>
-                        <Textarea 
-                            placeholder="Add agenda, document requirements, or case notes..." 
-                            className="min-h-[100px]"
-                            value={formData.description}
-                            onChange={(e) => handleInputChange('description', e.target.value)}
-                        />
-                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Start Time</Label>
+                                        <div className="relative">
+                                            <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input 
+                                                type="time" 
+                                                className="pl-9 bg-background/50 h-10" 
+                                                value={formData.startTime}
+                                                onChange={(e) => handleInputChange('startTime', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>End Time</Label>
+                                        <div className="relative">
+                                            <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input 
+                                                type="time" 
+                                                className="pl-9 bg-background/50 h-10" 
+                                                value={formData.endTime}
+                                                onChange={(e) => handleInputChange('endTime', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Location */}
+                                <div className="space-y-2">
+                                    <Label>Location / Meeting Link</Label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input 
+                                            className="pl-9 bg-background/50 h-10" 
+                                            placeholder="e.g., Courtroom 2A or Zoom Link" 
+                                            value={formData.location}
+                                            onChange={(e) => handleInputChange('location', e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Description */}
+                                <div className="space-y-2">
+                                    <Label>Notes & Agenda</Label>
+                                    <Textarea 
+                                        placeholder="Add important details, required documents, or meeting agenda..." 
+                                        className="min-h-[120px] bg-background/50 resize-y"
+                                        value={formData.description}
+                                        onChange={(e) => handleInputChange('description', e.target.value)}
+                                    />
+                                </div>
+                            </CardContent>
+
+                            <CardFooter className="flex justify-end gap-3 pt-6 pb-6 bg-muted/20 border-t border-border/40 rounded-b-xl">
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    onClick={() => navigate(-1)}
+                                    className="hover:bg-background/80"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button 
+                                    type="submit" 
+                                    disabled={isLoading}
+                                    className="min-w-[140px] shadow-lg shadow-primary/20"
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Scheduling...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="mr-2 h-4 w-4" /> Confirm Event
+                                        </>
+                                    )}
+                                </Button>
+                            </CardFooter>
+                        </form>
+                    </Card>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
-                    <Button type="button" variant="ghost" onClick={() => navigate(-1)}>Cancel</Button>
-                    <Button type="submit" disabled={isLoading}>
-                        {isLoading ? 'Scheduling...' : 'Schedule Event'}
-                    </Button>
+                {/* Sidebar Summary */}
+                <div className="lg:col-span-1">
+                    <div className="sticky top-6 space-y-6">
+                        <Card className="bg-primary/5 border-primary/10 shadow-none">
+                            <CardHeader>
+                                <CardTitle className="text-lg">Event Preview</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-start gap-3">
+                                    <div className={cn("mt-1 p-1.5 rounded-md bg-background border", eventTypeConfig[formData.eventType]?.color)}>
+                                        <SelectedIcon className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-foreground/90 leading-tight">
+                                            {formData.title || "Untitled Event"}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground capitalize mt-1">
+                                            {eventTypeConfig[formData.eventType]?.label}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div className="h-px bg-primary/10 w-full" />
+                                
+                                <div className="space-y-3 text-sm">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <CalendarIcon className="h-4 w-4 opacity-70" />
+                                        <span>
+                                            {formData.date ? format(formData.date, "EEEE, MMMM do, yyyy") : "No date selected"}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Clock className="h-4 w-4 opacity-70" />
+                                        <span>
+                                            {formData.startTime} - {formData.endTime}
+                                        </span>
+                                    </div>
+                                    {formData.location && (
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <MapPin className="h-4 w-4 opacity-70" />
+                                            <span className="truncate">{formData.location}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="p-4 rounded-xl bg-accent/5 border border-accent/10 text-sm text-muted-foreground">
+                            <p className="flex gap-2">
+                                <AlertCircle className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
+                                <span>
+                                    Reminders will be sent automatically to all participants 24 hours before the event.
+                                </span>
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+        </motion.div>
     );
 };
 

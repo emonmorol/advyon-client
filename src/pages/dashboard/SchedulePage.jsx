@@ -59,9 +59,9 @@ const filterTabs = [
 ];
 
 const viewConfig = [
-  { id: 'month', label: 'Month', icon: Grid3X3 },
-  { id: 'week', label: 'Week', icon: LayoutGrid },
-  { id: 'day', label: 'Day', icon: CalendarIcon },
+  { id: 'dayGridMonth', label: 'Month', icon: Grid3X3 },
+  { id: 'timeGridWeek', label: 'Week', icon: LayoutGrid },
+  { id: 'timeGridDay', label: 'Day', icon: CalendarIcon },
   { id: 'list', label: 'List', icon: List }
 ];
 
@@ -73,7 +73,7 @@ const SchedulePage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('month');
+  const [viewMode, setViewMode] = useState('dayGridMonth');
   const [calendarEvents, setCalendarEvents] = useState([]);
 
   useEffect(() => {
@@ -86,18 +86,18 @@ const SchedulePage = () => {
       const mapped = events.map(event => {
         const typeConfig = eventTypeConfig[event.eventType] || eventTypeConfig.other;
         const startDate = event.date ? new Date(event.date) : new Date();
-        const startTime = event.startTime ? event.startTime : '09:00';
-        const endTime = event.endTime ? event.endTime : '10:00';
+        const startTime = event.startTime || '09:00';
+        const endTime = event.endTime || '10:00';
         
         // Combine date and time for datetime events
-        const [startHour, startMin] = startTime.split(':');
-        const [endHour, endMin] = endTime.split(':');
+        const [startHour = '9', startMin = '0'] = startTime.split(':');
+        const [endHour = '10', endMin = '0'] = endTime.split(':');
         
         const start = new Date(startDate);
-        start.setHours(parseInt(startHour), parseInt(startMin));
+        start.setHours(parseInt(startHour) || 9, parseInt(startMin) || 0);
         
         const end = new Date(startDate);
-        end.setHours(parseInt(endHour), parseInt(endMin));
+        end.setHours(parseInt(endHour) || 10, parseInt(endMin) || 0);
 
         return {
           id: event._id,
@@ -110,7 +110,7 @@ const SchedulePage = () => {
             eventType: event.eventType,
             status: event.status,
             location: event.location,
-            caseId: event.caseId
+            caseId: typeof event.caseId === 'object' ? event.caseId : null
           }
         };
       });
@@ -306,7 +306,7 @@ const SchedulePage = () => {
       </motion.div>
 
       {/* Calendar View (Month/Week/Day) */}
-      {(viewMode === 'month' || viewMode === 'week' || viewMode === 'day') && (
+      {(viewMode === 'dayGridMonth' || viewMode === 'timeGridWeek' || viewMode === 'timeGridDay') && (
         <motion.div variants={item} className="bg-card rounded-xl border border-border shadow-lg p-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
@@ -439,10 +439,10 @@ const SchedulePage = () => {
                         </div>
 
                         {/* Case Reference */}
-                        {event.caseId && (
+                        {event.caseId && typeof event.caseId === 'object' && (
                           <div className="mt-3 pt-3 border-t border-border/40">
                             <Badge variant="outline" className="text-xs">
-                              {event.caseId.ref || event.caseId.title || 'Linked Case'}
+                              {event.caseId?.ref || event.caseId?.title || 'Linked Case'}
                             </Badge>
                           </div>
                         )}

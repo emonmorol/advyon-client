@@ -118,12 +118,12 @@ const ScheduleDetailModal = ({ event, isOpen, onClose }) => {
           )}
 
           {/* Case Reference */}
-          {event.caseId && (
+          {event.caseId && typeof event.caseId === 'object' && (
             <div className="flex items-center gap-3 text-sm">
               <Briefcase className="h-4 w-4 text-muted-foreground" />
               <span className="text-card-foreground">
-                {event.caseId.title || 'Linked Case'} 
-                {event.caseId.ref && <span className="text-muted-foreground ml-1">({event.caseId.ref})</span>}
+                {event.caseId?.title || 'Linked Case'} 
+                {event.caseId?.ref && <span className="text-muted-foreground ml-1">({event.caseId.ref})</span>}
               </span>
             </div>
           )}
