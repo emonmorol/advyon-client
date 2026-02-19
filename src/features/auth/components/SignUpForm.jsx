@@ -21,6 +21,8 @@ const SignUpForm = () => {
             footerActionLink: 'text-[#3A7573] hover:text-[#1D4746]',
             // Hide GitHub social button (WBS-1.2)
             'socialButtonsBlockButton__github': { display: 'none' },
+            // Google and Facebook will appear here if enabled in Clerk Dashboard
+            // They use the generic socialButtonsBlockButton styles defined above
           }
         }}
         signInUrl="/auth/signin"

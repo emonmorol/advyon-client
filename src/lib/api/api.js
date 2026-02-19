@@ -49,4 +49,10 @@ api.interceptors.request.use(async (config) => {
 // WBS-TD-CQ-01: Normalise all API errors into shared envelope
 attachErrorInterceptor(api);
 
+// AI Chat Endpoints
+api.getChats = () => api.get('/ai/chats');
+api.getChat = (id) => api.get(`/ai/chats/${id}`);
+api.createOrUpdateChat = (data) => api.post('/ai/chats', data);
+api.deleteChat = (id) => api.delete(`/ai/chats/${id}`);
+
 export default api;
