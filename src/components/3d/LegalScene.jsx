@@ -3,7 +3,10 @@ import {
   Environment,
   Float,
   MeshTransmissionMaterial,
+  MeshDistortMaterial,
   Stars,
+  Sphere,
+  Sparkles,
   Text, // kept for potential use
   useGLTF, // kept for potential use
 } from "@react-three/drei";
@@ -11,64 +14,87 @@ import { EffectComposer, Bloom, Noise, Vignette } from "@react-three/postprocess
 import { useRef, useMemo } from "react";
 import * as THREE from "three";
 
-function DigitalGem() {
-  const meshRef = useRef();
-  const wireframeRef = useRef();
-  
-  useFrame((state, delta) => {
-    if (meshRef.current) {
-        meshRef.current.rotation.x -= delta * 0.2;
-        meshRef.current.rotation.y -= delta * 0.15;
-    }
-    if (wireframeRef.current) {
-        wireframeRef.current.rotation.x += delta * 0.1;
-        wireframeRef.current.rotation.y += delta * 0.1;
-    }
-  });
+const AICore = () => {
+    const mesh = useRef();
+    
+    useFrame((state) => {
+        const t = state.clock.getElapsedTime();
+        if (mesh.current) {
+            mesh.current.distort = 0.4 + Math.sin(t) * 0.1;
+        }
+    });
 
-  return (
-    <Float rotationIntensity={1} floatIntensity={2} speed={1.5}>
-      <group scale={2.5}>
-        {/* Inner Crystal */}
-        <mesh ref={meshRef}>
-          <icosahedronGeometry args={[1, 0]} />
-          <MeshTransmissionMaterial
-            backside
-            backsideThickness={5}
-            thickness={2}
-            roughness={0.1}
-            chromaticAberration={0.1}
-            anisotropy={0.3}
-            distortion={1} // High distortion for "gem" look
-            distortionScale={0.5}
-            temporalDistortion={0.2}
-            iridescence={1}
-            iridescenceIOR={1}
-            iridescenceThicknessRange={[0, 1400]}
-            color="#5CDBD6" // Bright Teal
-            bg="#002220" // Dark Green
-            resolution={1024}
-          />
-        </mesh>
-        
-        {/* Outer Wireframe */}
-        <mesh ref={wireframeRef} scale={1.2}>
-          <icosahedronGeometry args={[1, 1]} />
-          <meshBasicMaterial color="#E59500" wireframe transparent opacity={0.15} />
-        </mesh>
-      </group>
-    </Float>
-  );
-}
+    return (
+        <group scale={2.5}>
+            <Sphere ref={mesh} args={[1, 64, 64]}>
+                <MeshDistortMaterial 
+                    color="#5CDBD6" 
+                    envMapIntensity={1} 
+                    clearcoat={1} 
+                    clearcoatRoughness={0} 
+                    metalness={0.1} 
+                    roughness={0.1}
+                    distort={0.4}
+                    speed={2} 
+                />
+            </Sphere>
+            {/* Inner Glow Polish */}
+            <mesh scale={0.9}>
+                 <sphereGeometry args={[1, 32, 32]} />
+                 <meshBasicMaterial color="#F5B342" wireframe transparent opacity={0.05} />
+            </mesh>
+        </group>
+    );
+};
+
+const DataSwarm = () => {
+    return (
+        <group>
+            {/* Primary Data Stream */}
+            <Sparkles 
+                count={200} 
+                scale={12} 
+                size={4} 
+                speed={0.4} 
+                opacity={0.8} 
+                color="#5CDBD6"
+            />
+            {/* Secondary Gold Dust */}
+            <Sparkles 
+                count={100} 
+                scale={10} 
+                size={2} 
+                speed={0.2} 
+                opacity={0.5} 
+                color="#F5B342"
+            />
+            {/* Floating Rings */}
+            <group rotation={[Math.PI / 3, 0, 0]}>
+                 <Float rotationIntensity={1} floatIntensity={0.5} speed={2}>
+                    <mesh rotation={[Math.PI / 2, 0, 0]}>
+                        <torusGeometry args={[3, 0.02, 16, 100]} />
+                        <meshBasicMaterial color="#5CDBD6" transparent opacity={0.2} />
+                    </mesh>
+                 </Float>
+            </group>
+             <group rotation={[-Math.PI / 3, 0, 0]}>
+                 <Float rotationIntensity={1} floatIntensity={0.5} speed={1.5}>
+                    <mesh rotation={[Math.PI / 2, 0, 0]}>
+                        <torusGeometry args={[4, 0.01, 16, 100]} />
+                        <meshBasicMaterial color="#F5B342" transparent opacity={0.1} />
+                    </mesh>
+                 </Float>
+            </group>
+        </group>
+    );
+};
 
 function Rig() {
     const { camera, pointer } = useThree()
     const vec = new THREE.Vector3()
 
     useFrame(() => {
-        // More stronger, noticeable parallax
-        // Moves camera opposite to mouse
-        camera.position.lerp(vec.set(-pointer.x * 4, -pointer.y * 4, camera.position.z), 0.05)
+        camera.position.lerp(vec.set(-pointer.x * 2, -pointer.y * 2, 9), 0.05)
         camera.lookAt(0, 0, 0)
     })
     return null
@@ -80,33 +106,28 @@ const LegalScene = () => {
         <Canvas 
             shadows 
             camera={{ position: [0, 0, 9], fov: 45 }}
-            eventSource={document.body} // Ensure it captures events even with overlays
+            eventSource={document.body}
         >
-            {/* Lighting & Environment */}
-            <ambientLight intensity={0.4} color="#004d40" />
-            <spotLight position={[20, 20, 20]} angle={0.2} penumbra={1} intensity={25} color="#cceeee" />
-            <spotLight position={[-20, -10, 10]} angle={0.2} penumbra={1} intensity={15} color="#E59500" />
-            
-            {/* Deep Green Environment */}
-             <color attach="background" args={['#002220']} /> 
-             {/* Note: background attribute on Canvas or color attach="background" works */}
+            <ambientLight intensity={0.5} color="#004d40" />
+            <spotLight position={[10, 10, 10]} angle={0.25} penumbra={1} intensity={20} color="#cceeee" />
+            <spotLight position={[-10, -10, -10]} angle={0.2} penumbra={1} intensity={10} color="#F5B342" />
+            <Environment preset="city" />
 
-            {/* Objects */}
-            <group position={[3.5, 0, 0]}> {/* Position Right */}
-                <DigitalGem />
+            {/* Centered AI Core */}
+            <group position={[3.5, 0, 0]}>
+                <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+                    <AICore />
+                </Float>
+                <DataSwarm />
             </group>
 
-             {/* Stars - High Density */}
-            <Stars radius={80} depth={50} count={8000} factor={4} saturation={1} fade speed={1.5} />
-
-            {/* Interactions */}
+            <Stars radius={80} depth={50} count={6000} factor={4} saturation={0} fade speed={1} />
             <Rig />
             
-            {/* Post Processing */}
             <EffectComposer disableNormalPass>
-                <Bloom luminanceThreshold={0.8} mipmapBlur intensity={1.5} radius={0.3} />
-                <Noise opacity={0.08} />
-                <Vignette eskil={false} offset={0.1} darkness={0.8} />
+                <Bloom luminanceThreshold={0.2} mipmapBlur intensity={1.2} radius={0.5} />
+                <Noise opacity={0.03} />
+                <Vignette eskil={false} offset={0.1} darkness={0.6} />
             </EffectComposer>
         </Canvas>
     </div>
