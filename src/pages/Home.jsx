@@ -1,16 +1,15 @@
-import LandingNavbar from '@/components/layout/LandingNavbar';
-import Footer from '@/components/layout/Footer';
-import LegalScene from '@/components/3d/LegalScene';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { 
-  ArrowRight, Sparkles, Shield, Calendar, BarChart, Scale, FileText, 
-  CheckCircle2, XCircle, Zap, Globe, MessageSquare, BadgeCheck 
-} from 'lucide-react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useRef } from 'react';
+import PublicPageLayout from '@/components/layout/PublicPageLayout';
+import { Button } from '@/components/ui/button';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  ArrowRight, Sparkles, Shield, Calendar, Scale, FileText, 
+  CheckCircle2, XCircle, Zap, Globe, MessageSquare, BadgeCheck,
+  ChevronDown
+} from 'lucide-react';
 
 // Animations
 const fadeInUp = {
@@ -28,39 +27,25 @@ const staggerContainer = {
   }
 };
 
-export default function Home() {
-  const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"]
-  });
+import SystemBootLoader from '@/components/ui/SystemBootLoader';
+import { useBootSequence } from '@/hooks/useBootSequence';
 
-  // Parallax for text (scrolls slightly slower than background/foreground feels)
-  const yText = useTransform(scrollYProgress, [0, 1], [0, 100]);
+export default function Home() {
+  const { shouldBoot, completeBoot } = useBootSequence();
+  if (shouldBoot) {
+    return <SystemBootLoader onComplete={completeBoot} />;
+  }
+
 
   return (
-    <div ref={containerRef} className="relative min-h-screen w-full overflow-x-hidden bg-[#001514] text-white selection:bg-teal-500/30 selection:text-teal-50 font-sans">
-      
-      {/* 3D Background - Fixed & Locked */}
-      {/* The OrbitControls in LegalScene handle the "rolling" interaction */}
-      <div className="fixed inset-0 z-0 h-screen w-screen pointer-events-auto">
-        <LegalScene />
-      </div>
-      
-      {/* Enhanced Gradient Overlay for readability while keeping Orb visible */}
-      {/* Darker on left (text side), transparent on right (orb side) */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-r from-[#001514] via-[#001514]/60 to-transparent pointer-events-none" />
-      <div className="fixed inset-0 z-0 bg-gradient-to-b from-transparent via-[#001514]/20 to-[#001514] pointer-events-none" />
-
-      {/* Navigation */}
-      <LandingNavbar />
-
-      <main className="relative z-10 flex flex-col">
+    <PublicPageLayout 
+        title="Future of Legal Tech" 
+        description="Advyon is the unified platform for modern legal firms. AI-driven automation, secure document management, and client portals."
+    >
         
         {/* HERO SECTION - Split Layout (Hockroll Style) */}
-        <section className="relative min-h-screen pt-24 pb-12 flex items-center overflow-hidden">
-            
-            {/* Background Glow - Left Aligned for text separation */}
+        <section className="relative min-h-[90vh] flex items-center pt-20">
+            {/* Background Glow - Left Aligned */}
             <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[800px] h-[800px] bg-teal-900/20 rounded-full blur-[120px] pointer-events-none z-0" />
             
             <div className="container mx-auto px-6 lg:px-12 relative z-10">
@@ -73,13 +58,13 @@ export default function Home() {
                         variants={staggerContainer}
                         className="max-w-xl relative z-20" 
                     >
-                         {/* Badge - Tighter spacing */}
+                         {/* Badge */}
                          <motion.div variants={fadeInUp} className="mb-6 inline-flex items-center gap-2 rounded-full bg-teal-900/30 px-4 py-1.5 text-xs font-semibold tracking-wider text-teal-300 backdrop-blur-md border border-teal-500/20 shadow-lg cursor-default uppercase">
                             <Sparkles className="h-3 w-3 text-teal-200" />
                             <span>The Future of Legal Tech</span>
                         </motion.div>
 
-                        {/* Headline - Better line braking with max-w */}
+                        {/* Headline */}
                         <motion.h1 variants={fadeInUp} className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl mb-6 leading-[1.1] drop-shadow-lg">
                             Your firm's <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-emerald-200">
@@ -110,10 +95,10 @@ export default function Home() {
                         </motion.div>
                     </motion.div>
 
-                    {/* RIGHT COLUMN: Floating Glass UI (The "Hockroll" Composition) */}
+                    {/* RIGHT COLUMN: Floating Glass UI */}
                     <div className="relative h-[600px] w-full hidden lg:block perspective-[1000px]">
                         
-                        {/* Main Glass Card: Document List - Moved UP slightly for better balance */}
+                        {/* Main Glass Card: Document List */}
                         <motion.div
                             initial={{ opacity: 0, y: 50, rotateX: 5 }}
                             animate={{ opacity: 1, y: 0, rotateX: 0 }}
@@ -154,7 +139,7 @@ export default function Home() {
                             </div>
                         </motion.div>
 
-                        {/* Floating Widget 1: Expert Profile - Adjusted Position (Higher) */}
+                        {/* Floating Widget 1: Expert Profile */}
                         <motion.div
                             animate={{ y: [0, -10, 0] }}
                             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -170,7 +155,7 @@ export default function Home() {
                             </div>
                         </motion.div>
 
-                         {/* Floating Widget 2: Stats - Adjusted Position (Closer) */}
+                         {/* Floating Widget 2: Stats */}
                          <motion.div
                             animate={{ y: [0, -15, 0] }}
                             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
@@ -189,35 +174,31 @@ export default function Home() {
                                 <span className="flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-amber-500"/> 23 Attn</span>
                             </div>
                         </motion.div>
-
                     </div>
                 </div>
             </div>
+            
+            {/* Scroll Indicator */}
+            <motion.div 
+                animate={{ y: [0, 10, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 text-emerald-100/30 pointer-events-none"
+            >
+                <ChevronDown className="h-8 w-8" />
+            </motion.div>
         </section>
 
-        {/* SECTION: PROBLEM / SOLUTION - Glass Panels */}
+        {/* SECTION: PROBLEM / SOLUTION - New Branding */}
         <section className="py-32 relative z-10">
              <div className="container mx-auto px-6 lg:px-12">
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true, margin: "-100px" }}
-                    transition={{ duration: 1 }}
-                    className="text-center mb-20"
-                >
-                    <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl mb-6">Why Modern Firms Switch</h2>
-                    <p className="text-xl text-emerald-100/60 max-w-2xl mx-auto">Stop wrestling with outdated systems and start practicing law.</p>
-                </motion.div>
+                <SectionHeader 
+                    title="Why Modern Firms Switch" 
+                    subtitle="Stop wrestling with outdated systems and start practicing law."
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {/* Problem Glass Card */}
-                    <motion.div 
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={fadeInUp}
-                        className="group relative rounded-[2.5rem] bg-[#1a0505]/40 backdrop-blur-md border border-red-500/10 p-12 hover:bg-[#1a0505]/60 hover:border-red-500/30 transition-all duration-500"
-                    >
+                    <GlassCard variant="danger" className="p-10 lg:p-14 rounded-[3rem]">
                         <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-900/20 flex items-center justify-center mb-8 shadow-inner shadow-red-500/10">
                             <XCircle className="h-8 w-8 text-red-400" />
                         </div>
@@ -225,29 +206,21 @@ export default function Home() {
                         <ul className="space-y-6 text-red-100/70 text-lg">
                             <li className="flex items-start gap-4">
                                 <span className="mt-2 h-2 w-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
-                                <span>Scattered documents across email & local drives.</span>
+                                <span>Scattered documents across email & drives.</span>
                             </li>
                             <li className="flex items-start gap-4">
                                 <span className="mt-2 h-2 w-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
-                                <span>Unbillable hours spent on administrative chaos.</span>
+                                <span>Unbillable hours spent on admin chaos.</span>
                             </li>
                              <li className="flex items-start gap-4">
                                 <span className="mt-2 h-2 w-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
-                                <span>Data security vulnerabilities & compliance risks.</span>
+                                <span>Data security vulnerabilities.</span>
                             </li>
                         </ul>
-                    </motion.div>
+                    </GlassCard>
 
                     {/* Solution Glass Card - Highly emphasized */}
-                    <motion.div 
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={fadeInUp}
-                        className="group relative rounded-[2.5rem] bg-teal-950/40 backdrop-blur-xl border border-teal-500/30 p-12 transition-all duration-500 overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                        
+                    <GlassCard variant="active" className="p-10 lg:p-14 rounded-[3rem] border-teal-400/30">
                         <div className="relative z-10 h-16 w-16 rounded-2xl bg-gradient-to-br from-teal-500/20 to-emerald-900/20 flex items-center justify-center mb-8 shadow-inner shadow-teal-500/20">
                             <CheckCircle2 className="h-8 w-8 text-teal-400" />
                         </div>
@@ -255,39 +228,29 @@ export default function Home() {
                          <ul className="relative z-10 space-y-6 text-teal-50/90 text-lg">
                             <li className="flex items-start gap-4">
                                 <span className="mt-2 h-2 w-2 rounded-full bg-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.8)]" />
-                                <span>Unified Intelligent Platform for all workflows.</span>
+                                <span>Unified Intelligent Platform.</span>
                             </li>
                             <li className="flex items-start gap-4">
                                 <span className="mt-2 h-2 w-2 rounded-full bg-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.8)]" />
-                                <span>AI-driven automation reclaiming 20+ hours/week.</span>
+                                <span>AI-driven automation reclaims 20h/week.</span>
                             </li>
                              <li className="flex items-start gap-4">
                                 <span className="mt-2 h-2 w-2 rounded-full bg-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.8)]" />
-                                <span>Bank-grade encryption & automated compliance.</span>
+                                <span>Bank-grade encryption & compliance.</span>
                             </li>
                         </ul>
-                    </motion.div>
+                    </GlassCard>
                 </div>
              </div>
         </section>
 
-        {/* FEATURES GRID - Transparent to show depth */}
-        <section className="py-32 relative">
+        {/* FEATURES GRID */}
+        <section id="features" className="py-32 relative">
              <div className="container mx-auto px-6 lg:px-12">
-                 <motion.div 
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    variants={fadeInUp}
-                    className="mb-24 text-center"
-                 >
-                    <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-teal-200">
-                        Built for the Future of Law
-                    </h2>
-                    <p className="text-xl text-emerald-100/60 max-w-3xl mx-auto">
-                        Every tool you need, reimagined with intelligence at the core.
-                    </p>
-                 </motion.div>
+                 <SectionHeader 
+                    title="Built for the Future of Law" 
+                    subtitle="Every tool you need, reimagined with intelligence at the core."
+                 />
 
                  <motion.div 
                     initial="hidden"
@@ -305,26 +268,108 @@ export default function Home() {
                         { icon: Scale, title: "Case Intelligence", desc: "Predictive analytics for better case outcomes." }
                     ].map((feature, i) => (
                         <motion.div key={i} variants={fadeInUp}>
-                            <Card className="h-full bg-white/5 backdrop-blur-sm border-white/5 hover:bg-white/10 hover:border-teal-500/30 transition-all duration-300 group overflow-hidden rounded-3xl hover:-translate-y-2 hover:shadow-2xl hover:shadow-teal-900/20">
-                                <CardHeader>
-                                    <div className="h-12 w-12 rounded-xl bg-teal-500/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-teal-500/20 transition-all duration-300">
-                                        <feature.icon className="h-6 w-6 text-teal-400" />
-                                    </div>
-                                    <CardTitle className="text-xl font-bold text-teal-50 group-hover:text-white transition-colors">{feature.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-emerald-100/60 leading-relaxed">
-                                        {feature.desc}
-                                    </p>
-                                </CardContent>
-                            </Card>
+                            <GlassCard interactive className="h-full rounded-3xl hover:bg-white/10 group">
+                                <div className="h-12 w-12 rounded-xl bg-teal-500/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-teal-500/20 transition-all duration-300">
+                                    <feature.icon className="h-6 w-6 text-teal-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-teal-50 group-hover:text-white transition-colors mb-2">{feature.title}</h3>
+                                <p className="text-emerald-100/60 leading-relaxed">
+                                    {feature.desc}
+                                </p>
+                            </GlassCard>
                         </motion.div>
                     ))}
                  </motion.div>
              </div>
         </section>
 
-        {/* TESTIMONIALS - Left Aligned to balance Orb */}
+        {/* PRICING PREVIEW SECTION */}
+        <section id="pricing" className="py-32 relative">
+             <div className="container mx-auto px-6 lg:px-12">
+                 <SectionHeader title="Transparent Pricing" subtitle="Start small and scale as you grow. No hidden fees." />
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
+                     {/* Starter */}
+                     <GlassCard className="p-8 hover:bg-white/5 transition-colors">
+                         <h3 className="text-xl font-bold text-white mb-2">Solo</h3>
+                         <div className="text-3xl font-bold text-teal-400 mb-6">$49<span className="text-sm text-emerald-100/50 font-medium">/mo</span></div>
+                         <ul className="space-y-4 mb-8">
+                             {["1 User", "5 Active Cases", "Basic AI Docs", "Client Portal"].map((feat, i) => (
+                                 <li key={i} className="flex items-center gap-3 text-sm text-emerald-100/70">
+                                     <CheckCircle2 className="h-4 w-4 text-teal-500" /> {feat}
+                                 </li>
+                             ))}
+                         </ul>
+                         <Button variant="outline" className="w-full border-teal-500/30 text-teal-300 hover:bg-teal-950 hover:text-white font-semibold">Start Free Trial</Button>
+                     </GlassCard>
+
+                     {/* Pro - Highlighted */}
+                     <GlassCard variant="active" className="p-10 border-teal-400/50 relative transform md:scale-110 z-10 shadow-2xl shadow-teal-900/40">
+                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-teal-500 text-teal-950 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Most Popular</div>
+                         <h3 className="text-2xl font-bold text-white mb-2">Growth</h3>
+                         <div className="text-4xl font-bold text-teal-300 mb-6">$129<span className="text-sm text-emerald-100/50 font-medium">/mo</span></div>
+                         <ul className="space-y-4 mb-8">
+                             {["Up to 5 Users", "Unlimited Cases", "Advanced AI Agents", "Priority Support", "Analytics"].map((feat, i) => (
+                                 <li key={i} className="flex items-center gap-3 text-emerald-50">
+                                     <CheckCircle2 className="h-5 w-5 text-teal-400" /> {feat}
+                                 </li>
+                             ))}
+                         </ul>
+                         <Button className="w-full bg-teal-500 text-teal-950 hover:bg-teal-400 font-bold shadow-lg shadow-teal-500/25">Get Started</Button>
+                     </GlassCard>
+
+                     {/* Enterprise */}
+                     <GlassCard className="p-8 hover:bg-white/5 transition-colors">
+                         <h3 className="text-xl font-bold text-white mb-2">Firm</h3>
+                         <div className="text-3xl font-bold text-teal-400 mb-6">$299<span className="text-sm text-emerald-100/50 font-medium">/mo</span></div>
+                         <ul className="space-y-4 mb-8">
+                             {["Unlimited Users", "Custom Integrations", "Dedicated Manager", "SLA", "On-premise Option"].map((feat, i) => (
+                                 <li key={i} className="flex items-center gap-3 text-sm text-emerald-100/70">
+                                     <CheckCircle2 className="h-4 w-4 text-teal-500" /> {feat}
+                                 </li>
+                             ))}
+                         </ul>
+                         <Button variant="outline" className="w-full border-teal-500/30 text-teal-300 hover:bg-teal-950 hover:text-white font-semibold">Contact Sales</Button>
+                     </GlassCard>
+                 </div>
+             </div>
+        </section>
+
+        {/* [NEW] HOW IT WORKS SECTION */}
+        <section id="how-it-works" className="py-32 relative overflow-hidden">
+             <div className="container mx-auto px-6 lg:px-12">
+                <SectionHeader 
+                    title="How It Works" 
+                    subtitle="Seamless onboarding to get your firm running in minutes."
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                     {[
+                        { step: "01", title: "Sign Up", desc: "Create your secure organization account." },
+                        { step: "02", title: "Invite Team", desc: "Add colleagues and set permissions." },
+                        { step: "03", title: "Connect", desc: "Integrate your existing workflow tools." },
+                        { step: "04", title: "Automate", desc: "Start new cases and let AI handle admin." }
+                     ].map((step, i) => (
+                         <div key={i} className="relative group">
+                             {/* Connector Line */}
+                             {i !== 3 && (
+                                <div className="hidden md:block absolute top-[50px] overflow-hidden right-[-50%] w-full h-[2px] bg-teal-900/50 z-0">
+                                     <div className="h-full w-full bg-teal-500/50 origin-left scale-x-0 transition-transform duration-700 delay-300 group-hover:scale-x-100" />
+                                </div>
+                             )}
+                             
+                             <GlassCard className="text-center p-8 relative z-10 hover:border-teal-500/50 transition-colors duration-500">
+                                 <div className="inline-block text-5xl font-black text-white/5 mb-4">{step.step}</div>
+                                 <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
+                                 <p className="text-sm text-emerald-100/60">{step.desc}</p>
+                             </GlassCard>
+                         </div>
+                     ))}
+                </div>
+             </div>
+        </section>
+
+        {/* TESTIMONIALS */}
         <section className="py-32 relative">
             <div className="container mx-auto px-6 lg:px-12">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -354,76 +399,54 @@ export default function Home() {
                         </div>
                     </motion.div>
                     
-                    {/* Floating Glass Stats - Right Side (Over Orb?) */}
-                    {/* We make these extra transparent so the Orb can be seen drifting behind/around them */}
-                    <motion.div 
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={staggerContainer}
-                        className="grid grid-cols-2 gap-6"
-                    >
-                        {[
-                            { val: "20h+", label: "Saved Weekly", col: "text-teal-400" },
-                            { val: "99%", label: "Satisfaction", col: "text-amber-400" },
-                            { val: "0", label: "Breaches", col: "text-purple-400" },
-                            { val: "3x", label: "Faster Billing", col: "text-blue-400" }
-                        ].map((stat, i) => (
-                             <motion.div 
-                                key={i}
-                                variants={fadeInUp}
-                                className={`bg-black/20 backdrop-blur-md border border-white/5 p-8 rounded-3xl hover:bg-black/40 transition-colors duration-300 ${i % 2 !== 0 ? 'mt-12' : ''}`}
-                             >
-                                <h3 className={`text-4xl font-bold ${stat.col} mb-2`}>{stat.val}</h3>
-                                <p className="text-sm font-medium text-emerald-100/50 uppercase tracking-widest">{stat.label}</p>
-                            </motion.div>
-                        ))}
-                    </motion.div>
+                    {/* Floating Glass Stats */}
+                    <div className="grid grid-cols-2 gap-6">
+                         {[
+                             { val: "20h+", label: "Saved Weekly", col: "text-teal-400" },
+                             { val: "99%", label: "Satisfaction", col: "text-amber-400" },
+                             { val: "0", label: "Breaches", col: "text-purple-400" },
+                             { val: "3x", label: "Faster Billing", col: "text-blue-400" }
+                         ].map((stat, i) => (
+                              <GlassCard key={i} className={`p-8 text-center ${i % 2 !== 0 ? 'mt-12' : ''}`}>
+                                 <h3 className={`text-4xl font-bold ${stat.col} mb-2`}>{stat.val}</h3>
+                                 <p className="text-xs font-bold text-emerald-100/50 uppercase tracking-widest">{stat.label}</p>
+                             </GlassCard>
+                         ))}
+                    </div>
                 </div>
             </div>
         </section>
 
-        {/* CTA SECTION - Full Width Glass */}
+        {/* CTA SECTION */}
         <section className="relative py-32">
             <div className="container mx-auto px-6 lg:px-12">
-                <motion.div 
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8 }}
-                    className="relative overflow-hidden rounded-[3rem] bg-gradient-to-br from-teal-900 to-emerald-950 px-6 py-32 text-center shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] border border-teal-500/20"
-                >
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay" />
-                    
-                    {/* Abstract Shapes */}
-                    <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl" />
-                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+                <GlassCard className="relative overflow-hidden rounded-[3rem] px-6 py-24 text-center border-teal-500/30">
+                    <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl z-0" />
+                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl z-0" />
 
-                    <h2 className="relative z-10 text-4xl font-bold tracking-tight text-white sm:text-6xl mb-8">
-                        Ready to elevate your practice?
-                    </h2>
-                    <p className="relative z-10 mx-auto max-w-2xl text-xl leading-8 text-emerald-100/80 mb-12">
-                        Join the platform building the future of legal work. No credit card required.
-                    </p>
-                    <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-6">
-                        <Link to="/auth/signup">
-                            <Button size="xl" className="h-16 px-12 text-xl bg-white text-teal-950 hover:bg-emerald-50 font-bold shadow-xl rounded-2xl">
-                                Get Started Now
-                            </Button>
-                        </Link>
-                        <Link to="/demo">
-                             <Button variant="link" className="text-emerald-200 hover:text-white text-lg">
-                                Book a Demo <ArrowRight className="ml-2 h-5 w-5" />
-                            </Button>
-                        </Link>
+                    <div className="relative z-10">
+                        <h2 className="text-4xl font-bold tracking-tight text-white sm:text-6xl mb-8">
+                            Ready to elevate your practice?
+                        </h2>
+                        <p className="mx-auto max-w-2xl text-xl leading-8 text-emerald-100/80 mb-12">
+                            Join the platform building the future of legal work. No credit card required.
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                            <Link to="/auth/signup">
+                                <Button size="xl" className="h-16 px-12 text-xl bg-white text-teal-950 hover:bg-emerald-50 font-bold shadow-xl rounded-2xl">
+                                    Get Started Now
+                                </Button>
+                            </Link>
+                            <Link to="/demo">
+                                 <Button variant="link" className="text-emerald-200 hover:text-white text-lg">
+                                    Book a Demo <ArrowRight className="ml-2 h-5 w-5" />
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
-                </motion.div>
+                </GlassCard>
             </div>
         </section>
-
-      </main>
-
-      <Footer />
-    </div>
+    </PublicPageLayout>
   );
 }
