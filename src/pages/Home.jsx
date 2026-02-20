@@ -57,94 +57,141 @@ export default function Home() {
 
       <main className="relative z-10 flex flex-col">
         
-        {/* HERO SECTION - Centered & Symmetrical */}
-        <section className="relative min-h-screen pt-20 flex items-center justify-center overflow-hidden">
+        {/* HERO SECTION - Split Layout (Hockroll Style) */}
+        <section className="relative min-h-screen pt-24 pb-12 flex items-center overflow-hidden">
             
-            {/* Background Radial Glow - Centered */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none z-0" />
+            {/* Background Glow - Left Aligned for text separation */}
+            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[800px] h-[800px] bg-teal-900/20 rounded-full blur-[120px] pointer-events-none z-0" />
             
-            <div className="container mx-auto px-4 relative z-10 text-center">
-                 <motion.div
+            <div className="container mx-auto px-6 lg:px-12 relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    
+                    {/* LEFT COLUMN: Typography & CTAs */}
+                    <motion.div
                         initial="hidden"
                         animate="visible"
                         variants={staggerContainer}
-                        style={{ y: yText }} // Subtle parallax
-                        className="flex flex-col items-center max-w-5xl mx-auto"
+                        className="max-w-xl relative z-20" 
                     >
-                        {/* Badge */}
-                        <motion.div variants={fadeInUp} className="mb-8 inline-flex items-center gap-2 rounded-full bg-teal-900/40 px-6 py-2.5 text-sm font-medium text-teal-300 backdrop-blur-md border border-teal-500/30 shadow-[0_0_25px_rgba(20,184,166,0.2)] hover:shadow-[0_0_40px_rgba(20,184,166,0.4)] transition-shadow duration-500 cursor-default">
-                            <Sparkles className="h-4 w-4 text-teal-200 animate-pulse" />
-                            <span className="tracking-wide uppercase text-xs font-bold">The Future of Legal Tech</span>
+                         {/* Badge - Tighter spacing */}
+                         <motion.div variants={fadeInUp} className="mb-6 inline-flex items-center gap-2 rounded-full bg-teal-900/30 px-4 py-1.5 text-xs font-semibold tracking-wider text-teal-300 backdrop-blur-md border border-teal-500/20 shadow-lg cursor-default uppercase">
+                            <Sparkles className="h-3 w-3 text-teal-200" />
+                            <span>The Future of Legal Tech</span>
                         </motion.div>
-                        
-                        {/* Headline */}
-                        <motion.h1 variants={fadeInUp} className="text-6xl font-extrabold tracking-tight text-white sm:text-7xl lg:text-8xl mb-8 leading-[0.95] drop-shadow-2xl">
-                            Order from <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-400 to-emerald-400 drop-shadow-[0_0_35px_rgba(45,212,191,0.4)]">
-                                Chaos.
+
+                        {/* Headline - Better line braking with max-w */}
+                        <motion.h1 variants={fadeInUp} className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl mb-6 leading-[1.1] drop-shadow-lg">
+                            Your firm's <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-emerald-200">
+                                single source of truth.
                             </span>
                         </motion.h1>
                         
-                        {/* Subtext - Balanced max-width */}
-                        <motion.p variants={fadeInUp} className="text-xl text-emerald-100/80 sm:text-2xl mb-12 leading-relaxed max-w-2xl font-light mx-auto">
-                            Replace scattered tools with a <span className="text-teal-300 font-semibold">unified intelligent platform</span>. 
-                            Automate workflows, protect client data, and leverage AI to drive growth.
+                        <motion.p variants={fadeInUp} className="text-lg text-emerald-100/70 mb-8 leading-relaxed max-w-md font-light">
+                            No more searching across scattered documents. Advyon gives you everything you need to manage your firm's compliance and workflows.
                         </motion.p>
                         
-                        {/* CTAs */}
-                        <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-6 relative z-20 mb-20">
+                        <motion.div variants={fadeInUp} className="flex flex-wrap gap-4 mb-12">
                             <Link to="/auth/signup">
-                                <Button size="xl" className="group h-16 px-12 text-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white shadow-[0_0_40px_rgba(20,184,166,0.4)] hover:shadow-[0_0_60px_rgba(20,184,166,0.6)] transition-all duration-300 border border-teal-400/20 rounded-2xl relative overflow-hidden">
-                                     <span className="relative z-10 flex items-center gap-2">Start Free Trial <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></span>
-                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 translate-x-[-200%] group-hover:animate-shine" />
+                                <Button size="lg" className="h-14 px-8 text-lg bg-[#bbf7d0] text-teal-950 hover:bg-[#86efac] font-semibold border-0 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(187,247,208,0.3)]">
+                                     Get Started
                                 </Button>
                             </Link>
-                            <Link to="/features">
-                                <Button variant="outline" size="xl" className="h-16 px-12 text-xl border-white/10 text-white hover:bg-white/5 hover:border-white/30 backdrop-blur-sm transition-all duration-300 rounded-2xl">
-                                    How it Works
-                                </Button>
-                            </Link>
+                             <div className="flex items-center gap-6 px-4 border-l border-white/10 ml-2">
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-white">500+</div>
+                                    <div className="text-xs text-emerald-100/50 uppercase tracking-wider">Clients</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-white">100%</div>
+                                    <div className="text-xs text-emerald-100/50 uppercase tracking-wider">Secure</div>
+                                </div>
+                            </div>
                         </motion.div>
+                    </motion.div>
+
+                    {/* RIGHT COLUMN: Floating Glass UI (The "Hockroll" Composition) */}
+                    <div className="relative h-[600px] w-full hidden lg:block perspective-[1000px]">
                         
-                        {/* Trust Signals - Centered Row */}
-                        <motion.div variants={fadeInUp} className="flex flex-col items-center gap-4 opacity-70 hover:opacity-100 transition-opacity duration-500">
-                             <p className="text-xs font-bold tracking-[0.2em] text-emerald-100/40 uppercase">Trusted by 500+ Innovative Firms</p>
-                            <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-16 grayscale hover:grayscale-0 transition-all duration-500">
-                                <div className="text-xl font-bold font-serif text-white/50 flex items-center gap-2"><div className="h-5 w-5 bg-white/30 rounded-full" /> NexaLaw</div>
-                                <div className="text-xl font-bold font-sans text-white/50 flex items-center gap-2"><div className="h-5 w-5 bg-white/30 rounded-md" /> Vertex</div>
-                                <div className="text-xl font-bold font-mono text-white/50 flex items-center gap-2"><div className="h-5 w-5 bg-white/30 rounded-sm rotate-45" /> Curia</div>
-                                <div className="text-xl font-bold font-serif text-white/50 flex items-center gap-2"><div className="h-5 w-5 bg-white/30 rounded-tr-lg" /> JurisAI</div>
+                        {/* Main Glass Card: Document List - Moved UP slightly for better balance */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 50, rotateX: 5 }}
+                            animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            className="absolute top-[18%] left-[20%] -translate-x-1/2 -translate-y-1/2 w-[90%] bg-teal-950/40 backdrop-blur-xl border border-teal-500/30 rounded-3xl p-6 shadow-2xl z-20"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-white font-semibold flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                                    Active Documents
+                                </h3>
+                                <div className="bg-white/5 px-3 py-1 rounded-lg text-xs text-emerald-100/60 border border-white/5">
+                                    Filter by Status
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {[
+                                    { name: "Employee Handbook", type: "Policy", status: "active" },
+                                    { name: "Data Privacy Agreement", type: "Contract", status: "active" },
+                                    { name: "Q3 Compliance Report", type: "Report", status: "pending" },
+                                    { name: "Client Onboarding", type: "Workflow", status: "active" },
+                                    { name: "Ethics Charter 2024", type: "Policy", status: "active" },
+                                ].map((item, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl transition-colors group cursor-pointer border border-transparent hover:border-white/5">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${item.status === 'active' ? 'bg-teal-500/10 text-teal-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                                                <FileText className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm text-emerald-50 font-medium group-hover:text-white transition-colors">{item.name}</div>
+                                                <div className="text-xs text-emerald-100/40">{item.type}</div>
+                                            </div>
+                                        </div>
+                                         <div className={`h-2 w-2 rounded-full ${item.status === 'active' ? 'bg-teal-500' : 'bg-amber-500/50'} shadow-sm`} />
+                                    </div>
+                                ))}
                             </div>
                         </motion.div>
 
-                        {/* Floating "AI Active" element - Centered/Bottom or subtle side element? 
-                            Let's make it a subtle notification at the bottom right of the hero area 
-                            so it doesn't break symmetry too much but adds life. 
-                        */}
-                    </motion.div>
-                    
-                    {/* Floating Glass Card - Re-positioned to be less intrusive in centered layout */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1.2, duration: 0.8 }}
-                        className="absolute bottom-10 right-10 hidden xl:block bg-black/40 backdrop-blur-xl border border-teal-500/30 p-4 rounded-xl shadow-2xl w-64 z-10"
-                    >
-                         <div className="flex items-center gap-3 mb-2">
-                            <div className="h-8 w-8 rounded-full bg-teal-500/20 flex items-center justify-center animate-pulse">
-                                <Sparkles className="h-4 w-4 text-teal-400" />
-                            </div>
+                        {/* Floating Widget 1: Expert Profile - Adjusted Position (Higher) */}
+                        <motion.div
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                            className="absolute bottom-[-4%] left-10 bg-[#0c2e2c]/80 backdrop-blur-xl border border-teal-500/20 rounded-2xl p-4 shadow-xl z-30 flex items-center gap-3"
+                        >
+                            <Avatar className="h-10 w-10 border border-teal-500/30">
+                                <AvatarImage src="https://github.com/shadcn.png" />
+                                <AvatarFallback>EA</AvatarFallback>
+                            </Avatar>
                             <div>
-                                <h4 className="text-sm font-bold text-white">System Active</h4>
-                                <p className="text-xs text-emerald-100/60">Monitoring Compliance</p>
+                                <div className="text-sm font-bold text-white">Ross Arnold</div>
+                                <div className="text-xs text-emerald-100/60">Legal AI Expert</div>
                             </div>
-                        </div>
-                         <div className="flex gap-1 mt-2">
-                            <div className="h-1 w-full bg-teal-500/50 rounded-full animate-[pulse_2s_infinite]" />
-                            <div className="h-1 w-full bg-teal-500/30 rounded-full animate-[pulse_2s_infinite_0.5s]" />
-                            <div className="h-1 w-full bg-teal-500/10 rounded-full animate-[pulse_2s_infinite_1s]" />
-                        </div>
-                    </motion.div>
+                        </motion.div>
+
+                         {/* Floating Widget 2: Stats - Adjusted Position (Closer) */}
+                         <motion.div
+                            animate={{ y: [0, -15, 0] }}
+                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                            className="absolute -top-3 -right-10 bg-[#e9f5f3] text-[#081c1b] backdrop-blur-xl border border-white/40 rounded-2xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-30 w-48"
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-xs font-bold uppercase tracking-wider text-teal-800/60">Policies</span>
+                                <BadgeCheck className="h-4 w-4 text-teal-600" />
+                            </div>
+                            <div className="text-3xl font-bold mb-1">79%</div>
+                            <div className="h-1.5 w-full bg-teal-200/50 rounded-full overflow-hidden">
+                                <div className="h-full bg-teal-600 w-[79%]" />
+                            </div>
+                            <div className="mt-2 flex gap-2 text-[10px] font-medium text-teal-800/70">
+                                <span className="flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-teal-600"/> 54 OK</span>
+                                <span className="flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-amber-500"/> 23 Attn</span>
+                            </div>
+                        </motion.div>
+
+                    </div>
+                </div>
             </div>
         </section>
 

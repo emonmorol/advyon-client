@@ -245,7 +245,7 @@ const LegalScene = () => {
 
             {/* OrbitControls: Stable "Rolling" around the Object */}
             <OrbitControls 
-                target={[3.5, 0, 0]} // CRITICAL: Focus on the AI Core
+                target={[0, 0, 0]} // CRITICAL: Focus on the Scene Center (screen center)
                 enableZoom={false} 
                 enablePan={false} 
                 enableDamping={true}
@@ -257,8 +257,8 @@ const LegalScene = () => {
                 maxPolarAngle={Math.PI / 1.5}
             />
 
-            {/* Centered AI Core with Legal Context */}
-            <group position={[3.5, 0, 0]}>
+            {/* AI Core positioned to the Right (matching UI column) */}
+            <group position={[2.5, 0, 0]}>
                 <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
                     <AICore />
                 </Float>
