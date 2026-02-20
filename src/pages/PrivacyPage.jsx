@@ -5,7 +5,7 @@ export default function PrivacyPage() {
     <LegalPageTemplate title="Privacy Policy" lastUpdated="February 20, 2026">
         <h3>1. Introduction</h3>
         <p>
-            Advyon ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our legal practice management platform.
+            Advyon (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our legal practice management platform.
         </p>
         
         <h3>2. Information We Collect</h3>
