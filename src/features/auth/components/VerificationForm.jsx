@@ -30,7 +30,7 @@ const VerificationForm = ({ onSubmit, isLoading }) => {
                     <Label htmlFor="barNumber">Bar Council Enrollment Number</Label>
                     <Input
                         id="barNumber"
-                        placeholder="e.g. D/1234/2023"
+                        placeholder="e.g. 2023/12345"
                         className="bg-background"
                         {...register("barNumber", { required: "Bar number is required" })}
                     />
@@ -40,17 +40,19 @@ const VerificationForm = ({ onSubmit, isLoading }) => {
                 </div>
 
                 <div className="space-y-2">
-                    <Label>State Bar Council</Label>
+                    <Label>Bar Council / Association</Label>
                     <Select onValueChange={(value) => setValue("barCouncil", value)}>
                         <SelectTrigger className="bg-background">
                             <SelectValue placeholder="Select your Bar Council" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="delhi">Bar Council of Delhi</SelectItem>
-                            <SelectItem value="maharashtra">Bar Council of Maharashtra & Goa</SelectItem>
-                            <SelectItem value="karnataka">Bar Council of Karnataka</SelectItem>
-                            <SelectItem value="tamilnadu">Bar Council of Tamil Nadu</SelectItem>
-                            <SelectItem value="westbengal">Bar Council of West Bengal</SelectItem>
+                            <SelectItem value="bangladesh_bar_council">Bangladesh Bar Council</SelectItem>
+                            <SelectItem value="supreme_court">Supreme Court Bar Association</SelectItem>
+                            <SelectItem value="dhaka">Dhaka Bar Association</SelectItem>
+                            <SelectItem value="chittagong">Chittagong District Bar Association</SelectItem>
+                            <SelectItem value="sylhet">Sylhet District Bar Association</SelectItem>
+                            <SelectItem value="rajshahi">Rajshahi Bar Association</SelectItem>
+                            <SelectItem value="khulna">Khulna Bar Association</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

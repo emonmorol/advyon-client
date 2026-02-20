@@ -10,7 +10,7 @@ export default function LandingNavbar() {
 
   const navLinks = [
     { name: "Features", href: "/#features" },
-    { name: "How it Works", href: "/#how-it-works" },
+    { name: "How it Works", href: "/how-to-use" },
     { name: "Pricing", href: "/#pricing" },
     { name: "About", href: "/about" },
     { name: "Careers", href: "/careers" },
