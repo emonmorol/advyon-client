@@ -59,24 +59,32 @@ const socialIconMap = {
 };
 
 const usePrefersReducedMotion = () => {
-  const [prefers, setPrefers] = useState(false);
+  const [prefers, setPrefers] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+
   useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return undefined;
+    }
+
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefers(media.matches);
     const handler = () => setPrefers(media.matches);
+
+    handler();
+
     if (media.addEventListener) {
       media.addEventListener('change', handler);
-    } else {
-      media.addListener(handler);
+      return () => media.removeEventListener('change', handler);
     }
-    return () => {
-      if (media.removeEventListener) {
-        media.removeEventListener('change', handler);
-      } else {
-        media.removeListener(handler);
-      }
-    };
+
+    media.addListener(handler);
+    return () => media.removeListener(handler);
   }, []);
+
   return prefers;
 };
 
@@ -84,11 +92,6 @@ export default function ContactPage() {
   const { shouldBoot, completeBoot } = useBootSequence();
   const [meta, setMeta] = useState(fallbackMeta);
   const [metaLoading, setMetaLoading] = useState(true);
-
-  if (shouldBoot) {
-    return <SystemBootLoader onComplete={completeBoot} />;
-  }
-
   const [formValues, setFormValues] = useState(defaultContactValues);
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -116,6 +119,10 @@ export default function ContactPage() {
       mounted = false;
     };
   }, []);
+
+  if (shouldBoot) {
+    return <SystemBootLoader onComplete={completeBoot} />;
+  }
 
   const topics = meta?.topics ?? fallbackMeta.topics;
   const urgencyLevels = meta?.urgencyLevels ?? fallbackMeta.urgencyLevels;

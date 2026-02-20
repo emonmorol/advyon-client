@@ -143,7 +143,7 @@ export default function AboutPage() {
                   </div>
                   <h3 className="text-xl font-bold text-white mb-1 group-hover:text-teal-300 transition-colors">{member.name}</h3>
                   <div className="text-sm font-medium text-teal-500 uppercase tracking-wider mb-4">{member.role}</div>
-                  <p className="text-emerald-100/60 text-sm italic">"{member.bio}"</p>
+                  <p className="text-emerald-100/60 text-sm italic">&ldquo;{member.bio}&rdquo;</p>
                 </GlassCard>
               </motion.div>
             ))}
