@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { contactFormSchema, defaultContactValues } from '@/features/landing/contactSchema';
 import { fetchContactMeta, submitContactRequest } from '@/services/public/contactService';
+import SystemBootLoader from '@/components/ui/SystemBootLoader';
+import { useBootSequence } from '@/hooks/useBootSequence';
 
 const fallbackMeta = {
   topics: [
@@ -26,9 +28,9 @@ const fallbackMeta = {
     { key: 'transactions', label: 'Transactions & M&A', description: 'Cross-border deals, financings' },
   ],
   urgencyLevels: [
-    { key: 'critical-24h', label: 'Critical · 24h', description: 'Court or regulator deadline' },
-    { key: 'high-72h', label: 'High · 72h', description: 'Strategic response within 3 days' },
-    { key: 'standard-week', label: 'Standard · 7d', description: 'Typical onboarding cadence' },
+    { key: 'critical-24h', label: 'Critical - 24h', description: 'Court or regulator deadline' },
+    { key: 'high-72h', label: 'High - 72h', description: 'Strategic response within 3 days' },
+    { key: 'standard-week', label: 'Standard - 7d', description: 'Typical onboarding cadence' },
   ],
   offices: [
     {
@@ -79,8 +81,14 @@ const usePrefersReducedMotion = () => {
 };
 
 export default function ContactPage() {
+  const { shouldBoot, completeBoot } = useBootSequence();
   const [meta, setMeta] = useState(fallbackMeta);
   const [metaLoading, setMetaLoading] = useState(true);
+
+  if (shouldBoot) {
+    return <SystemBootLoader onComplete={completeBoot} />;
+  }
+
   const [formValues, setFormValues] = useState(defaultContactValues);
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -227,7 +235,7 @@ export default function ContactPage() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-white">Start the conversation</h2>
-                <p className="text-sm text-white/60">Secure intake · No spam · Human response in minutes.</p>
+                <p className="text-sm text-white/60">Secure intake - No spam - Human response in minutes.</p>
               </div>
               <ArrowUpRight className="h-8 w-8 text-white/50" />
             </div>
@@ -304,7 +312,7 @@ export default function ContactPage() {
                   className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white placeholder:text-white/40"
                   value={formValues.message}
                   onChange={handleInputChange('message')}
-                  placeholder="Share context, deadlines, stakeholders…"
+                  placeholder="Share context, deadlines, stakeholders..."
                 />
                 {formErrors.message && <p className="mt-1 text-xs text-amber-200">{formErrors.message[0]}</p>}
               </div>
@@ -316,7 +324,7 @@ export default function ContactPage() {
             >
               {submitting ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" /> Sending securely…
+                  <Loader2 className="h-5 w-5 animate-spin" /> Sending securely...
                 </>
               ) : (
                 <>
