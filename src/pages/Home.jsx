@@ -66,14 +66,14 @@ export default function Home() {
 
                         {/* Headline */}
                         <motion.h1 variants={fadeInUp} className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl mb-6 leading-[1.1] drop-shadow-lg">
-                            Your firm's <br />
+                            Your firm&apos;s <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-emerald-200">
                                 single source of truth.
                             </span>
                         </motion.h1>
                         
                         <motion.p variants={fadeInUp} className="text-lg text-emerald-100/70 mb-8 leading-relaxed max-w-md font-light">
-                            No more searching across scattered documents. Advyon gives you everything you need to manage your firm's compliance and workflows.
+                            No more searching across scattered documents. Advyon gives you everything you need to manage your firm&apos;s compliance and workflows.
                         </motion.p>
                         
                         <motion.div variants={fadeInUp} className="flex flex-wrap gap-4 mb-12">
@@ -385,7 +385,7 @@ export default function Home() {
                         </div>
                         <h2 className="text-5xl font-bold mb-8">Trusted by Top Firms</h2>
                         <blockquote className="text-2xl font-light text-emerald-50/90 italic leading-relaxed mb-10 border-l-4 border-teal-500 pl-6">
-                            "Advyon didn't just organize our files; it fundamentally changed how we practice law. The AI insights are scary good."
+                            &ldquo;Advyon didn&apos;t just organize our files; it fundamentally changed how we practice law. The AI insights are scary good.&rdquo;
                         </blockquote>
                         <div className="flex items-center gap-5">
                             <Avatar className="h-16 w-16 border-2 border-teal-500/50">

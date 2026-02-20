@@ -58,9 +58,9 @@ export default function HowToUsePage() {
 
         <div className="relative max-w-xl mx-auto -mt-8 mb-20 z-20">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-500/50 h-5 w-5" />
-            <Input 
-                type="text" 
-                placeholder="Search guides (e.g., 'Upload contract', 'Reset password')" 
+                <Input 
+                    type="text" 
+                    placeholder="Search guides (e.g., &apos;Upload contract&apos;, &apos;Reset password&apos;)" 
                 className="pl-12 h-14 bg-white/5 border-teal-500/20 text-white placeholder:text-emerald-100/30 rounded-xl focus-visible:ring-teal-500/50 backdrop-blur-xl"
             />
         </div>
