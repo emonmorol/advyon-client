@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthApi } from '../hooks/useAuthApi';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useAuth, RedirectToSignIn } from '@clerk/clerk-react';
+import SystemBootLoader from '@/components/ui/SystemBootLoader';
 
 /**
  * DashboardLayout — WBS-1.3
@@ -106,7 +107,7 @@ const DashboardLayout = () => {
   }
 
   if (!isLoaded || (isSignedIn && isSyncing)) {
-    return <div className="flex h-screen items-center justify-center bg-[#1C4645] text-white">Loading Advyon...</div>;
+    return <SystemBootLoader minimal message="Synchronizing Workspace..." minDuration={0} />;
   }
 
   if (!isSignedIn) {

@@ -16,6 +16,14 @@ import TextReviewPage from '@/pages/dashboard/TextReviewPage';
 import ProfilePage from '@/pages/dashboard/ProfilePage';
 import AnalyticsPage from '@/pages/dashboard/AnalyticsPage';
 
+import AboutPage from '@/pages/AboutPage';
+import BlogPage from '@/pages/BlogPage';
+import TermsPage from '@/pages/TermsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
+import CookiePolicyPage from '@/pages/CookiePolicyPage';
+import SecurityPage from '@/pages/SecurityPage';
+import AccessibilityPage from '@/pages/AccessibilityPage';
+
 import AuthLayout from '@/layouts/AuthLayout';
 import AuthSuccessPage from '@/pages/auth/AuthSuccessPage';
 import RequireRole from '@/components/auth/RequireRole';
@@ -56,6 +64,15 @@ export const router = createBrowserRouter([
         path: 'contact',
         element: <ContactPage />,
       },
+      { path: 'about', element: <AboutPage /> },
+      { path: 'how-to-use', element: <HowToUsePage /> },
+      { path: 'careers', element: <CareersPage /> },
+      { path: 'blog', element: <BlogPage /> },
+      { path: 'terms', element: <TermsPage /> },
+      { path: 'privacy', element: <PrivacyPage /> },
+      { path: 'cookies', element: <CookiePolicyPage /> },
+      { path: 'security', element: <SecurityPage /> },
+      { path: 'accessibility', element: <AccessibilityPage /> },
     ],
   },
   {
