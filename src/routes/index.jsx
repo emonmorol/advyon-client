@@ -17,6 +17,8 @@ import ProfilePage from '@/pages/dashboard/ProfilePage';
 import AnalyticsPage from '@/pages/dashboard/AnalyticsPage';
 
 import AboutPage from '@/pages/AboutPage';
+import HowToUsePage from '@/pages/HowToUsePage';
+import CareersPage from '@/pages/CareersPage';
 import BlogPage from '@/pages/BlogPage';
 import TermsPage from '@/pages/TermsPage';
 import PrivacyPage from '@/pages/PrivacyPage';
