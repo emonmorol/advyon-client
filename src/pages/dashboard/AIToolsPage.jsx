@@ -533,9 +533,9 @@ const AIToolsPage = () => {
 
                         <Sparkles className="h-5 w-5 text-primary" />
                         <h1 className="text-lg font-semibold tracking-tight">Advyon AI Assistant</h1>
-                        <Badge variant="outline" className="ml-2 font-normal text-xs text-muted-foreground border-primary/20 bg-primary/5">
+                        {/* <Badge variant="outline" className="ml-2 font-normal text-xs text-muted-foreground border-primary/20 bg-primary/5">
                             Beta
-                        </Badge>
+                        </Badge> */}
                     </div>
                 </header>
 
