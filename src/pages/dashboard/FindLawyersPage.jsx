@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLawyers } from '@/services/users/userService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +26,7 @@ import {
   Filter,
   Mail,
   Phone,
+  MessageSquare,
 } from 'lucide-react';
 
 const PRACTICE_AREAS = [
@@ -69,6 +71,7 @@ function SkeletonCard() {
 }
 
 export default function FindLawyersPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [practiceArea, setPracticeArea] = useState('All');
@@ -90,6 +93,22 @@ export default function FindLawyersPage() {
   const handlePracticeAreaChange = (value) => {
     setPracticeArea(value);
     setPage(1);
+  };
+
+  // Chat handler — creates or finds existing conversation, then navigates to it
+  const handleChat = async (lawyer) => {
+    try {
+      const { default: api } = await import('@/lib/api/api');
+      const { data } = await api.post('/chat/conversations', {
+        otherUserId: lawyer._id || lawyer.id,
+      });
+      const conversation = data?.data || data;
+      if (conversation?._id) {
+        navigate(`/dashboard/chat/${conversation._id}`);
+      }
+    } catch (err) {
+      console.error('Failed to start chat:', err);
+    }
   };
 
   const params = useMemo(() => ({
@@ -269,6 +288,15 @@ export default function FindLawyersPage() {
                   >
                     <Phone className="mr-1.5 h-3 w-3" />
                     Call
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs flex-1 border-border/50 hover:bg-[hsl(var(--amber-glow))] hover:text-white hover:border-[hsl(var(--amber-glow))] transition-colors"
+                    onClick={() => handleChat(lawyer)}
+                  >
+                    <MessageSquare className="mr-1.5 h-3 w-3" />
+                    Chat
                   </Button>
                 </div>
               </CardContent>
