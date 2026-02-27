@@ -42,6 +42,7 @@ import BillingPage from '@/pages/dashboard/BillingPage';
 import ComingSoonPage from '@/pages/ComingSoonPage';
 import AIToolsPage from '@/pages/dashboard/AIToolsPage';
 import ContactPage from '@/pages/ContactPage';
+import FindLawyersPage from '@/pages/dashboard/FindLawyersPage';
 
 export const router = createBrowserRouter([
   {
@@ -119,6 +120,7 @@ export const router = createBrowserRouter([
         )
       },
       { path: 'settings', element: <ComingSoonPage title="Settings" /> },
+      { path: 'find-lawyers', element: <FindLawyersPage /> },
       { path: 'legal-database', element: <ComingSoonPage title="Legal Database" /> },
       { path: 'ai-assistant', element: <RouteErrorBoundary routeName="AITools"><AIToolsPage /></RouteErrorBoundary> },
       {
