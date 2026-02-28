@@ -1,8 +1,7 @@
 import React from 'react';
-import { Edit2 } from 'lucide-react';
 import AvatarUploader from './AvatarUploader';
 
-const ProfileHeader = ({ user, onEdit, onAvatarUpdate }) => {
+const ProfileHeader = ({ user, onAvatarUpdate }) => {
   // Format role for display
   const formatRole = (role) => {
     if (!role) return 'User';
@@ -62,12 +61,7 @@ const ProfileHeader = ({ user, onEdit, onAvatarUpdate }) => {
           )}
         </div>
 
-        <div className="mt-4 sm:mt-0 mb-4 sm:mb-2 self-center sm:self-center">
-          <Edit2 
-            className="w-5 h-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
-            onClick={onEdit}
-          />
-        </div>
+
       </div>
     </div>
   );
