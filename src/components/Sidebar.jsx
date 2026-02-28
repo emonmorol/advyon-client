@@ -15,7 +15,8 @@ import {
   Calendar,
   CreditCard,
   ShieldCheck,
-  Scale
+  Scale,
+  MessageSquare
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -67,6 +68,12 @@ export const allSidebarItems = [
     href: "/dashboard/find-lawyers",
     icon: Scale,
     roles: ['client']
+  },
+  {
+    title: "Chat",
+    href: "/dashboard/chat",
+    icon: MessageSquare,
+    roles: ['client', 'lawyer']
   },
   {
     title: "Admin Panel",
