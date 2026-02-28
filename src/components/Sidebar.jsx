@@ -14,7 +14,8 @@ import {
   Loader2,
   Calendar,
   CreditCard,
-  ShieldCheck
+  ShieldCheck,
+  Scale
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -60,6 +61,12 @@ export const allSidebarItems = [
     href: "/dashboard/billing",
     icon: CreditCard,
     roles: ['lawyer', 'client', 'admin', 'judge']
+  },
+  {
+    title: "Find Lawyers",
+    href: "/dashboard/find-lawyers",
+    icon: Scale,
+    roles: ['client']
   },
   {
     title: "Admin Panel",
@@ -131,7 +138,8 @@ export function Sidebar({ className, isCollapsed, onMouseEnter, onMouseLeave }) 
     >
       <div className="flex-1 py-6 flex flex-col gap-2 overflow-hidden">
         {sidebarItems.map((item) => {
-          const isActive = location.pathname === item.href
+          const hrefPath = item.href.split('#')[0]
+          const isActive = location.pathname === hrefPath
           return (
             <Link
               key={item.href}
