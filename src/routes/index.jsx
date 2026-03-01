@@ -44,6 +44,7 @@ import AIToolsPage from '@/pages/dashboard/AIToolsPage';
 import ContactPage from '@/pages/ContactPage';
 import FindLawyersPage from '@/pages/dashboard/FindLawyersPage';
 import ChatPage from '@/pages/dashboard/ChatPage';
+import ArchivedCasesPage from '@/pages/dashboard/ArchivedCasesPage';
 
 export const router = createBrowserRouter([
   {
@@ -100,7 +101,7 @@ export const router = createBrowserRouter([
       { path: 'review/:docId', element: <RouteErrorBoundary routeName="TextReview"><TextReviewPage /></RouteErrorBoundary> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'cases/active', element: <ComingSoonPage title="Active Cases" /> },
-      { path: 'cases/archived', element: <ComingSoonPage title="Archived Cases" /> },
+      { path: 'cases/archived', element: <ArchivedCasesPage /> },
       { path: 'documents', element: <RouteErrorBoundary routeName="MyDocuments"><MyDocumentsPage /></RouteErrorBoundary> },
       { path: 'messages', element: <ComingSoonPage title="Messages" /> },
       { path: 'messages/:messageId', element: <ComingSoonPage title="Message Details" /> },
