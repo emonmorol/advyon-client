@@ -21,10 +21,28 @@ import {
   X,
   Grid,
   List,
+  Archive,
+  RefreshCw,
+  MoreVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAllDocuments } from '@/services/documents/documentService';
+import { useAllDocuments, archiveDocument, restoreDocument, deleteDocument } from '@/services/documents/documentService';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 // Category color mapping
 const categoryColors = {
@@ -71,13 +89,14 @@ const formatDate = (date) => {
 };
 
 // Document Card Component
-const DocumentCard = ({ document, onView, onDownload }) => {
+const DocumentCard = ({ document, onArchive, onRestore, onDelete }) => {
   const navigate = useNavigate();
   const category = document.aiAnalysis?.documentCategory || 'Uncategorized';
   const categoryStyle = categoryColors[category] || categoryColors.Uncategorized;
   const status = statusColors[document.processingStatus] || statusColors.pending;
   const StatusIcon = status.icon;
   const caseData = document.caseId;
+  const isArchived = document.status === 'archived';
 
   const handleView = () => {
     if (document.id) {
@@ -94,7 +113,13 @@ const DocumentCard = ({ document, onView, onDownload }) => {
       className="group relative bg-card border border-border/50 rounded-xl p-4 hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
     >
       {/* Status indicator */}
-      <div className="absolute top-3 right-3">
+      <div className="absolute top-3 right-3 flex items-center gap-2">
+        {isArchived && (
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border bg-yellow-500/10 text-yellow-500 border-yellow-500/30">
+            <Archive size={10} />
+            Archived
+          </span>
+        )}
         <div className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border', status.bg, status.text, status.border)}>
           <StatusIcon size={10} className={document.processingStatus === 'processing' ? 'animate-spin' : ''} />
           {document.processingStatus}
@@ -106,7 +131,7 @@ const DocumentCard = ({ document, onView, onDownload }) => {
         <div className="p-2 rounded-lg bg-accent/10 flex-shrink-0">
           <FileText size={20} className="text-accent" />
         </div>
-        <div className="min-w-0 flex-1 pr-16">
+        <div className="min-w-0 flex-1 pr-24">
           <h3 className="font-semibold text-foreground truncate" title={document.fileName}>
             {document.fileName}
           </h3>
@@ -175,6 +200,35 @@ const DocumentCard = ({ document, onView, onDownload }) => {
             Download
           </Button>
         )}
+
+        {/* Three-dot Action Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-secondary">
+              <MoreVertical size={14} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 z-50">
+            {isArchived ? (
+              <DropdownMenuItem onClick={() => onRestore(document)} className="cursor-pointer gap-2">
+                <RefreshCw size={14} />
+                <span>Unarchive</span>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => onArchive(document)} className="cursor-pointer gap-2">
+                <Archive size={14} />
+                <span>Archive</span>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onClick={() => onDelete(document)}
+              className="cursor-pointer text-destructive focus:bg-destructive focus:text-destructive-foreground gap-2"
+            >
+              <Trash2 size={14} />
+              <span>Delete</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </motion.div>
   );
@@ -200,11 +254,14 @@ const MyDocumentsPage = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState('active'); // 'active' | 'archived'
+  const [deleteTarget, setDeleteTarget] = useState(null); // document to delete
 
-  // Fetch documents
+  // Fetch documents filtered by tab status
   const { data, error, isLoading, mutate } = useAllDocuments({
     category: selectedCategory || undefined,
     processingStatus: selectedStatus || undefined,
+    status: activeTab,
   });
 
   const documents = data?.data?.documents || [];
@@ -226,14 +283,47 @@ const MyDocumentsPage = () => {
   // Get unique categories for filter
   const categories = Object.keys(categoryStats);
 
-  // Clear filters
-  const clearFilters = () => {
-    setSelectedCategory('');
-    setSelectedStatus('');
-    setSearchQuery('');
+  const hasActiveFilters = selectedCategory || selectedStatus || searchQuery;
+
+  const handleArchive = async (document) => {
+    try {
+      await archiveDocument(document.id);
+      toast.success('Document archived successfully');
+      mutate();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to archive document');
+    }
   };
 
-  const hasActiveFilters = selectedCategory || selectedStatus || searchQuery;
+  const handleRestore = async (document) => {
+    try {
+      await restoreDocument(document.id);
+      toast.success('Document unarchived successfully');
+      mutate();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to unarchive document');
+    }
+  };
+
+  const handleDeleteClick = (document) => {
+    setDeleteTarget(document);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      const caseId = deleteTarget.caseId?.id || deleteTarget.caseId;
+      await deleteDocument(caseId, deleteTarget.id);
+      toast.success('Document deleted successfully');
+      setDeleteTarget(null);
+      mutate();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete document');
+    }
+  };
 
   return (
     <div className="min-h-screen p-6 bg-background">
@@ -264,6 +354,38 @@ const MyDocumentsPage = () => {
             </Button>
           </div>
         </div>
+      </motion.div>
+
+      {/* Active / Archived Tab Switcher */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex gap-2 mb-6 border-b border-border/50"
+      >
+        <button
+          onClick={() => setActiveTab('active')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'active'
+              ? 'border-accent text-accent'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <FileText size={14} className="inline mr-1.5" />
+          Active
+        </button>
+        <button
+          onClick={() => setActiveTab('archived')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'archived'
+              ? 'border-accent text-accent'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Archive size={14} className="inline mr-1.5" />
+          Archived
+        </button>
       </motion.div>
 
       {/* Stats Row */}
@@ -400,12 +522,20 @@ const MyDocumentsPage = () => {
           animate={{ opacity: 1 }}
           className="flex flex-col items-center justify-center py-20 bg-card border border-border/50 rounded-xl"
         >
-          <FolderOpen className="w-16 h-16 text-muted-foreground/30 mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">No documents found</h3>
+          {activeTab === 'archived' ? (
+            <Archive className="w-16 h-16 text-muted-foreground/30 mb-4" />
+          ) : (
+            <FolderOpen className="w-16 h-16 text-muted-foreground/30 mb-4" />
+          )}
+          <h3 className="text-lg font-semibold text-foreground mb-1">
+            {hasActiveFilters ? 'No documents found' : activeTab === 'archived' ? 'No archived documents' : 'No documents yet'}
+          </h3>
           <p className="text-muted-foreground text-sm text-center max-w-md">
             {hasActiveFilters
               ? 'No documents match your current filters. Try adjusting your search or filters.'
-              : 'You haven\'t uploaded any documents yet. Upload documents via your case workspace.'}
+              : activeTab === 'archived'
+              ? 'You have no archived documents. Archive documents from the Active tab.'
+              : "You haven't uploaded any documents yet. Upload documents via your case workspace."}
           </p>
           {hasActiveFilters && (
             <Button onClick={clearFilters} className="mt-4">
@@ -426,7 +556,13 @@ const MyDocumentsPage = () => {
         >
           <AnimatePresence mode="popLayout">
             {filteredDocuments.map((doc) => (
-              <DocumentCard key={doc.id || doc._id} document={doc} />
+              <DocumentCard
+                key={doc.id || doc._id}
+                document={doc}
+                onArchive={handleArchive}
+                onRestore={handleRestore}
+                onDelete={handleDeleteClick}
+              />
             ))}
           </AnimatePresence>
         </motion.div>
@@ -442,6 +578,34 @@ const MyDocumentsPage = () => {
           Showing {filteredDocuments.length} of {total} documents
         </motion.p>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Document</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{deleteTarget?.fileName}</strong>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 sm:justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              className="px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md text-sm font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmDelete}
+              className="px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md text-sm font-medium transition-colors"
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
