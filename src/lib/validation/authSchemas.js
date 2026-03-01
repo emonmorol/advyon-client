@@ -58,12 +58,10 @@ const lawyerProfileSchema = z.object({
         .number({ invalid_type_error: 'Must be a number' })
         .int()
         .min(0, 'Cannot be negative')
-        .max(60, 'Value too large')
-        .optional(),
+        .max(60, 'Value too large'),
     primaryPracticeArea: z
         .string()
-        .min(1, 'Practice area is required')
-        .optional(),
+        .min(1, 'Practice area is required'),
 });
 
 // ─── Judge Profile (onboarding) ─────────────────────────────────────

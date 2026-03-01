@@ -110,11 +110,11 @@ export default function OnboardingFlow() {
                     barCouncilName:
                         finalRole === 'lawyer' ? profile.barCouncilName || undefined : undefined,
                     yearsOfExperience:
-                        finalRole === 'lawyer' && profile.yearsOfExperience
-                            ? Number(profile.yearsOfExperience) // Ensure number
+                        finalRole === 'lawyer'
+                            ? Number(profile.yearsOfExperience || 0) // Ensure number
                             : undefined,
                     primaryPracticeArea:
-                        finalRole === 'lawyer' ? profile.primaryPracticeArea || undefined : undefined,
+                        finalRole === 'lawyer' ? profile.primaryPracticeArea || 'Corporate Law' : undefined,
                 },
             };
 
