@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+// Regex to reject emoji characters in name fields
+const noEmoji = /^[^\p{Emoji_Presentation}\p{Extended_Pictographic}]*$/u;
+
+// Regex for valid phone number characters (digits, +, -, spaces, parentheses)
+const validPhone = /^[\d\s+\-()]*$/;
+
 /**
  * WBS-1.4 — Shared Zod schemas for auth and onboarding forms.
  * These mirror server-side AuthValidation schemas to ensure parity.
@@ -22,11 +28,13 @@ const clientProfileSchema = z.object({
     fullName: z
         .string()
         .min(2, 'Full name must be at least 2 characters')
-        .max(100, 'Full name is too long'),
+        .max(100, 'Full name is too long')
+        .regex(noEmoji, 'Name cannot contain emoji'),
     phone: z
         .string()
         .min(6, 'Phone number is too short')
         .max(20, 'Phone number is too long')
+        .regex(validPhone, 'Phone number can only contain digits, +, -, spaces, and parentheses')
         .optional(),
     address: z
         .string()
@@ -85,10 +93,16 @@ export const profileUpdateSchema = z.object({
         .string()
         .min(2, 'Name must be at least 2 characters')
         .max(100, 'Name is too long')
+        .regex(noEmoji, 'Name cannot contain emoji')
         .optional(),
     displayName: z
         .string()
         .max(50, 'Display name is too long')
+        .regex(noEmoji, 'Display name cannot contain emoji')
+        .optional(),
+    phone: z
+        .string()
+        .regex(validPhone, 'Phone number can only contain digits, +, -, spaces, and parentheses')
         .optional(),
     preferredLanguage: z
         .enum(['en', 'bn'], { errorMap: () => ({ message: 'Select a valid language' }) })
