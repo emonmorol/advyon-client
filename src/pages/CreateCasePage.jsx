@@ -26,9 +26,14 @@ const CreateCasePage = () => {
         e.preventDefault();
         setError(null);
         try {
-            await createCase(formData);
+            // Remove empty caseNumber to allow auto-generation on backend
+            const payload = {
+                ...formData,
+                caseNumber: formData.caseNumber.trim() || undefined
+            };
+            const newCase = await createCase(payload);
             toast.success("Case workspace created successfully", {
-                description: `Matter ${formData.caseNumber} has been initialized.`
+                description: `Matter ${newCase.caseNumber} has been initialized.`
             });
             navigate('/dashboard/workspace');
         } catch (err) {
@@ -146,8 +151,8 @@ const CreateCasePage = () => {
                                             value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
                                     </div>
                                     <div className="group space-y-1.5">
-                                        <label className={labelClass}>Case Number <span className="text-destructive">*</span></label>
-                                        <input type="text" required placeholder="e.g. CR-2024-001" className={`${inputClass} font-mono`}
+                                        <label className={labelClass}>Case Number <span className="text-muted-foreground">(optional)</span></label>
+                                        <input type="text" placeholder="Leave blank for auto-generation (ADV-2024-XXXXXX)" className={`${inputClass} font-mono`}
                                             value={formData.caseNumber} onChange={(e) => setFormData({ ...formData, caseNumber: e.target.value })} />
                                     </div>
                                 </div>
@@ -281,7 +286,7 @@ const CreateCasePage = () => {
                                     {formData.title || 'New Matter'}
                                 </div>
                                 <p className="text-teal-100/70 text-xs font-mono truncate">
-                                    REF: {formData.caseNumber || 'PENDING...'}
+                                    REF: {formData.caseNumber || 'AUTO-GENERATED'}
                                 </p>
                                 <div className="mt-3 flex items-center gap-1.5 flex-wrap">
                                     <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/10 text-teal-100/90 border border-white/10">
