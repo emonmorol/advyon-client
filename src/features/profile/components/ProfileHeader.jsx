@@ -1,5 +1,6 @@
 import React from 'react';
 import AvatarUploader from './AvatarUploader';
+import { ShieldCheck } from 'lucide-react';
 
 const ProfileHeader = ({ user, onAvatarUpdate }) => {
   // Format role for display
@@ -43,6 +44,12 @@ const ProfileHeader = ({ user, onAvatarUpdate }) => {
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
               {formatRole(user.role)}
             </span>
+            {user.role === 'lawyer' && user.verificationStatus === 'verified' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                <ShieldCheck className="w-3 h-3" />
+                Verified
+              </span>
+            )}
             {user.status && (
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(user.status)}`}>
                 {user.status === 'in-progress' ? 'Pending' : user.status.charAt(0).toUpperCase() + user.status.slice(1)}

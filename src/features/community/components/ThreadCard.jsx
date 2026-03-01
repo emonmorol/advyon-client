@@ -84,7 +84,12 @@ const ThreadCard = ({ thread }) => {
                                 <AvatarImage src={authorAvatar} />
                                 <AvatarFallback>{authorName[0]?.toUpperCase() || 'U'}</AvatarFallback>
                             </Avatar>
-                            <span className="font-medium text-foreground">{authorName}</span>
+                            <span className="font-medium text-foreground flex items-center gap-1">
+                                {authorName}
+                                {authorRole === 'lawyer' && authorVerificationStatus === 'verified' && (
+                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                                )}
+                            </span>
                             <span>•</span>
                             <span className="capitalize">{authorRole}</span>
                             <span>•</span>

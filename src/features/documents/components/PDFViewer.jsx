@@ -196,6 +196,11 @@ const PDFViewer = ({
                 width: zoom !== 1 ? `${100 / zoom}%` : '100%',
               }}
               onLoad={() => setIsLoading(false)}
+              onError={(e) => {
+                console.error('PDF iframe error:', e);
+                setError('Failed to load PDF. The link may have expired. Please try refreshing the page or download the file.');
+              }}
+              sandbox="allow-scripts allow-same-origin allow-forms"
             />
           )}
 
