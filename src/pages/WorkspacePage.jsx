@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardView, WorkspaceView } from '../features/workspace';
-import { Navbar } from '@/components/Navbar';
-import { Sidebar } from '@/components/Sidebar';
-import { motion } from 'framer-motion';
 import { useCasesStore } from '@/store/cases';
 import { useParams } from 'react-router-dom';
 
@@ -11,7 +8,6 @@ const WorkspacePage = () => {
     const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'workspace'
     const [activeCase, setActiveCase] = useState(null);
     const [searchTerm, setSearchTerm] = useState(''); // Global search state
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
     const { cases, fetchCases } = useCasesStore();
 
@@ -36,33 +32,17 @@ const WorkspacePage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col p-0">
-
-            <div className="flex flex-1 relative p-0">
-                {/* Animated Placeholder for the fixed sidebar width */}
-
-
-                <Sidebar
-                    className="hidden md:flex bg-primary"
-                    isCollapsed={isSidebarCollapsed}
-                    onMouseEnter={() => setIsSidebarCollapsed(false)}
-                    onMouseLeave={() => setIsSidebarCollapsed(true)}
+        <div className="h-full w-full flex flex-col bg-background overflow-hidden relative">
+            {effectiveCurrentView === 'dashboard' ? (
+                <DashboardView onSelectCase={handleCaseSelect} searchTerm={searchTerm} />
+            ) : (
+                <WorkspaceView
+                    activeCase={effectiveActiveCase}
+                    onSwitchCase={handleCaseSelect}
+                    onBack={() => setCurrentView('dashboard')}
+                    searchTerm={searchTerm}
                 />
-
-                {/* Workspace Content */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    {effectiveCurrentView === 'dashboard' ? (
-                        <DashboardView onSelectCase={handleCaseSelect} searchTerm={searchTerm} />
-                    ) : (
-                        <WorkspaceView
-                            activeCase={effectiveActiveCase}
-                            onSwitchCase={handleCaseSelect}
-                            onBack={() => setCurrentView('dashboard')}
-                            searchTerm={searchTerm}
-                        />
-                    )}
-                </div>
-            </div>
+            )}
         </div>
     );
 };
