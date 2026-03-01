@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Clock, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Clock, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,6 +29,7 @@ const ThreadCard = ({ thread }) => {
     const authorName = thread.author?.fullName || thread.author?.name || 'Anonymous';
     const authorAvatar = thread.author?.avatarUrl || thread.author?.avatar || '';
     const authorRole = thread.author?.role || 'Member';
+    const authorVerificationStatus = thread.author?.verificationStatus || thread.author?.isVerified || null;
     const postedAt = thread.postedAt || formatTime(thread.createdAt);
     const preview = thread.preview || (thread.content?.substring(0, 200) + (thread.content?.length > 200 ? '...' : ''));
     const repliesCount = thread.replies ?? thread.repliesCount ?? 0;

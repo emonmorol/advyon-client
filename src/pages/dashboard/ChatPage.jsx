@@ -101,8 +101,11 @@ function ConversationItem({ conversation, currentUserId, isActive, onClick, isOn
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-foreground truncate">
+          <h4 className="text-sm font-semibold text-foreground truncate flex items-center gap-1">
             {otherUser?.fullName || otherUser?.displayName || 'Unknown'}
+            {otherUser?.role === 'lawyer' && otherUser?.verificationStatus === 'verified' && (
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+            )}
           </h4>
           <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
             {formatTime(conversation.lastMessageAt)}
@@ -428,12 +431,17 @@ export default function ChatPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-1">
                     {otherUser?.fullName || otherUser?.displayName || 'Unknown'}
+                    {otherUser?.role === 'lawyer' && otherUser?.verificationStatus === 'verified' && (
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                    )}
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     {currentTyping.length > 0 ? (
                       <span className="text-[hsl(var(--teal-accent))] animate-pulse">Typing...</span>
+                    ) : otherUser?.role === 'lawyer' && otherUser?.verificationStatus === 'verified' ? (
+                      <span className="text-emerald-600 dark:text-emerald-400">Verified Lawyer</span>
                     ) : otherUser?.role ? (
                       otherUser.role.charAt(0).toUpperCase() + otherUser.role.slice(1)
                     ) : (
