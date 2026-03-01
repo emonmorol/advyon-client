@@ -57,6 +57,7 @@ const PDFViewer = ({
   const [error, setError] = useState(null);
   const [resolvedUrl, setResolvedUrl] = useState(null);
   const [largeFileAccepted, setLargeFileAccepted] = useState(false);
+  const [useGoogleViewer, setUseGoogleViewer] = useState(false);
 
   // Large file gate
   const isLargeFile = fileSize && fileSize > LARGE_FILE_THRESHOLD;
@@ -65,29 +66,23 @@ const PDFViewer = ({
     setIsLoading(true);
     setError(null);
 
-    const upgradeToHttps = (url) => {
-        if (typeof url === 'string') {
-            return url.replace(/^http:\/\//i, 'https://');
-        }
-        return url;
-    };
-
     try {
       if (fileUrl) {
-        setResolvedUrl(upgradeToHttps(fileUrl));
+        setResolvedUrl(fileUrl);
         setIsLoading(false);
         return;
       }
 
       // Fetch content URL from API if documentId provided
       if (documentId) {
-        const response = await api.get(`/documents/${documentId}/content`);
-        const url = response.data?.data?.url || response.data?.url;
-        if (url) {
-          setResolvedUrl(upgradeToHttps(url));
-        } else {
-          throw new Error('No content URL returned');
-        }
+        // Get the auth token from the API instance
+        const token = await api.defaults.headers?.Authorization;
+        
+        // Use the /view endpoint for inline viewing (proxies through backend)
+        // This solves Cloudinary's Content-Disposition: attachment issue
+        // Include token as query param since browsers don't send headers for iframe/object requests
+        const viewUrl = `${api.defaults.baseURL}/documents/${documentId}/view${token ? `?token=${encodeURIComponent(token.replace('Bearer ', ''))}` : ''}`;
+        setResolvedUrl(viewUrl);
       }
     } catch (err) {
       setError(err?.response?.data?.message || err.message || 'Failed to load document');
@@ -175,6 +170,19 @@ const PDFViewer = ({
                   (fileType && fileType.startsWith('image/'));
   const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(fileExt);
 
+  // Construct proper URL with auth token for the view endpoint
+  const getViewUrl = () => {
+    if (!resolvedUrl) return null;
+    
+    // If it's already a full URL (not our API endpoint), use as-is
+    if (resolvedUrl.startsWith('http')) {
+      return resolvedUrl;
+    }
+    
+    // Otherwise, it's a relative URL that needs the base URL
+    return resolvedUrl;
+  };
+
   // ─── Document render ─────────────────────────────────────────────────
   return (
     <div
@@ -185,23 +193,60 @@ const PDFViewer = ({
         <div className="flex flex-col flex-1 min-h-0 w-full h-full">
           {/* PDF Documents */}
           {isPdf && (
-            <iframe
-              src={`${resolvedUrl}#page=${currentPage}&toolbar=1&navpanes=1`}
-              className="w-full flex-1 border-0"
-              title={fileName || "PDF Document"}
-              style={{
-                minHeight: '600px',
-                transform: `scale(${zoom})`,
-                transformOrigin: 'top left',
-                width: zoom !== 1 ? `${100 / zoom}%` : '100%',
-              }}
-              onLoad={() => setIsLoading(false)}
-              onError={(e) => {
-                console.error('PDF iframe error:', e);
-                setError('Failed to load PDF. The link may have expired. Please try refreshing the page or download the file.');
-              }}
-              sandbox="allow-scripts allow-same-origin allow-forms"
-            />
+            <>
+              {useGoogleViewer ? (
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
+                  className="w-full h-full border-0"
+                  title={fileName || "PDF Document"}
+                  onLoad={() => setIsLoading(false)}
+                />
+              ) : (
+                <object
+                  data={resolvedUrl}
+                  type="application/pdf"
+                  className="w-full flex-1 border-0"
+                  style={{
+                    minHeight: '600px',
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'top left',
+                    width: zoom !== 1 ? `${100 / zoom}%` : '100%',
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center h-full gap-4 p-6 text-center bg-background">
+                    <FileText className="h-16 w-16 text-muted-foreground" />
+                    <p className="font-medium text-foreground">Unable to display PDF inline</p>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Your browser cannot display this PDF directly. Try one of the options below.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                      {onDownload && (
+                        <button
+                          onClick={onDownload}
+                          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm flex items-center gap-2"
+                        >
+                          <Download className="w-4 h-4" /> Download
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setUseGoogleViewer(true)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                      >
+                        Try Google Viewer
+                      </button>
+                      <a
+                        href={resolvedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition text-sm"
+                      >
+                        Open in New Tab
+                      </a>
+                    </div>
+                  </div>
+                </object>
+              )}
+            </>
           )}
 
           {/* Image Files */}
