@@ -19,6 +19,13 @@ import { motion } from "framer-motion"
 import { useClerk } from "@clerk/clerk-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { AIAssistantToggle, useAIAssistant } from "@/components"
+import { useAuthStore } from "@/store/useAuthStore"
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion"
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -71,6 +78,9 @@ const languages = [
 export function Navbar() {
   const isMobile = useIsMobile()
   const { signOut, user } = useClerk()
+  const { user: authUser } = useAuthStore()
+  const userRole = authUser?.role || 'client'
+  const sidebarItems = allSidebarItems.filter(item => item.roles.includes(userRole))
   const [selectedLanguage, setSelectedLanguage] = React.useState("en")
   const { isOpen, toggleAI } = useAIAssistant()
   const location = useLocation()
@@ -199,21 +209,59 @@ export function Navbar() {
                   <Link to="/dashboard" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <LayoutDashboard className="w-4 h-4" /> Dashboard
                   </Link>
-                  <Link to="/cases" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
-                    <FileText className="w-4 h-4" /> Cases
-                  </Link>
-                   <Link to="/dashboard/community" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
-                    <Users className="w-4 h-4" /> Community
-                  </Link>
-                   <Link to="/dashboard/legal-database" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="cases" className="border-none">
+                      <AccordionTrigger className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-accent/20 text-sm hover:no-underline font-normal text-white">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Cases
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ul className="flex flex-col gap-1 pl-8 pt-1">
+                          {caseManagement.map((item) => (
+                            <li key={item.title}>
+                              <Link to={item.href} className="text-sm text-muted-foreground hover:text-white py-1.5 block">
+                                {item.title}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="community" className="border-none">
+                      <AccordionTrigger className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-accent/20 text-sm hover:no-underline font-normal text-white">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4" /> Community
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ul className="flex flex-col gap-1 pl-8 pt-1">
+                          {communityFeatures.map((item) => (
+                            <li key={item.title}>
+                              <Link to={item.href} className="text-sm text-muted-foreground hover:text-white py-1.5 block">
+                                {item.title}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+
+                  <Link to="/dashboard/legal" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
                     <Scale className="w-4 h-4" /> Legal DB
+                  </Link>
+                  <Link to="/dashboard/ai-assistant" className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent/20 text-sm">
+                    <Sparkles className="w-4 h-4 text-accent-foreground" /> AI Tools
                   </Link>
                 </div>
 
                 {isDashboard && (
                   <div className="flex flex-col gap-2">
-                    <h3 className="text-sm font-medium text-muted-foreground px-2">Dashboard</h3>
-                    {allSidebarItems.map((item) => (
+                    <h3 className="text-sm font-medium text-muted-foreground px-2">Dashboard Tools</h3>
+                    {sidebarItems.map((item) => (
                       <Link
                         key={item.href}
                         to={item.href}
