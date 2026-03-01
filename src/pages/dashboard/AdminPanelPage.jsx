@@ -5,6 +5,7 @@
  */
 import { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import api from '@/lib/api/api';
 import {
   useAdminUsers,
   useBulkUpdateUsers,
@@ -13,11 +14,14 @@ import {
   useUpdateSystemSettings,
   useAdminAnalytics,
   useAuditLogs,
+  usePendingVerifications,
 } from '@/services/admin/adminService';
 import {
   Users, Shield, BarChart3, Settings, FileText, Trash2, Ban,
   CheckCircle, ChevronLeft, ChevronRight, Search, RefreshCw,
+  BadgeCheck, XCircle, Clock, ExternalLink,
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 // ─── Users Tab ───────────────────────────────────────────────────
 function UsersTab() {
@@ -362,6 +366,145 @@ function AuditLogsTab() {
   );
 }
 
+// ─── Verifications Tab ───────────────────────────────────────────
+function VerificationsTab() {
+  const [page, setPage] = useState(1);
+  const { data, isLoading, mutate } = usePendingVerifications({ page, limit: 20 });
+  const records = data?.data || [];
+
+  // Rejection modal state
+  const [rejectModal, setRejectModal] = useState(null); // { lawyerId, name }
+  const [rejectNotes, setRejectNotes] = useState('');
+  const [processing, setProcessing] = useState(null);
+
+  const handleReview = async (lawyerId, status, notes = '') => {
+    setProcessing(lawyerId);
+    try {
+      await api.patch(`/admin/verifications/${lawyerId}`, { status, notes });
+      toast.success(`Lawyer verification ${status} successfully.`);
+      mutate();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to update verification status.');
+    } finally {
+      setProcessing(null);
+      setRejectModal(null);
+      setRejectNotes('');
+    }
+  };
+
+  if (isLoading) return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-2 border-primary rounded-full border-t-transparent" /></div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Pending Lawyer Verifications</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Review and approve or reject submitted lawyer verification requests.</p>
+        </div>
+        <button onClick={() => mutate()} className="p-2 rounded-lg border hover:bg-muted transition">
+          <RefreshCw className="h-4 w-4" />
+        </button>
+      </div>
+
+      {records.length === 0 ? (
+        <div className="border rounded-xl p-10 text-center text-muted-foreground">
+          <BadgeCheck className="mx-auto h-10 w-10 mb-3 text-emerald-400" />
+          <p className="font-medium">All caught up!</p>
+          <p className="text-sm mt-1">No pending verification requests at this time.</p>
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-x-auto custom-scrollbar">
+          <table className="w-full text-sm min-w-[700px]">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="p-3 text-left">Lawyer</th>
+                <th className="p-3 text-left">Bar Reg. No.</th>
+                <th className="p-3 text-left">Bar Council</th>
+                <th className="p-3 text-left">Submitted</th>
+                <th className="p-3 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((rec) => {
+                const user = rec.userId;
+                const isProcessing = processing === rec.id;
+                return (
+                  <tr key={rec._id} className="border-t hover:bg-muted/30 transition">
+                    <td className="p-3">
+                      <div>
+                        <p className="font-medium">{user?.fullName || '—'}</p>
+                        <p className="text-xs text-muted-foreground">{user?.email || '—'}</p>
+                      </div>
+                    </td>
+                    <td className="p-3 font-mono text-xs">{rec.barRegistrationNumber || '—'}</td>
+                    <td className="p-3">{rec.barCouncilName || '—'}</td>
+                    <td className="p-3 text-muted-foreground">{rec.updatedAt ? new Date(rec.updatedAt).toLocaleDateString() : '—'}</td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={isProcessing}
+                          onClick={() => handleReview(rec.id, 'verified')}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs bg-emerald-500/10 text-emerald-600 rounded-md hover:bg-emerald-500/20 disabled:opacity-50 transition"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" /> Approve
+                        </button>
+                        <button
+                          disabled={isProcessing}
+                          onClick={() => setRejectModal({ lawyerId: rec.id, name: user?.fullName || 'this lawyer' })}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs bg-red-500/10 text-red-600 rounded-md hover:bg-red-500/20 disabled:opacity-50 transition"
+                        >
+                          <XCircle className="h-3.5 w-3.5" /> Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-50 hover:bg-muted transition">
+          <ChevronLeft className="h-4 w-4" /> Previous
+        </button>
+        <span className="text-sm text-muted-foreground">Page {page}</span>
+        <button onClick={() => setPage((p) => p + 1)} disabled={records.length < 20} className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-50 hover:bg-muted transition">
+          Next <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Rejection Modal */}
+      {rejectModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setRejectModal(null)}>
+          <div className="bg-background rounded-xl shadow-xl border p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold">Reject Verification</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">Rejecting <span className="font-medium text-foreground">{rejectModal.name}</span>. Optionally provide a reason.</p>
+            <textarea
+              className="w-full border rounded-lg p-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[100px] resize-none"
+              placeholder="Reason for rejection (optional)..."
+              value={rejectNotes}
+              onChange={(e) => setRejectNotes(e.target.value)}
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => { setRejectModal(null); setRejectNotes(''); }} className="px-4 py-2 text-sm border rounded-lg hover:bg-muted transition">Cancel</button>
+              <button
+                disabled={!!processing}
+                onClick={() => handleReview(rejectModal.lawyerId, 'rejected', rejectNotes)}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
+              >
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Shared Components ───────────────────────────────────────────
 function StatCard({ label, value, color = 'primary' }) {
   const colorMap = {
@@ -417,9 +560,12 @@ export default function AdminPanelPage() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="flex w-full overflow-x-auto custom-scrollbar md:grid md:grid-cols-5 max-w-full md:max-w-lg justify-start h-auto p-1">
+        <TabsList className="flex w-full overflow-x-auto custom-scrollbar md:grid md:grid-cols-6 max-w-full md:max-w-2xl justify-start h-auto p-1">
           <TabsTrigger value="users" className="flex shrink-0 items-center gap-1.5 text-xs px-4 py-2 md:px-2">
             <Users className="h-3.5 w-3.5" /> Users
+          </TabsTrigger>
+          <TabsTrigger value="verifications" className="flex shrink-0 items-center gap-1.5 text-xs px-4 py-2 md:px-2">
+            <BadgeCheck className="h-3.5 w-3.5" /> Verifications
           </TabsTrigger>
           <TabsTrigger value="cases" className="flex shrink-0 items-center gap-1.5 text-xs px-4 py-2 md:px-2">
             <FileText className="h-3.5 w-3.5" /> Cases
@@ -436,6 +582,7 @@ export default function AdminPanelPage() {
         </TabsList>
 
         <TabsContent value="users" className="mt-6"><UsersTab /></TabsContent>
+        <TabsContent value="verifications" className="mt-6"><VerificationsTab /></TabsContent>
         <TabsContent value="cases" className="mt-6"><CasesTab /></TabsContent>
         <TabsContent value="settings" className="mt-6"><SettingsTab /></TabsContent>
         <TabsContent value="analytics" className="mt-6"><AnalyticsTab /></TabsContent>

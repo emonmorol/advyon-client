@@ -23,6 +23,7 @@ import {
   Check,
   CheckCheck,
   Circle,
+  ShieldCheck,
 } from 'lucide-react';
 
 // ─── Helpers ───

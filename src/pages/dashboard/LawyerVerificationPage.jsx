@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, CheckCircle, AlertTriangle, HelpCircle, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,17 +10,31 @@ import {
 } from "@/components/ui/accordion";
 import VerificationForm from '@/features/auth/components/VerificationForm';
 import StatusTimeline from '@/components/ui/StatusTimeline';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useSubmitVerification } from '@/services/users/userService';
+import { toast } from 'react-hot-toast';
 
 const LawyerVerificationPage = () => {
-    const [status, setStatus] = useState('pending'); // pending, submitted, verified, rejected
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { user, fetchProfile } = useAuthStore();
+    const [status, setStatus] = useState(user?.verificationStatus || 'pending'); // pending, submitted, verified, rejected
+    const { trigger: submitVerification, isMutating: isSubmitting } = useSubmitVerification();
+
+    useEffect(() => {
+        if (user?.verificationStatus) {
+            setStatus(user.verificationStatus);
+        }
+    }, [user?.verificationStatus]);
 
     const handleSubmit = async (data) => {
-        setIsSubmitting(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setStatus('submitted');
-        setIsSubmitting(false);
+        try {
+            await submitVerification(data);
+            setStatus('submitted'); // Optimistic or mid-state, though backend sets to it 'pending'. We'll show submitted generic state.
+            await fetchProfile(); // Refresh real status from backend
+            toast.success("Verification request submitted successfully!");
+        } catch (error) {
+            console.error(error);
+            toast.error(error.message || "Failed to submit verification request");
+        }
     };
 
     const timelineSteps = [
@@ -77,12 +91,33 @@ const LawyerVerificationPage = () => {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {status === 'pending' ? (
-                                    <VerificationForm onSubmit={handleSubmit} isLoading={isSubmitting} />
-                                ) : (
+                                {status === 'pending' || status === 'rejected' ? (
+                                    <>
+                                        {status === 'rejected' && (
+                                            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md flex items-start gap-3">
+                                                <XCircle className="w-5 h-5 mt-0.5 shrink-0" />
+                                                <div>
+                                                    <p className="font-semibold">Verification Rejected</p>
+                                                    <p className="text-sm mt-1">{user?.verificationNotes || "Your previous submission was rejected. Please review your details and try again."}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <VerificationForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+                                    </>
+                                ) : status === 'verified' ? (
                                     <div className="py-12 text-center space-y-4">
                                         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
                                             <CheckCircle className="w-8 h-8" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-foreground">Verification Complete!</h3>
+                                        <p className="text-muted-foreground max-w-md mx-auto">
+                                            Congratulations! Your lawyer profile has been verified. You now get full access to Advyon's features.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="py-12 text-center space-y-4">
+                                        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+                                            <Clock className="w-8 h-8" />
                                         </div>
                                         <h3 className="text-xl font-semibold text-foreground">Submission Received!</h3>
                                         <p className="text-muted-foreground max-w-md mx-auto">
@@ -101,7 +136,7 @@ const LawyerVerificationPage = () => {
                             <CardContent>
                                 <StatusTimeline
                                     steps={timelineSteps}
-                                    currentStep={status === 'pending' ? 0 : 1}
+                                    currentStep={status === 'verified' ? 3 : status === 'pending' || status === 'rejected' ? 0 : 1}
                                 />
                             </CardContent>
                         </Card>
