@@ -34,3 +34,11 @@ export const useAdminAnalytics = () =>
 // ─── Audit Logs ──────────────────────────────────────────────────
 export const useAuditLogs = (params) =>
   useApiSWR(buildUrl('/admin/audit-logs', params));
+
+// ─── Lawyer Verifications ────────────────────────────────────────
+export const usePendingVerifications = (params) =>
+  useApiSWR(buildUrl('/admin/verifications', params));
+
+export const useReviewVerification = (lawyerId) =>
+  useApiMutation(`/admin/verifications/${lawyerId}`, 'patch');
+

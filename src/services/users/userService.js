@@ -24,3 +24,7 @@ export const useDeleteUser = (id) => useApiMutation(`${BASE}/${id}`, 'delete');
  * const { trigger: updateUser } = useUpdateUser(userId);
  * const { trigger: deleteUser } = useDeleteUser(userId);
  */
+
+export const useSubmitVerification = () =>
+  useApiMutation(`${BASE}/lawyer/verify-request`, 'post');
+
