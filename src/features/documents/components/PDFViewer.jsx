@@ -179,21 +179,21 @@ const PDFViewer = ({
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full overflow-auto bg-muted/30 rounded-lg custom-scrollbar"
+      className="relative flex flex-col flex-1 min-h-0 w-full overflow-auto bg-muted/30 rounded-lg custom-scrollbar"
     >
       {resolvedUrl ? (
-        <div className="w-full h-full">
+        <div className="flex flex-col flex-1 min-h-0 w-full h-full">
           {/* PDF Documents */}
           {isPdf && (
             <iframe
               src={`${resolvedUrl}#page=${currentPage}&toolbar=1&navpanes=1`}
-              className="w-full h-full border-0"
+              className="w-full flex-1 border-0"
               title={fileName || "PDF Document"}
               style={{
+                minHeight: '600px',
                 transform: `scale(${zoom})`,
                 transformOrigin: 'top left',
                 width: zoom !== 1 ? `${100 / zoom}%` : '100%',
-                height: zoom !== 1 ? `${100 / zoom}%` : '100%',
               }}
               onLoad={() => setIsLoading(false)}
             />

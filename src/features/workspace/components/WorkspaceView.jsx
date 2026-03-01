@@ -110,10 +110,6 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         (f.fileName || f.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Fetch Content for selected document
-    const { fetchDocumentContent } = useDocumentsStore();
-    const [previewUrl, setPreviewUrl] = useState(null);
-    const [loadingPreview, setLoadingPreview] = useState(false);
     const previewPanelRef = useRef(null);
 
     const caseIdentifier = activeCase?.id || activeCase?._id;
@@ -161,57 +157,15 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         }
     }, [selectedDocument]);
 
-    React.useEffect(() => {
-        let active = true;
-        const loadPreview = async () => {
-            // Robust ID check
-            const docId = selectedDocument?.id || selectedDocument?._id;
-            const caseId = activeCase?.id || activeCase?._id;
-
-            if (!docId) {
-                if (active) setPreviewUrl(null);
-                return;
-            }
-
-            setLoadingPreview(true);
-
-            try {
-                // STRATEGY 1: Check if we already have a direct URL in the document object
-                // We check multiple possible field names to be safe
-                const directUrl = selectedDocument.cloudinaryUrl ||
-                    selectedDocument.url ||
-                    selectedDocument.secure_url ||
-                    selectedDocument.fileUrl; // Potential other field name
-
-                if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('http')) {
-                    if (active) setPreviewUrl(directUrl);
-                } else {
-                    // STRATEGY 2: Fetch content URL from API
-                    const url = await fetchDocumentContent(docId);
-
-                    // Handle potential object response if fetchDocumentContent returns { data: ... }
-                    const finalUrl = (typeof url === 'object' && url?.cloudinaryUrl) ? url.cloudinaryUrl : url;
-
-                    if (active) {
-                        setPreviewUrl(finalUrl || null);
-                    }
-                }
-            } catch (err) {
-                console.error("[Preview] Failed to load preview url", err);
-                if (active) setPreviewUrl(null);
-            } finally {
-                if (active) setLoadingPreview(false);
-            }
-        };
-
-        if (selectedDocument) {
-            loadPreview();
-        } else {
-            setPreviewUrl(null);
-        }
-
-        return () => { active = false; };
-    }, [selectedDocument, activeCase, fetchDocumentContent]);
+    // Derive preview URL from the already-fetched document object.
+    // The list endpoint (/cases/:id/documents) already signs cloudinaryUrl.
+    // If cloudinaryUrl is missing, PDFViewer will fall back to calling /documents/:id/content.
+    const previewUrl = selectedDocument
+        ? (selectedDocument.cloudinaryUrl ||
+           selectedDocument.url ||
+           selectedDocument.secure_url ||
+           null)
+        : null;
 
 
     const handleFolderClick = (folder) => {
@@ -514,7 +468,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                         </div>
                                     </div>
 
-                                    <div className="flex-1 overflow-y-auto p-4 bg-secondary/10">
+                                    <div className="flex-1 flex flex-col min-h-0 bg-secondary/10">
                                         {/* WBS-5.3: Error boundary wrapping preview pane with PDFViewer component */}
                                         <DocumentErrorBoundary 
                                             context="WorkspaceView.Preview" 
@@ -522,23 +476,16 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                                             message="This document couldn't be rendered. Try clicking retry or open it in a new viewer."
                                             onDownloadFallback={() => navigate(`/dashboard/documents/${selectedDocument.id || selectedDocument._id}/download`)}
                                         >
-                                            <div className="bg-background border border-border rounded-xl shadow-sm overflow-hidden h-full flex flex-col">
-                                                {selectedDocument ? (
-                                                    <PDFViewer
-                                                        fileUrl={previewUrl}
-                                                        documentId={selectedDocument.id || selectedDocument._id}
-                                                        fileSize={selectedDocument.fileSize}
-                                                        fileName={selectedDocument.fileName || selectedDocument.name}
-                                                        fileType={selectedDocument.fileType}
-                                                        onDownload={() => navigate(`/dashboard/documents/${selectedDocument.id || selectedDocument._id}/download`)}
-                                                        onPageChange={(page) => console.log('[PDFViewer] Page changed:', page)}
-                                                    />
-                                                ) : (
-                                                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                                                        <p className="font-medium text-foreground">File Preview</p>
-                                                        <p className="text-xs opacity-50 mt-2">Select a document to preview</p>
-                                                    </div>
-                                                )}
+                                            <div className="flex-1 min-h-0 bg-background border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
+                                                <PDFViewer
+                                                    fileUrl={previewUrl}
+                                                    documentId={selectedDocument.id || selectedDocument._id}
+                                                    fileSize={selectedDocument.fileSize}
+                                                    fileName={selectedDocument.fileName || selectedDocument.name}
+                                                    fileType={selectedDocument.fileType}
+                                                    onDownload={() => navigate(`/dashboard/documents/${selectedDocument.id || selectedDocument._id}/download`)}
+                                                    onPageChange={(page) => console.log('[PDFViewer] Page changed:', page)}
+                                                />
                                             </div>
                                         </DocumentErrorBoundary>
 
