@@ -65,9 +65,16 @@ const PDFViewer = ({
     setIsLoading(true);
     setError(null);
 
+    const upgradeToHttps = (url) => {
+        if (typeof url === 'string') {
+            return url.replace(/^http:\/\//i, 'https://');
+        }
+        return url;
+    };
+
     try {
       if (fileUrl) {
-        setResolvedUrl(fileUrl);
+        setResolvedUrl(upgradeToHttps(fileUrl));
         setIsLoading(false);
         return;
       }
@@ -77,7 +84,7 @@ const PDFViewer = ({
         const response = await api.get(`/documents/${documentId}/content`);
         const url = response.data?.data?.url || response.data?.url;
         if (url) {
-          setResolvedUrl(url);
+          setResolvedUrl(upgradeToHttps(url));
         } else {
           throw new Error('No content URL returned');
         }

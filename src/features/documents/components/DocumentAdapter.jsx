@@ -234,10 +234,12 @@ export default function DocumentAdapter({
 }) {
     const mime = (fileType || '').toLowerCase();
 
-    if (isPDF(mime)) {
+    if (isPDF(mime) || mime.includes('pdf')) {
         return (
             <PDFViewer
                 fileUrl={fileUrl}
+                fileType={fileType}
+                fileName={fileName}
                 documentId={documentId}
                 fileSize={fileSize}
                 zoom={zoom}
