@@ -44,6 +44,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useCasesStore } from '@/store/cases';
 import api from '@/lib/api/api';
+import { getCaseSharedUsers } from '@/services/caseAccess/caseAccessService';
 
 const eventTypeConfig = {
   hearing: { icon: Gavel, label: 'Court Hearing', color: 'text-amber-500' },
@@ -82,6 +83,49 @@ const CreateEventPage = () => {
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleCaseSelect = async (val) => {
+        const selectedCase = cases.find(c => (c.id === val || c._id === val));
+        let newParticipants = [...formData.participants];
+
+        if (selectedCase) {
+            // Add lawyer (creator)
+            if (selectedCase.createdBy) {
+                const lawyerId = selectedCase.createdBy._id || selectedCase.createdBy.id || selectedCase.createdBy;
+                if (lawyerId && !newParticipants.includes(lawyerId.toString())) {
+                    newParticipants.push(lawyerId.toString());
+                }
+            }
+            // Add primary client
+            if (selectedCase.clientId) {
+                const clientId = selectedCase.clientId._id || selectedCase.clientId.id || selectedCase.clientId;
+                if (clientId && !newParticipants.includes(clientId.toString())) {
+                    newParticipants.push(clientId.toString());
+                }
+            }
+            
+            // Add all other stakeholders (shared access users)
+            try {
+                const sharedUsers = await getCaseSharedUsers(val);
+                if (sharedUsers && Array.isArray(sharedUsers)) {
+                    sharedUsers.forEach(user => {
+                        const id = user.userId?._id || user.userId?.id || user.userId || user.id || user._id;
+                        if (id && !newParticipants.includes(id.toString())) {
+                            newParticipants.push(id.toString());
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch shared users for case:", err);
+            }
+        }
+        
+        setFormData(prev => ({ 
+            ...prev, 
+            caseId: val,
+            participants: newParticipants
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -208,7 +252,7 @@ const CreateEventPage = () => {
                                         <Label>Link to Case <span className="text-red-500">*</span></Label>
                                         <Select 
                                             value={formData.caseId} 
-                                            onValueChange={(val) => handleInputChange('caseId', val)}
+                                            onValueChange={handleCaseSelect}
                                         >
                                             <SelectTrigger className={cn("h-10 bg-background/50", !formData.caseId && "border-amber-500/50")}>
                                                 <SelectValue placeholder="Select a case..." />
