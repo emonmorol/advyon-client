@@ -133,12 +133,12 @@ const DashboardLayout = () => {
           onMouseLeave={() => setIsSidebarCollapsed(true)}
         />
 
-        <main className="flex-1 pr-1 pb-3 h-[calc(100vh-4rem)] relative z-10 flex flex-col">
+        <main className="flex-1 min-w-0 pr-0 md:pr-1 pb-3 h-[calc(100vh-4rem)] relative z-10 flex flex-col">
           {/* Background Effects */}
           <div className="absolute inset-0 bg-primary -z-10 fixed"></div>
 
-          <div className={`bg-background rounded-2xl shadow-2xl flex-1 text-gray-800 ${
-            isWorkspaceRoute ? 'overflow-hidden p-0' : 'overflow-y-auto'
+          <div className={`bg-background rounded-none md:rounded-2xl shadow-2xl flex-1 text-gray-800 ${
+            isWorkspaceRoute ? 'overflow-hidden p-0' : 'overflow-x-hidden overflow-y-auto'
           }`}>
             <Outlet />
           </div>
