@@ -436,7 +436,7 @@ export default function OnboardingFlow() {
                                         <StepInput
                                             icon={Building}
                                             label="Bar Council Name"
-                                            placeholder="e.g. Bar Council of Delhi"
+                                            placeholder="e.g. Bar Council of Dhaka"
                                             value={profile.barCouncilName}
                                             onChange={(val) =>
                                                 updateProfile({ barCouncilName: val })
@@ -511,7 +511,7 @@ export default function OnboardingFlow() {
 
             {/* Footer Decoration */}
             <div className="absolute bottom-4 right-8 z-10 hidden lg:block">
-                <p className="text-[#B0C4C3]/60 text-xs">© 2025 Advyon Inc.</p>
+                <p className="text-[#B0C4C3]/60 text-xs">© 2026 Advyon Inc.</p>
             </div>
 
             <style>{`
