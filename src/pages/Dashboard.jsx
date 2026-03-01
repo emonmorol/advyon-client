@@ -418,7 +418,7 @@ const Dashboard = () => {
           <Card className={cardStyle}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-card-foreground">
-                <span>Client Requests</span>
+                <span>{isClient ? 'Recent Messages' : 'Client Requests'}</span>
                 {pendingCount > 0 && (
                   <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
                     {pendingCount} New
@@ -454,14 +454,14 @@ const Dashboard = () => {
                 ))
               ) : (
                 <div className="text-center py-6 text-muted-foreground text-sm">
-                  No pending requests
+                  {isClient ? 'No recent messages' : 'No pending requests'}
                 </div>
               )}
               <Button 
                 className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-primary"
-                onClick={() => navigate('/dashboard/messages')}
+                onClick={() => navigate('/dashboard/chat')}
               >
-                View All Requests
+                {isClient ? 'View All Messages' : 'View All Requests'}
               </Button>
             </CardContent>
           </Card>
