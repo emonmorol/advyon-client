@@ -11,6 +11,7 @@ import { useDocumentsStore } from '@/store/documents';
 import { useCasesStore } from '@/store/cases';
 import { SmartFileUploader } from '@/components/SmartFileUploader';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from "@/hooks/use-mobile";
 import DocumentErrorBoundary from '@/features/documents/components/DocumentErrorBoundary';
 import PDFViewer from '@/features/documents/components/PDFViewer';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -27,7 +28,13 @@ import {
 const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+    const isMobile = useIsMobile();
+    const [showLeftSidebar, setShowLeftSidebar] = useState(!isMobile);
+
+    React.useEffect(() => {
+        setShowLeftSidebar(!isMobile);
+    }, [isMobile]);
+
     const [isCaseSwitcherOpen, setIsCaseSwitcherOpen] = useState(false);
     const [breadcrumbs, setBreadcrumbs] = useState([activeCase.title]);
     const [expandedFolders, setExpandedFolders] = useState([]);
@@ -383,13 +390,13 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                         {canManageAccess && (
                             <button
                                 onClick={() => setIsAddClientOpen(true)}
-                                className="flex items-center gap-1.5 border border-accent/30 bg-background hover:bg-accent/10 text-muted-foreground hover:text-foreground px-3 py-1 rounded-md text-xs font-semibold transition-all"
+                                className="flex items-center gap-1.5 border border-accent/30 bg-background hover:bg-accent/10 text-muted-foreground hover:text-foreground px-2 md:px-3 py-1 rounded-md text-xs font-semibold transition-all"
                             >
                                 <UserPlus size={14} />
                                 <span className="hidden sm:inline">Add Client</span>
                             </button>
                         )}
-                        <button className="flex items-center gap-1.5 bg-accent hover:bg-accent/90 text-accent-foreground px-3 py-1 rounded-md text-xs font-semibold transition-all shadow-sm"><Plus size={14} /><span className="hidden sm:inline">Upload File</span></button>
+                        <button className="flex items-center gap-1.5 bg-accent hover:bg-accent/90 text-accent-foreground px-2 md:px-3 py-1 rounded-md text-xs font-semibold transition-all shadow-sm"><Plus size={14} /><span className="hidden sm:inline">Upload</span></button>
                     </div>
                 </div>
 
