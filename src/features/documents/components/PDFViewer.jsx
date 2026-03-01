@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Loader2, AlertTriangle, RefreshCw, Download } from 'lucide-react';
-import api from '@/lib/api/api';
 
 /**
  * WBS-5.3 — Production-ready PDF viewer with:
  *  - Animated skeleton loading state
  *  - Large-file warning gate (> 25 MB)
  *  - Error boundary-safe rendering
- *  - iframe-based display with zoom
+ *  - Backend proxy for inline viewing
  */
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 const LARGE_FILE_THRESHOLD = 25 * 1024 * 1024; // 25 MB
 
 // ─── Loading skeleton ───────────────────────────────────────────────
@@ -75,13 +75,23 @@ const PDFViewer = ({
 
       // Fetch content URL from API if documentId provided
       if (documentId) {
-        // Get the auth token from the API instance
-        const token = await api.defaults.headers?.Authorization;
+        // Get Clerk token directly from window.Clerk
+        let token = null;
+        try {
+          const clerk = window?.Clerk;
+          const session = clerk?.session;
+          if (session) {
+            token = await session.getToken();
+          }
+        } catch (err) {
+          console.warn('Failed to get Clerk token:', err);
+        }
         
         // Use the /view endpoint for inline viewing (proxies through backend)
         // This solves Cloudinary's Content-Disposition: attachment issue
         // Include token as query param since browsers don't send headers for iframe/object requests
-        const viewUrl = `${api.defaults.baseURL}/documents/${documentId}/view${token ? `?token=${encodeURIComponent(token.replace('Bearer ', ''))}` : ''}`;
+        const viewUrl = `${API_BASE_URL}/documents/${documentId}/view${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        console.log('PDF Viewer URL:', viewUrl); // Debug log
         setResolvedUrl(viewUrl);
       }
     } catch (err) {
@@ -170,19 +180,6 @@ const PDFViewer = ({
                   (fileType && fileType.startsWith('image/'));
   const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(fileExt);
 
-  // Construct proper URL with auth token for the view endpoint
-  const getViewUrl = () => {
-    if (!resolvedUrl) return null;
-    
-    // If it's already a full URL (not our API endpoint), use as-is
-    if (resolvedUrl.startsWith('http')) {
-      return resolvedUrl;
-    }
-    
-    // Otherwise, it's a relative URL that needs the base URL
-    return resolvedUrl;
-  };
-
   // ─── Document render ─────────────────────────────────────────────────
   return (
     <div
@@ -202,50 +199,35 @@ const PDFViewer = ({
                   onLoad={() => setIsLoading(false)}
                 />
               ) : (
-                <object
-                  data={resolvedUrl}
+                <iframe
+                  src={resolvedUrl}
+                  className="w-full h-full border-0"
+                  title={fileName || "PDF Document"}
                   type="application/pdf"
-                  className="w-full flex-1 border-0"
                   style={{
                     minHeight: '600px',
-                    transform: `scale(${zoom})`,
-                    transformOrigin: 'top left',
-                    width: zoom !== 1 ? `${100 / zoom}%` : '100%',
                   }}
-                >
-                  <div className="flex flex-col items-center justify-center h-full gap-4 p-6 text-center bg-background">
-                    <FileText className="h-16 w-16 text-muted-foreground" />
-                    <p className="font-medium text-foreground">Unable to display PDF inline</p>
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      Your browser cannot display this PDF directly. Try one of the options below.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                      {onDownload && (
-                        <button
-                          onClick={onDownload}
-                          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm flex items-center gap-2"
-                        >
-                          <Download className="w-4 h-4" /> Download
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setUseGoogleViewer(true)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
-                      >
-                        Try Google Viewer
-                      </button>
-                      <a
-                        href={resolvedUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition text-sm"
-                      >
-                        Open in New Tab
-                      </a>
-                    </div>
-                  </div>
-                </object>
+                  onLoad={() => setIsLoading(false)}
+                />
               )}
+              
+              {/* Fallback options if iframe fails */}
+              <div className="absolute bottom-4 right-4 flex gap-2">
+                <button
+                  onClick={() => setUseGoogleViewer(!useGoogleViewer)}
+                  className="px-3 py-1.5 bg-white/90 backdrop-blur text-sm rounded shadow-lg hover:bg-white transition"
+                >
+                  {useGoogleViewer ? 'Use Native Viewer' : 'Use Google Viewer'}
+                </button>
+                {onDownload && (
+                  <button
+                    onClick={onDownload}
+                    className="px-3 py-1.5 bg-teal-600 text-white text-sm rounded shadow-lg hover:bg-teal-700 transition flex items-center gap-1"
+                  >
+                    <Download className="w-4 h-4" /> Download
+                  </button>
+                )}
+              </div>
             </>
           )}
 
@@ -347,4 +329,3 @@ const PDFViewer = ({
 };
 
 export default PDFViewer;
-
