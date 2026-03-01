@@ -29,7 +29,7 @@ export default function SystemBootLoader({
 
   return (
     <div className={containerClasses}>
-      <div className={`mb-4 ${minimal ? 'text-3xl' : 'text-4xl'}`}>
+      <div className={`${minimal ? 'mr-3' : 'mb-4 text-4xl'}`}>
         {minimal ? (
           <Loader2 className={`animate-spin ${spinnerSize}`} />
         ) : (

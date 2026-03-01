@@ -62,7 +62,7 @@ const LegalSectionModal = ({ section, isOpen, onClose }) => {
 
    return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-         <DialogContent className="max-w-3xl max-h-[85vh] p-0 overflow-hidden flex flex-col gap-0 border-border/80 shadow-2xl">
+         <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[85vh] p-0 overflow-hidden flex flex-col gap-0 border-border/80 shadow-2xl">
             {/* Header */}
             <DialogHeader className="px-6 py-4 border-b border-border bg-muted/30">
                <div className="space-y-1.5">
@@ -138,17 +138,17 @@ const LegalSectionModal = ({ section, isOpen, onClose }) => {
             </ScrollArea>
 
             {/* Footer Actions */}
-            <div className="p-4 border-t border-border bg-background flex items-center justify-between gap-4">
-               <Button variant="outline" size="sm" className="gap-2">
+            <div className="p-4 border-t border-border bg-background flex flex-col sm:flex-row items-center justify-between gap-4">
+               <Button variant="outline" size="sm" className="w-full sm:w-auto gap-2">
                   <ExternalLink className="w-4 h-4" />
                   View Original Source
                </Button>
 
-               <div className="flex items-center gap-2">
+               <div className="flex flex-wrap items-center justify-center sm:justify-end w-full sm:w-auto gap-2 text-center">
                   <Button 
                      variant="outline" 
                      size="sm" 
-                     className="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/30"
+                     className="flex-1 sm:flex-none gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/30"
                      onClick={handleCopy}
                      disabled={copied}
                   >
@@ -164,11 +164,11 @@ const LegalSectionModal = ({ section, isOpen, onClose }) => {
                         </>
                      )}
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/30">
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/30">
                      <Quote className="w-4 h-4" />
                      Cite
                   </Button>
-                  <Button size="sm" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button size="sm" className="flex-1 sm:flex-none gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
                      <Bookmark className="w-4 h-4" />
                      Save Section
                   </Button>
