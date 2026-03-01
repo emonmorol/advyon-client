@@ -222,6 +222,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                 ? prev.filter(f => f !== folder)
                 : [...prev, folder]
         );
+        if (isMobile) setShowLeftSidebar(false);
     };
 
     const handleFileClick = (folder, file) => {
@@ -231,13 +232,23 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
         }
         navigate(`/dashboard/workspace/doc/${file.id || file._id}`);
         setSelectedDocument(file);
+        if (isMobile) setShowLeftSidebar(false);
     };
 
     return (
         <div className="flex flex-1 overflow-hidden relative z-20 animate-in fade-in slide-in-from-right-4 duration-500 h-full p-0">
 
             {/* LEFT SIDEBAR */}
-            <aside className={cn("bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out", showLeftSidebar ? "w-64 translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 overflow-hidden border-none")}>
+            {isMobile && showLeftSidebar && (
+                <div 
+                    className="absolute inset-0 z-30 bg-background/80 backdrop-blur-sm"
+                    onClick={() => setShowLeftSidebar(false)}
+                />
+            )}
+            <aside className={cn("bg-card flex flex-col transition-all duration-300 ease-in-out z-40",
+                isMobile ? "absolute inset-y-0 left-0 border-r border-border" : "relative border-r border-border",
+                showLeftSidebar ? "w-64 translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 overflow-hidden border-none"
+            )}>
                 <div className="w-64 flex flex-col h-full overflow-hidden">
                     <div className="p-3 overflow-y-auto custom-scrollbar flex-1">
 
@@ -401,7 +412,7 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                 </div>
 
                 <div className="flex-1 overflow-hidden">
-                    <PanelGroup direction="horizontal">
+                    <PanelGroup direction={isMobile ? "vertical" : "horizontal"}>
                         {/* Doc List Panel */}
                         <Panel
                             defaultSize={40}
@@ -478,8 +489,8 @@ const WorkspaceView = ({ activeCase, onSwitchCase, searchTerm, onBack }) => {
                         </Panel>
 
                         {/* Resize Handle - ALWAYS RENDERED */}
-                        <PanelResizeHandle className="w-1 bg-border hover:bg-accent ring-1 ring-border/50 transition-colors cursor-col-resize flex items-center justify-center">
-                            <div className="w-0.5 h-8 bg-muted-foreground/30 rounded-full" />
+                        <PanelResizeHandle className={cn("bg-border hover:bg-accent ring-1 ring-border/50 transition-colors flex items-center justify-center", isMobile ? "h-1 cursor-row-resize py-1" : "w-1 cursor-col-resize px-1")}>
+                            <div className={cn("bg-muted-foreground/30 rounded-full", isMobile ? "h-0.5 w-8" : "w-0.5 h-8")} />
                         </PanelResizeHandle>
 
                         {/* Preview Panel - ALWAYS RENDERED with collapsible */}
