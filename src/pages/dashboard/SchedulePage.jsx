@@ -140,7 +140,7 @@ const SchedulePage = () => {
 
   const handleViewChange = (newView) => {
     setViewMode(newView);
-    if (calendarRef.current) {
+    if (newView !== 'list' && calendarRef.current) {
       const calendarApi = calendarRef.current.getApi();
       calendarApi.changeView(newView);
     }
@@ -313,32 +313,34 @@ const SchedulePage = () => {
               <Loader2 className="h-8 w-8 animate-spin text-accent" />
             </div>
           ) : (
-            <div className="[&_.fc]:font-sans [&_.fc]:text-sm [&_.fc-theme-standard td]:border-border [&_.fc-theme-standard th]:border-border [&_.fc-col-header-cell]:bg-muted/50 [&_.fc-daygrid-day]:hover:bg-muted/30 [&_.fc-event]:rounded-md [&_.fc-event]:px-2 [&_.fc-event]:py-1">
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                initialView={viewMode}
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: ''
-                }}
-                events={calendarEvents}
-                eventClick={handleEventClick}
-                dateClick={handleDateClick}
-                height="auto"
-                aspectRatio={1.8}
-                eventDisplay="block"
-                dayMaxEvents={3}
-                nowIndicator={true}
-                selectable={true}
-                selectMirror={true}
-                eventTimeFormat={{
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  meridiem: 'short'
-                }}
-              />
+            <div className="overflow-x-auto custom-scrollbar [&_.fc]:font-sans [&_.fc]:text-sm [&_.fc-theme-standard td]:border-border [&_.fc-theme-standard th]:border-border [&_.fc-col-header-cell]:bg-muted/50 [&_.fc-daygrid-day]:hover:bg-muted/30 [&_.fc-event]:rounded-md [&_.fc-event]:px-2 [&_.fc-event]:py-1">
+              <div className="min-w-[700px]">
+                <FullCalendar
+                  ref={calendarRef}
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView={viewMode}
+                  headerToolbar={{
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: ''
+                  }}
+                  events={calendarEvents}
+                  eventClick={handleEventClick}
+                  dateClick={handleDateClick}
+                  height="auto"
+                  aspectRatio={1.8}
+                  eventDisplay="block"
+                  dayMaxEvents={3}
+                  nowIndicator={true}
+                  selectable={true}
+                  selectMirror={true}
+                  eventTimeFormat={{
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    meridiem: 'short'
+                  }}
+                />
+              </div>
             </div>
           )}
         </motion.div>

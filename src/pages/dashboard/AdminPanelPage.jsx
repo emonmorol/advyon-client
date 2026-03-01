@@ -100,8 +100,8 @@ function UsersTab() {
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-2 border-primary rounded-full border-t-transparent" /></div>
       ) : (
-        <div className="border rounded-lg overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="border rounded-lg overflow-x-auto custom-scrollbar">
+          <table className="w-full text-sm min-w-[700px]">
             <thead className="bg-muted/50">
               <tr>
                 <th className="p-3 text-left w-10"><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? users.map((u) => u._id) : [])} /></th>
@@ -193,8 +193,8 @@ function CasesTab() {
       {/* Recent Cases Table */}
       <div>
         <h3 className="text-sm font-semibold mb-3">Recent Cases</h3>
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="border rounded-lg overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="bg-muted/50">
               <tr>
                 <th className="p-3 text-left">Case Number</th>
@@ -324,8 +324,8 @@ function AuditLogsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="border rounded-lg overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="border rounded-lg overflow-x-auto custom-scrollbar">
+          <table className="w-full text-sm min-w-[700px]">
           <thead className="bg-muted/50">
             <tr>
               <th className="p-3 text-left">Action</th>
@@ -417,20 +417,20 @@ export default function AdminPanelPage() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 max-w-lg">
-          <TabsTrigger value="users" className="flex items-center gap-1.5 text-xs">
+        <TabsList className="flex w-full overflow-x-auto custom-scrollbar md:grid md:grid-cols-5 max-w-full md:max-w-lg justify-start h-auto p-1">
+          <TabsTrigger value="users" className="flex shrink-0 items-center gap-1.5 text-xs px-4 py-2 md:px-2">
             <Users className="h-3.5 w-3.5" /> Users
           </TabsTrigger>
-          <TabsTrigger value="cases" className="flex items-center gap-1.5 text-xs">
+          <TabsTrigger value="cases" className="flex shrink-0 items-center gap-1.5 text-xs px-4 py-2 md:px-2">
             <FileText className="h-3.5 w-3.5" /> Cases
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-1.5 text-xs">
+          <TabsTrigger value="settings" className="flex shrink-0 items-center gap-1.5 text-xs px-4 py-2 md:px-2">
             <Settings className="h-3.5 w-3.5" /> Settings
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-1.5 text-xs">
+          <TabsTrigger value="analytics" className="flex shrink-0 items-center gap-1.5 text-xs px-4 py-2 md:px-2">
             <BarChart3 className="h-3.5 w-3.5" /> Analytics
           </TabsTrigger>
-          <TabsTrigger value="audit" className="flex items-center gap-1.5 text-xs">
+          <TabsTrigger value="audit" className="flex shrink-0 items-center gap-1.5 text-xs px-4 py-2 md:px-2">
             <Shield className="h-3.5 w-3.5" /> Audit
           </TabsTrigger>
         </TabsList>
