@@ -18,7 +18,9 @@ import {
   Gavel,
   FileText,
   AlertCircle,
-  X
+  X,
+  ExternalLink,
+  Video
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -66,6 +68,8 @@ const ScheduleDetailModal = ({ event, isOpen, onClose }) => {
     return time;
   };
 
+  const isUrl = (str) => /^https?:\/\//.test(str);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] bg-card border-border/40">
@@ -109,11 +113,27 @@ const ScheduleDetailModal = ({ event, isOpen, onClose }) => {
             </span>
           </div>
 
-          {/* Location */}
+          {/* Location / Meet Link */}
           {event.location && (
             <div className="flex items-center gap-3 text-sm">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="text-card-foreground">{event.location}</span>
+              {isUrl(event.location) ? (
+                <Video className="h-4 w-4 text-blue-500 flex-shrink-0" />
+              ) : (
+                <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              )}
+              {isUrl(event.location) ? (
+                <a
+                  href={event.location}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 hover:underline transition-colors truncate max-w-[340px]"
+                >
+                  <span className="truncate">{event.location}</span>
+                  <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+                </a>
+              ) : (
+                <span className="text-card-foreground">{event.location}</span>
+              )}
             </div>
           )}
 
