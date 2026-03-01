@@ -1,5 +1,5 @@
-import React from 'react';
-import { Briefcase, Clock, MoreVertical, Archive, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Briefcase, Clock, MoreVertical, Archive, Trash2, RefreshCw } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import {
     DropdownMenu,
@@ -7,11 +7,20 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { useCasesStore } from '@/store/cases';
 import { toast } from 'sonner';
 
 const CaseCard = ({ data, onOpen }) => {
-    const { deleteCase, archiveCase } = useCasesStore();
+    const { deleteCase, archiveCase, restoreCase } = useCasesStore();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const handleArchive = async (e) => {
         e.stopPropagation();
@@ -23,12 +32,28 @@ const CaseCard = ({ data, onOpen }) => {
             toast.error('Failed to archive case');
         }
     };
+    const handleRestore = async (e) => {
+        e.stopPropagation();
+        try {
+            await restoreCase(data.id || data._id);
+            toast.success('Case unarchived successfully');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to unarchive case');
+        }
+    };
 
-    const handleDelete = async (e) => {
+    const handleDeleteClick = (e) => {
+        e.stopPropagation();
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async (e) => {
         e.stopPropagation();
         try {
             await deleteCase(data.id || data._id);
             toast.success('Case deleted successfully');
+            setIsDeleteDialogOpen(false);
         } catch (error) {
             console.error(error);
             toast.error('Failed to delete case');
@@ -65,16 +90,57 @@ const CaseCard = ({ data, onOpen }) => {
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40 z-50">
-                        <DropdownMenuItem onClick={handleArchive} className="cursor-pointer gap-2">
-                            <Archive size={14} />
-                            <span>Archive</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleDelete} className="cursor-pointer text-destructive focus:bg-destructive focus:text-destructive-foreground gap-2">
+                        {data.status === 'archived' ? (
+                            <DropdownMenuItem onClick={handleRestore} className="cursor-pointer gap-2">
+                                <RefreshCw size={14} />
+                                <span>Unarchive</span>
+                            </DropdownMenuItem>
+                        ) : (
+                            <DropdownMenuItem onClick={handleArchive} className="cursor-pointer gap-2">
+                                <Archive size={14} />
+                                <span>Archive</span>
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={handleDeleteClick} className="cursor-pointer text-destructive focus:bg-destructive focus:text-destructive-foreground gap-2">
                             <Trash2 size={14} />
                             <span>Delete</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+                    // Stop propagation when closing through overlay click or escape key
+                    if (!open) setIsDeleteDialogOpen(false);
+                }}>
+                    <DialogContent onClick={(e) => e.stopPropagation()} className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Delete Case</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete this case? This action cannot be undone and will permanently remove the case and its contents.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-4 sm:justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsDeleteDialogOpen(false);
+                                }}
+                                className="px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDelete}
+                                className="px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md text-sm font-medium transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
 
