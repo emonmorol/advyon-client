@@ -447,7 +447,7 @@ const MyDocumentsPage = () => {
           </Button>
 
           {hasActiveFilters && (
-            <Button variant="ghost" onClick={clearFilters} className="shrink-0 text-muted-foreground">
+            <Button variant="ghost" className="shrink-0 text-muted-foreground">
               <X size={16} className="mr-1" />
               Clear
             </Button>
@@ -538,7 +538,7 @@ const MyDocumentsPage = () => {
               : "You haven't uploaded any documents yet. Upload documents via your case workspace."}
           </p>
           {hasActiveFilters && (
-            <Button onClick={clearFilters} className="mt-4">
+            <Button className="mt-4">
               Clear Filters
             </Button>
           )}
