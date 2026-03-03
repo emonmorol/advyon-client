@@ -1,13 +1,13 @@
 # Advyon Client
 
-## 📖 Project Overview
+## Project Overview
 **Advyon Client** is a modern, production-ready frontend application built for the Advyon Legal Platform. It is designed as a **Single Page Application (SPA)** using a **Component-Based Architecture** with a **Feature-Driven Modular Structure**.
 
 This architecture ensures scalability, maintainability, and a clear separation of concerns, making it easy to manage complex business logic (like Case Management or Authentication) alongside UI components.
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 ### 1. Component-Based SPA
 The application is built using **React**, where the UI is decomposed into independent, reusable pieces called "components".
@@ -21,7 +21,7 @@ Instead of grouping files by type (e.g., all controllers together), code is orga
 
 ---
 
-## 🛠 Technology Stack
+## Technology Stack
 
 ### Core
 - **[Vite](https://vitejs.dev/):** Next-generation frontend tooling for instant server start and lightning-fast HMR (Hot Module Replacement).
@@ -45,7 +45,7 @@ Instead of grouping files by type (e.g., all controllers together), code is orga
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```bash
 src/
@@ -66,7 +66,7 @@ src/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 Ensure you have **Node.js** installed on your machine.
@@ -105,6 +105,6 @@ npm run preview
 
 ---
 
-## 📏 Code Quality
+## Code Quality
 - **ESLint:** For identifying and reporting on patterns found in ECMAScript/JavaScript code.
 - **Prettier:** An opinionated code formatter to ensure consistent style.
